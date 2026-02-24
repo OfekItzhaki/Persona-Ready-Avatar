@@ -1,0 +1,6 @@
+Component	Tech Stack	Estimated Monthly Cost
+Framework	Next.js (React)	$0 (Vercel Free Tier)
+3D Engine	Three.js / react-three-fiber	$0 (Open Source)
+Avatar Model	Ready Player Me (GLB)	$0 (Free for personal use)
+TTS & Lip-Sync	Azure Neural TTS	$0 - $15+ (Free 500k chars/mo)
+Alt. Voice	ElevenLabs	$0 - $11+ (Higher quality)

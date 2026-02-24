@@ -1,0 +1,43 @@
+High-level goal
+A completely separate project that consumes any backend exposing { question → answer + language } via HTTP/WebSocket, and turns that into a talking doctor avatar with multilingual TTS and lip sync.
+
+It should NOT care how RAG/LLM is implemented – it only needs an API contract.
+
+Architecture
+Frontend app:
+
+Next.js (React) SPA.
+
+Components:
+
+Chat pane (text).
+
+Avatar pane (3D or 2D doctor).
+
+Controls: input, language indicator, mute, etc.
+
+Avatar & lip-sync:
+
+3D: react‑three‑fiber + Ready Player Me/GLB model with viseme blendshapes.
+
+Or simpler 2D sprite-based avatar (still driven by viseme data) if you want a faster POC.
+
+Voice pipeline:
+
+The avatar project can:
+
+Either call TTS itself (using e.g. Azure TTS) given the text + language.
+
+Or receive audio + viseme data from the backend if you later extend Project A.
+
+For maximum decoupling, start with:
+
+Avatar project calls a TTS provider directly.
+
+APIs it consumes:
+
+From Project A (or any “brain”):
+
+POST /api/chat → { answer, language?, sessionId? }
+
+If language is omitted, detect on frontend or assume a default.

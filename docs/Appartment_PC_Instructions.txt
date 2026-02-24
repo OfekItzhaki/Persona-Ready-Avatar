@@ -1,0 +1,47 @@
+I can see you're working on the avatar-client spec and want to continue with the design, incorporating CQRS and other relevant patterns. Let me check the current state of your spec to understand where we left off.
+
+Read file(s)
+
+requirements.md
+
+.config.kiro
+Perfect! I can see you have a comprehensive requirements document for the avatar-client spec and you're using the requirements-first workflow. Now you want to continue with the design phase, incorporating CQRS and other relevant architectural patterns.
+
+Let me delegate to the design phase of the requirements-first workflow to create a comprehensive design document that addresses CQRS and other architectural patterns suitable for this avatar client application.
+
+Read file(s)
+
+requirements.md
+
+THE_HORIZON_STANDARD.md
+Searched workspace
+Checking the avatar-client spec directory to see what files already exist
+
+2 edits to file
+
+design.md
+
+
+
+Generated properties based on requirements
+
+2 edits to file
+
+design.md
+
+
+Design document completed! I've created a comprehensive architecture that evaluates CQRS and incorporates several relevant patterns for your avatar client.
+
+Key decisions on patterns:
+
+CQRS: Not using full CQRS since it's overkill for a client-side app, but we're adopting CQRS-inspired patterns where they make sense (command/query separation in React Query).
+
+Patterns we're implementing:
+
+Repository Pattern - clean API abstraction
+Service Layer - business logic coordination
+Event-Driven Architecture - critical for the real-time audio-viseme sync
+Observer Pattern - multiple components reacting to audio/viseme events
+Strategy Pattern - flexible voice selection across languages
+Hybrid State Management - React Query for server state, Zustand for client state
+The design addresses your complex real-time synchronization requirements (50ms audio-viseme sync tolerance) and follows The Horizon Standard principles. Ready to move forward with the implementation tasks?

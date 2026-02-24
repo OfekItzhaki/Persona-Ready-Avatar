@@ -1,0 +1,11 @@
+Build a Next.js application called 'Avatar Client'.
+Requirements:
+1. Create a 3D Avatar component using react-three-fiber that loads a GLB model with viseme blendshapes.
+2. Integrate Azure Neural TTS to convert text into speech. 
+3. IMPORTANT: Capture Azure 'VisemeReceived' events and use them to animate the avatar's mouth in real-time.
+4. Implement a UI with:
+   - A dropdown to select an 'Agent' (fetch these from a configurable Brain API).
+   - A chat interface.
+   - A 3D viewport for the talking avatar.
+5. Deconfliction: This app should not have any RAG or LLM logic. It only calls `POST /api/chat` on a remote 'Brain' and renders the result.
+6. Support multiple languages: The TTS voice should change based on the 'language' field returned by the Brain.

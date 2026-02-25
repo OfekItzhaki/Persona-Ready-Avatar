@@ -129,7 +129,7 @@ The Avatar Client is a Next.js web application that provides a 3D animated avata
 3. THE .env.example file SHALL include AZURE_SPEECH_KEY for the Azure Speech API key
 4. THE .env.example file SHALL include AZURE_SPEECH_REGION for the Azure Speech service region
 5. THE .env.example file SHALL include BRAIN_API_URL for the Brain API base URL
-6. THE .env.example file SHALL include NEXT_PUBLIC_* prefixed variables for client-side accessible configuration
+6. THE .env.example file SHALL include NEXT*PUBLIC*\* prefixed variables for client-side accessible configuration
 7. THE Avatar_Client SHALL validate that required environment variables are present at application startup
 8. WHEN required environment variables are missing, THE Avatar_Client SHALL log an error message specifying which variables are missing and prevent application startup
 

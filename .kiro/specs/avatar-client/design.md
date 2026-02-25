@@ -50,44 +50,44 @@ graph TB
             Chat[Chat Interface]
             Persona[Persona Switcher]
         end
-        
+
         subgraph "Business Logic Layer"
             TTS[TTS Service]
             Viseme[Viseme Coordinator]
             Audio[Audio Manager]
         end
-        
+
         subgraph "Data Access Layer"
             API[API Repository]
             Cache[React Query Cache]
         end
-        
+
         subgraph "State Management"
             ServerState[Server State<br/>React Query]
             ClientState[Client State<br/>Zustand]
         end
     end
-    
+
     subgraph "External Services"
         Brain[Brain API]
         Azure[Azure Speech SDK]
     end
-    
+
     UI --> TTS
     UI --> API
     Avatar --> Viseme
     Chat --> API
     Persona --> API
-    
+
     TTS --> Azure
     TTS --> Viseme
     Viseme --> Audio
     Viseme --> Avatar
-    
+
     API --> Brain
     API --> Cache
     Cache --> ServerState
-    
+
     TTS --> ClientState
     Avatar --> ClientState
 
@@ -115,12 +115,14 @@ CQRS is typically applied in backend systems with complex domain logic and separ
 The Repository Pattern abstracts data access logic and provides a clean API for the rest of the application.
 
 **Benefits**:
+
 - Decouples business logic from API implementation details
 - Makes testing easier through dependency injection
 - Centralizes API error handling
 - Provides a single place to add cross-cutting concerns (logging, retries, etc.)
 
 **Implementation**:
+
 - `BrainApiRepository`: Handles all Brain API communication
 - `AzureSpeechRepository`: Wraps Azure Speech SDK interactions
 
@@ -131,6 +133,7 @@ The Repository Pattern abstracts data access logic and provides a clean API for 
 Services encapsulate business logic and coordinate between repositories and UI components.
 
 **Services**:
+
 - `TTSService`: Orchestrates text-to-speech synthesis and viseme event handling
 - `VisemeCoordinator`: Synchronizes audio playback with viseme animations
 - `AudioManager`: Manages audio playback state and timing
@@ -160,6 +163,7 @@ Services encapsulate business logic and coordinate between repositories and UI c
 The viseme synchronization requires precise timing coordination between multiple subsystems.
 
 **Event Flow**:
+
 1. User submits message → Command dispatched
 2. Brain API responds → Text received
 3. TTS Service synthesizes → Audio + Viseme events emitted
@@ -176,6 +180,7 @@ The viseme synchronization requires precise timing coordination between multiple
 Multiple components need to react to audio playback events and viseme data.
 
 **Observers**:
+
 - Avatar Component observes viseme events
 - Transcript Display observes audio progress
 - Audio Manager observes playback state
@@ -187,6 +192,7 @@ Multiple components need to react to audio playback events and viseme data.
 Different languages require different voice selection strategies.
 
 **Strategies**:
+
 - `LanguageVoiceStrategy`: Maps language codes to Azure voice identifiers
 - `DefaultVoiceStrategy`: Fallback to English voice
 - Extensible for future voice customization (gender, accent, etc.)
@@ -196,12 +202,14 @@ Different languages require different voice selection strategies.
 #### Presentation Layer
 
 **Responsibilities**:
+
 - Render UI components
 - Handle user interactions
 - Display data from state
 - Trigger commands/queries
 
 **Components**:
+
 - `AvatarCanvas`: 3D viewport container
 - `AvatarModel`: Three.js mesh with blendshape animations
 - `ChatInterface`: Message input and conversation history
@@ -210,6 +218,7 @@ Different languages require different voice selection strategies.
 - `NotificationToast`: Error and status messages
 
 **Rules**:
+
 - Components are presentational and delegate logic to services
 - No direct API calls (use repositories through hooks)
 - No business logic (use services)
@@ -218,12 +227,14 @@ Different languages require different voice selection strategies.
 #### Business Logic Layer
 
 **Responsibilities**:
+
 - Implement domain logic
 - Coordinate between repositories and UI
 - Handle complex workflows
 - Manage real-time synchronization
 
 **Services**:
+
 - `TTSService`: Text-to-speech orchestration
 - `VisemeCoordinator`: Animation timing and synchronization
 - `AudioManager`: Audio playback control
@@ -231,6 +242,7 @@ Different languages require different voice selection strategies.
 - `LanguageVoiceMapper`: Voice selection logic
 
 **Rules**:
+
 - Services are stateless (state managed by Zustand/React Query)
 - Services use dependency injection for repositories
 - Services emit events for cross-cutting concerns
@@ -239,12 +251,14 @@ Different languages require different voice selection strategies.
 #### Data Access Layer
 
 **Responsibilities**:
+
 - Abstract external API communication
 - Handle HTTP requests/responses
 - Manage API errors
 - Provide type-safe interfaces
 
 **Repositories**:
+
 - `BrainApiRepository`: Brain API communication
   - `sendMessage(agentId, message)`: POST /api/chat
   - `getAgents()`: GET /api/agents
@@ -253,6 +267,7 @@ Different languages require different voice selection strategies.
   - `subscribeToVisemes(callback)`: Viseme event subscription
 
 **Rules**:
+
 - Repositories return typed results (Result<T, Error> pattern)
 - All API errors are caught and transformed to domain errors
 - Repositories are injected into services
@@ -279,6 +294,7 @@ interface VisemeData {
 ```
 
 **Responsibilities**:
+
 - Initialize Three.js scene with react-three-fiber
 - Load GLB model with blendshapes
 - Apply viseme blendshape animations
@@ -286,6 +302,7 @@ interface VisemeData {
 - Display loading and error states
 
 **Key Features**:
+
 - Smooth blendshape interpolation using lerp
 - 60 FPS animation loop
 - Automatic camera positioning
@@ -309,6 +326,7 @@ interface ChatMessage {
 ```
 
 **Responsibilities**:
+
 - Display conversation history
 - Accept user input
 - Submit messages to Brain API
@@ -316,6 +334,7 @@ interface ChatMessage {
 - Handle errors
 
 **Key Features**:
+
 - Auto-scroll to latest message
 - Keyboard shortcuts (Enter to send)
 - Optimistic UI updates
@@ -339,12 +358,14 @@ interface Agent {
 ```
 
 **Responsibilities**:
+
 - Fetch and display available agents
 - Handle agent selection
 - Show loading and error states
 - Persist selected agent
 
 **Key Features**:
+
 - Dropdown UI with search
 - Agent descriptions on hover
 - Retry on fetch failure
@@ -361,11 +382,9 @@ interface ITTSService {
     voice: string,
     language: string
   ): Promise<Result<AudioBuffer, TTSError>>;
-  
-  subscribeToVisemes(
-    callback: (viseme: VisemeEvent) => void
-  ): () => void;
-  
+
+  subscribeToVisemes(callback: (viseme: VisemeEvent) => void): () => void;
+
   stop(): void;
 }
 
@@ -375,13 +394,14 @@ interface VisemeEvent {
   duration: number;
 }
 
-type TTSError = 
+type TTSError =
   | { type: 'NETWORK_ERROR'; message: string }
   | { type: 'INVALID_VOICE'; voice: string }
   | { type: 'SYNTHESIS_FAILED'; details: string };
 ```
 
 **Implementation Details**:
+
 - Uses Azure Speech SDK SpeechSynthesizer
 - Subscribes to VisemeReceived events
 - Emits viseme events to coordinator
@@ -395,13 +415,12 @@ interface IVisemeCoordinator {
   start(audioBuffer: AudioBuffer, visemes: VisemeEvent[]): void;
   stop(): void;
   getCurrentViseme(): VisemeData | null;
-  subscribeToVisemeChanges(
-    callback: (viseme: VisemeData) => void
-  ): () => void;
+  subscribeToVisemeChanges(callback: (viseme: VisemeData) => void): () => void;
 }
 ```
 
 **Implementation Details**:
+
 - Schedules viseme animations based on audio timing
 - Uses requestAnimationFrame for smooth updates
 - Synchronizes with AudioContext currentTime
@@ -418,15 +437,14 @@ interface IAudioManager {
   stop(): void;
   getCurrentTime(): number;
   getDuration(): number;
-  subscribeToPlaybackState(
-    callback: (state: PlaybackState) => void
-  ): () => void;
+  subscribeToPlaybackState(callback: (state: PlaybackState) => void): () => void;
 }
 
 type PlaybackState = 'idle' | 'playing' | 'paused' | 'stopped';
 ```
 
 **Implementation Details**:
+
 - Uses Web Audio API (AudioContext)
 - Manages AudioBufferSourceNode lifecycle
 - Emits playback state changes
@@ -439,11 +457,8 @@ type PlaybackState = 'idle' | 'playing' | 'paused' | 'stopped';
 
 ```typescript
 interface IBrainApiRepository {
-  sendMessage(
-    agentId: string,
-    message: string
-  ): Promise<Result<ChatResponse, ApiError>>;
-  
+  sendMessage(agentId: string, message: string): Promise<Result<ChatResponse, ApiError>>;
+
   getAgents(): Promise<Result<Agent[], ApiError>>;
 }
 
@@ -461,6 +476,7 @@ type ApiError =
 ```
 
 **Implementation Details**:
+
 - Uses fetch API with timeout wrapper
 - Implements retry logic with exponential backoff
 - Transforms HTTP errors to domain errors
@@ -471,10 +487,7 @@ type ApiError =
 
 ```typescript
 interface IAzureSpeechRepository {
-  synthesize(
-    text: string,
-    config: SpeechConfig
-  ): Promise<Result<SynthesisResult, SpeechError>>;
+  synthesize(text: string, config: SpeechConfig): Promise<Result<SynthesisResult, SpeechError>>;
 }
 
 interface SpeechConfig {
@@ -496,6 +509,7 @@ type SpeechError =
 ```
 
 **Implementation Details**:
+
 - Wraps Azure Speech SDK
 - Manages SDK lifecycle (create/dispose)
 - Collects viseme events during synthesis
@@ -524,11 +538,7 @@ const useSendMessage = () => {
       brainApiRepository.sendMessage(agentId, message),
     onSuccess: (response) => {
       // Trigger TTS
-      ttsService.synthesizeSpeech(
-        response.message,
-        selectedAgent.voice,
-        selectedAgent.language
-      );
+      ttsService.synthesizeSpeech(response.message, selectedAgent.voice, selectedAgent.language);
     },
   });
 };
@@ -541,19 +551,19 @@ interface AppState {
   // Agent selection
   selectedAgentId: string | null;
   setSelectedAgent: (agentId: string) => void;
-  
+
   // Conversation
   messages: ChatMessage[];
   addMessage: (message: ChatMessage) => void;
   clearMessages: () => void;
-  
+
   // Audio/Viseme state
   currentViseme: VisemeData | null;
   setCurrentViseme: (viseme: VisemeData | null) => void;
-  
+
   playbackState: PlaybackState;
   setPlaybackState: (state: PlaybackState) => void;
-  
+
   // Notifications
   notifications: Notification[];
   addNotification: (notification: Notification) => void;
@@ -563,26 +573,29 @@ interface AppState {
 const useAppStore = create<AppState>((set) => ({
   selectedAgentId: null,
   setSelectedAgent: (agentId) => set({ selectedAgentId: agentId }),
-  
+
   messages: [],
-  addMessage: (message) => set((state) => ({
-    messages: [...state.messages, message]
-  })),
+  addMessage: (message) =>
+    set((state) => ({
+      messages: [...state.messages, message],
+    })),
   clearMessages: () => set({ messages: [] }),
-  
+
   currentViseme: null,
   setCurrentViseme: (viseme) => set({ currentViseme: viseme }),
-  
+
   playbackState: 'idle',
   setPlaybackState: (state) => set({ playbackState: state }),
-  
+
   notifications: [],
-  addNotification: (notification) => set((state) => ({
-    notifications: [...state.notifications, notification]
-  })),
-  removeNotification: (id) => set((state) => ({
-    notifications: state.notifications.filter(n => n.id !== id)
-  })),
+  addNotification: (notification) =>
+    set((state) => ({
+      notifications: [...state.notifications, notification],
+    })),
+  removeNotification: (id) =>
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id),
+    })),
 }));
 ```
 
@@ -678,7 +691,7 @@ interface SynthesisResult {
 }
 
 // Audio format
-type AudioFormat = 
+type AudioFormat =
   | 'audio-16khz-32kbitrate-mono-mp3'
   | 'audio-24khz-48kbitrate-mono-mp3'
   | 'raw-16khz-16bit-mono-pcm';
@@ -688,16 +701,10 @@ type AudioFormat =
 
 ```typescript
 // Result type for error handling
-type Result<T, E> = 
-  | { success: true; data: T }
-  | { success: false; error: E };
+type Result<T, E> = { success: true; data: T } | { success: false; error: E };
 
 // Domain errors
-type DomainError =
-  | ApiError
-  | TTSError
-  | SpeechError
-  | ValidationError;
+type DomainError = ApiError | TTSError | SpeechError | ValidationError;
 
 interface ValidationError {
   type: 'VALIDATION_ERROR';
@@ -714,43 +721,43 @@ Azure Speech SDK provides 22 viseme IDs (0-21). These must be mapped to blendsha
 
 ```typescript
 const VISEME_BLENDSHAPE_MAP: Record<number, string> = {
-  0: 'viseme_sil',    // Silence
-  1: 'viseme_PP',     // p, b, m
-  2: 'viseme_FF',     // f, v
-  3: 'viseme_TH',     // th
-  4: 'viseme_DD',     // t, d
-  5: 'viseme_kk',     // k, g
-  6: 'viseme_CH',     // ch, j, sh
-  7: 'viseme_SS',     // s, z
-  8: 'viseme_nn',     // n, l
-  9: 'viseme_RR',     // r
-  10: 'viseme_aa',    // a (father)
-  11: 'viseme_E',     // e (bed)
-  12: 'viseme_I',     // i (feet)
-  13: 'viseme_O',     // o (boat)
-  14: 'viseme_U',     // u (book)
-  15: 'viseme_aa',    // a (cat)
-  16: 'viseme_E',     // e (pet)
-  17: 'viseme_I',     // i (sit)
-  18: 'viseme_O',     // o (dog)
-  19: 'viseme_U',     // u (put)
-  20: 'viseme_aa',    // a (about)
-  21: 'viseme_E',     // e (taken)
+  0: 'viseme_sil', // Silence
+  1: 'viseme_PP', // p, b, m
+  2: 'viseme_FF', // f, v
+  3: 'viseme_TH', // th
+  4: 'viseme_DD', // t, d
+  5: 'viseme_kk', // k, g
+  6: 'viseme_CH', // ch, j, sh
+  7: 'viseme_SS', // s, z
+  8: 'viseme_nn', // n, l
+  9: 'viseme_RR', // r
+  10: 'viseme_aa', // a (father)
+  11: 'viseme_E', // e (bed)
+  12: 'viseme_I', // i (feet)
+  13: 'viseme_O', // o (boat)
+  14: 'viseme_U', // u (book)
+  15: 'viseme_aa', // a (cat)
+  16: 'viseme_E', // e (pet)
+  17: 'viseme_I', // i (sit)
+  18: 'viseme_O', // o (dog)
+  19: 'viseme_U', // u (put)
+  20: 'viseme_aa', // a (about)
+  21: 'viseme_E', // e (taken)
 };
 ```
 
 **Note**: The GLB model must contain blendshape targets matching these names. If the model uses different naming conventions, this mapping must be adjusted accordingly.
 
-
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property Reflection
 
 After analyzing all acceptance criteria, I identified the following redundancies and consolidations:
 
 **Redundant Properties Eliminated**:
+
 - Requirements 6.1 and 6.2 are covered by 4.1 and 5.3 (API endpoint calls)
 - Requirement 7.1 is identical to 2.5 (language-based voice selection)
 - Requirement 10.4 is identical to 1.5 (GLB model load error handling)
@@ -758,235 +765,237 @@ After analyzing all acceptance criteria, I identified the following redundancies
 - Requirements 20.4 and 20.5 are identical to 16.5 and 16.6 (Husky and lint-staged)
 
 **Properties Combined**:
+
 - Message display properties (5.5, 9.1, 9.3) combined into comprehensive message rendering property
 - Security header properties (14.1-14.4) combined into single security headers property
 - Documentation properties (18.1-18.7) combined into README completeness property
 - TypeScript configuration properties (15.4-15.6) combined into TypeScript compliance property
 
 **Edge Cases Handled by Generators**:
+
 - Requirement 7.4 (unsupported language fallback) will be covered by property test generators
 
 ### Core Functional Properties
 
 #### Property 1: GLB Model Loading
 
-*For any* valid GLB model file path, the Avatar Component should successfully load the model and extract blendshape data, or handle load failures gracefully with error messages and logging.
+_For any_ valid GLB model file path, the Avatar Component should successfully load the model and extract blendshape data, or handle load failures gracefully with error messages and logging.
 
 **Validates: Requirements 1.1, 1.5**
 
 #### Property 2: Text-to-Speech Synthesis
 
-*For any* non-empty text string and valid voice configuration, the TTS Service should produce an audio buffer and emit corresponding viseme events.
+_For any_ non-empty text string and valid voice configuration, the TTS Service should produce an audio buffer and emit corresponding viseme events.
 
 **Validates: Requirements 2.2, 2.3**
 
 #### Property 3: Voice Selection by Configuration
 
-*For any* agent configuration with a specified voice identifier, the TTS Service should use that exact voice for speech synthesis.
+_For any_ agent configuration with a specified voice identifier, the TTS Service should use that exact voice for speech synthesis.
 
 **Validates: Requirements 2.4**
 
 #### Property 4: Language-Based Voice Selection
 
-*For any* supported language code (en-US, es-ES, fr-FR, de-DE, ja-JP, zh-CN), the TTS Service should select an appropriate Azure Neural TTS voice matching that language.
+_For any_ supported language code (en-US, es-ES, fr-FR, de-DE, ja-JP, zh-CN), the TTS Service should select an appropriate Azure Neural TTS voice matching that language.
 
 **Validates: Requirements 2.5, 7.5**
 
 #### Property 5: Viseme Event Forwarding
 
-*For any* viseme event received from Azure Speech SDK, the TTS Service should forward the viseme ID and timing data to the Avatar Component without loss or corruption.
+_For any_ viseme event received from Azure Speech SDK, the TTS Service should forward the viseme ID and timing data to the Avatar Component without loss or corruption.
 
 **Validates: Requirements 3.2**
 
 #### Property 6: Viseme-to-Blendshape Mapping
 
-*For any* valid Azure viseme ID (0-21), the Avatar Component should map it to a corresponding blendshape target name in the GLB model.
+_For any_ valid Azure viseme ID (0-21), the Avatar Component should map it to a corresponding blendshape target name in the GLB model.
 
 **Validates: Requirements 3.3**
 
 #### Property 7: Blendshape Interpolation
 
-*For any* sequence of viseme events with timing data, the Avatar Component should interpolate blendshape values smoothly over time, creating continuous mouth animations.
+_For any_ sequence of viseme events with timing data, the Avatar Component should interpolate blendshape values smoothly over time, creating continuous mouth animations.
 
 **Validates: Requirements 3.4**
 
 #### Property 8: Audio-Viseme Synchronization Timing
 
-*For any* audio playback with viseme data, the timing difference between audio playback position and viseme animation should not exceed 50 milliseconds.
+_For any_ audio playback with viseme data, the timing difference between audio playback position and viseme animation should not exceed 50 milliseconds.
 
 **Validates: Requirements 3.5**
 
 #### Property 9: Agent Selection State Management
 
-*For any* agent selected from the dropdown, the application state should update to reflect that agent as the active conversation context, and all subsequent operations should use that agent.
+_For any_ agent selected from the dropdown, the application state should update to reflect that agent as the active conversation context, and all subsequent operations should use that agent.
 
 **Validates: Requirements 4.3**
 
 #### Property 10: Agent ID in Chat Requests
 
-*For any* chat message sent after an agent is selected, the HTTP request payload should include the selected agent's identifier.
+_For any_ chat message sent after an agent is selected, the HTTP request payload should include the selected agent's identifier.
 
 **Validates: Requirements 4.4, 5.4**
 
 #### Property 11: Agent Display Information
 
-*For any* agent in the dropdown, both the agent name and description (if present) should be displayed to the user.
+_For any_ agent in the dropdown, both the agent name and description (if present) should be displayed to the user.
 
 **Validates: Requirements 4.6**
 
 #### Property 12: Chat Message Submission
 
-*For any* user message submitted through the chat interface, an HTTP POST request should be sent to the Brain API `/api/chat` endpoint with the message text and agent ID.
+_For any_ user message submitted through the chat interface, an HTTP POST request should be sent to the Brain API `/api/chat` endpoint with the message text and agent ID.
 
 **Validates: Requirements 5.3, 5.4**
 
 #### Property 13: Response Display and TTS Trigger
 
-*For any* response received from the Brain API, the response text should be displayed in the conversation history and passed to the TTS Service for speech synthesis.
+_For any_ response received from the Brain API, the response text should be displayed in the conversation history and passed to the TTS Service for speech synthesis.
 
 **Validates: Requirements 5.5, 5.6**
 
 #### Property 14: Input Disabling During Request
 
-*For any* pending Brain API request, the chat input field should be disabled until the request completes (success or failure).
+_For any_ pending Brain API request, the chat input field should be disabled until the request completes (success or failure).
 
 **Validates: Requirements 5.7**
 
 #### Property 15: HTTP Headers in API Requests
 
-*For any* HTTP request to the Brain API, the request should include proper headers including `Content-Type: application/json`.
+_For any_ HTTP request to the Brain API, the request should include proper headers including `Content-Type: application/json`.
 
 **Validates: Requirements 6.4**
 
 #### Property 16: JSON Response Parsing
 
-*For any* valid JSON response from the Brain API, the application should successfully parse the response into typed data structures.
+_For any_ valid JSON response from the Brain API, the application should successfully parse the response into typed data structures.
 
 **Validates: Requirements 6.5**
 
 #### Property 17: Request Timeout Handling
 
-*For any* Brain API request that exceeds 30 seconds, the request should timeout and trigger error handling.
+_For any_ Brain API request that exceeds 30 seconds, the request should timeout and trigger error handling.
 
 **Validates: Requirements 6.7**
 
 #### Property 18: Environment Variable Validation
 
-*For any* required environment variable (AZURE_SPEECH_KEY, AZURE_SPEECH_REGION, BRAIN_API_URL), if the variable is missing at startup, the application should log an error specifying the missing variable and prevent startup.
+_For any_ required environment variable (AZURE_SPEECH_KEY, AZURE_SPEECH_REGION, BRAIN_API_URL), if the variable is missing at startup, the application should log an error specifying the missing variable and prevent startup.
 
 **Validates: Requirements 8.7, 8.8**
 
 #### Property 19: Message Chronological Ordering
 
-*For any* sequence of messages in the conversation history, the messages should be displayed in chronological order based on their timestamps.
+_For any_ sequence of messages in the conversation history, the messages should be displayed in chronological order based on their timestamps.
 
 **Validates: Requirements 9.3**
 
 #### Property 20: Auto-Scroll to Latest Message
 
-*For any* new message added to the conversation history, the transcript display should automatically scroll to show the most recent message.
+_For any_ new message added to the conversation history, the transcript display should automatically scroll to show the most recent message.
 
 **Validates: Requirements 9.4**
 
 #### Property 21: Visual Message Distinction
 
-*For any* message in the conversation history, user messages and agent responses should have visually distinct styling to differentiate them.
+_For any_ message in the conversation history, user messages and agent responses should have visually distinct styling to differentiate them.
 
 **Validates: Requirements 9.5**
 
 #### Property 22: Network Error Notifications
 
-*For any* network request failure, the application should display a user-friendly error notification with the failure reason.
+_For any_ network request failure, the application should display a user-friendly error notification with the failure reason.
 
 **Validates: Requirements 10.2**
 
 #### Property 23: Structured Error Logging
 
-*For any* error that occurs in the application, a structured log entry should be created with timestamp, error type, and contextual information.
+_For any_ error that occurs in the application, a structured log entry should be created with timestamp, error type, and contextual information.
 
 **Validates: Requirements 10.5**
 
 #### Property 24: Error Boundary Protection
 
-*For any* component that throws an error during rendering, the error boundary should catch the error and prevent the entire application from crashing.
+_For any_ component that throws an error during rendering, the error boundary should catch the error and prevent the entire application from crashing.
 
 **Validates: Requirements 10.6**
 
 #### Property 25: Agent List Caching
 
-*For any* agent list fetch from `/api/agents`, subsequent fetches within 5 minutes should use the cached data without making a new network request.
+_For any_ agent list fetch from `/api/agents`, subsequent fetches within 5 minutes should use the cached data without making a new network request.
 
 **Validates: Requirements 11.2**
 
 #### Property 26: Optimistic UI Updates
 
-*For any* user message submission, the message should appear in the conversation history immediately before the API response is received.
+_For any_ user message submission, the message should appear in the conversation history immediately before the API response is received.
 
 **Validates: Requirements 11.3**
 
 #### Property 27: Session Conversation Persistence
 
-*For any* message added to the conversation history, the message should persist in client-side state for the duration of the session.
+_For any_ message added to the conversation history, the message should persist in client-side state for the duration of the session.
 
 **Validates: Requirements 11.4**
 
 #### Property 28: Loading State Display
 
-*For any* asynchronous operation (API call, model loading, TTS synthesis), a loading state indicator should be displayed to the user.
+_For any_ asynchronous operation (API call, model loading, TTS synthesis), a loading state indicator should be displayed to the user.
 
 **Validates: Requirements 11.6**
 
 #### Property 29: Avatar Aspect Ratio Maintenance
 
-*For any* viewport size change, the Avatar Component should maintain its aspect ratio and scale appropriately without distortion.
+_For any_ viewport size change, the Avatar Component should maintain its aspect ratio and scale appropriately without distortion.
 
 **Validates: Requirements 12.4**
 
 #### Property 30: ARIA Labels for Interactive Components
 
-*For any* interactive UI component (buttons, inputs, dropdowns), proper ARIA labels should be present for accessibility.
+_For any_ interactive UI component (buttons, inputs, dropdowns), proper ARIA labels should be present for accessibility.
 
 **Validates: Requirements 13.1**
 
 #### Property 31: Text Alternatives for Audio
 
-*For any* audio content played through TTS, corresponding text should be displayed in the Transcript Display as a text alternative.
+_For any_ audio content played through TTS, corresponding text should be displayed in the Transcript Display as a text alternative.
 
 **Validates: Requirements 13.4**
 
 #### Property 32: Screen Reader Announcements
 
-*For any* new message or status change, the application should trigger screen reader announcements to notify users of assistive technologies.
+_For any_ new message or status change, the application should trigger screen reader announcements to notify users of assistive technologies.
 
 **Validates: Requirements 13.6**
 
 #### Property 33: Input Validation and Sanitization
 
-*For any* user input before sending to the Brain API, the input should be validated and sanitized to prevent injection attacks.
+_For any_ user input before sending to the Brain API, the input should be validated and sanitized to prevent injection attacks.
 
 **Validates: Requirements 14.5**
 
 #### Property 34: Sensitive Data Protection in Logs
 
-*For any* log entry created by the application, the log should not contain sensitive data including API keys, tokens, or personal information.
+_For any_ log entry created by the application, the log should not contain sensitive data including API keys, tokens, or personal information.
 
 **Validates: Requirements 14.6**
 
 #### Property 35: TypeScript Type Coverage
 
-*For any* API request/response payload and component props/state, explicit TypeScript interfaces or types should be defined.
+_For any_ API request/response payload and component props/state, explicit TypeScript interfaces or types should be defined.
 
 **Validates: Requirements 15.2, 15.3**
 
 #### Property 36: Structured API Request Logging
 
-*For any* API request made to the Brain API, a structured log entry should be created including endpoint, method, and response status.
+_For any_ API request made to the Brain API, a structured log entry should be created including endpoint, method, and response status.
 
 **Validates: Requirements 19.2**
 
 #### Property 37: ISO 8601 Timestamp Format
 
-*For any* log entry created by the application, the timestamp should be in ISO 8601 format.
+_For any_ log entry created by the application, the timestamp should be in ISO 8601 format.
 
 **Validates: Requirements 19.5**
 
@@ -1228,7 +1237,6 @@ The Avatar Client should document the git workflow and branching strategy in the
 
 **Validates: Requirements 20.3**
 
-
 ## Error Handling
 
 ### Error Handling Strategy
@@ -1240,11 +1248,13 @@ The application implements a layered error handling approach with centralized er
 #### 1. Network Errors
 
 **Sources**:
+
 - Brain API communication failures
 - Azure Speech SDK network issues
 - Timeout errors
 
 **Handling**:
+
 - Catch at repository layer
 - Transform to domain errors with context
 - Display user-friendly notifications
@@ -1252,6 +1262,7 @@ The application implements a layered error handling approach with centralized er
 - Log structured error details
 
 **User Experience**:
+
 - Show notification: "Unable to connect to server. Retrying..."
 - Provide manual retry button
 - Maintain application state for recovery
@@ -1259,17 +1270,20 @@ The application implements a layered error handling approach with centralized er
 #### 2. Validation Errors
 
 **Sources**:
+
 - Invalid user input
 - Missing required fields
 - Malformed data
 
 **Handling**:
+
 - Validate at input boundaries
 - Sanitize before API calls
 - Return specific field-level errors
 - Prevent submission of invalid data
 
 **User Experience**:
+
 - Show inline validation messages
 - Highlight invalid fields
 - Provide clear guidance on corrections
@@ -1277,17 +1291,20 @@ The application implements a layered error handling approach with centralized er
 #### 3. Resource Loading Errors
 
 **Sources**:
+
 - GLB model loading failures
 - Audio buffer creation errors
 - Asset loading failures
 
 **Handling**:
+
 - Catch during resource initialization
 - Display error with troubleshooting guidance
 - Provide fallback UI or retry option
 - Log detailed error information
 
 **User Experience**:
+
 - Show error message: "Failed to load 3D model. Please check the model file."
 - Offer retry button
 - Gracefully degrade to text-only mode if needed
@@ -1295,17 +1312,20 @@ The application implements a layered error handling approach with centralized er
 #### 4. Speech Synthesis Errors
 
 **Sources**:
+
 - Invalid Azure credentials
 - Unsupported voice/language
 - Synthesis failures
 
 **Handling**:
+
 - Catch at TTS Service layer
 - Check credentials at startup
 - Fallback to default voice for unsupported languages
 - Log warnings for configuration issues
 
 **User Experience**:
+
 - Show notification: "Speech synthesis failed. Please check your configuration."
 - Display text response even if audio fails
 - Provide retry option
@@ -1313,17 +1333,20 @@ The application implements a layered error handling approach with centralized er
 #### 5. Runtime Errors
 
 **Sources**:
+
 - Component rendering errors
 - Unexpected exceptions
 - State management errors
 
 **Handling**:
+
 - Implement React Error Boundaries
 - Catch and log errors with stack traces
 - Prevent full application crash
 - Maintain unaffected features
 
 **User Experience**:
+
 - Show error boundary fallback UI
 - Provide "Reload" button
 - Log error for debugging
@@ -1342,8 +1365,8 @@ try {
       error: {
         type: 'SERVER_ERROR',
         status: response.status,
-        details: await response.text()
-      }
+        details: await response.text(),
+      },
     };
   }
 } catch (error) {
@@ -1351,21 +1374,19 @@ try {
     success: false,
     error: {
       type: 'NETWORK_ERROR',
-      message: error.message
-    }
+      message: error.message,
+    },
   };
 }
 
 // Service Layer: Domain Error → User Notification
 const result = await repository.sendMessage(agentId, message);
 if (!result.success) {
-  notificationService.error(
-    getUserFriendlyMessage(result.error)
-  );
+  notificationService.error(getUserFriendlyMessage(result.error));
   logger.error('Chat request failed', {
     error: result.error,
     agentId,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }
 ```
@@ -1375,6 +1396,7 @@ if (!result.success) {
 **Implementation**: Zustand store + Toast component
 
 **Features**:
+
 - Auto-dismiss after configurable duration
 - Manual dismiss option
 - Queue management for multiple notifications
@@ -1382,6 +1404,7 @@ if (!result.success) {
 - Accessibility support (ARIA live regions)
 
 **Notification Types**:
+
 - **Info**: General information (e.g., "Agent switched to GPT-4")
 - **Success**: Successful operations (e.g., "Message sent")
 - **Warning**: Non-critical issues (e.g., "Using default voice")
@@ -1392,12 +1415,14 @@ if (!result.success) {
 **Format**: Structured JSON logs
 
 **Log Levels**:
+
 - **Debug**: Detailed diagnostic information
 - **Info**: General informational messages
 - **Warn**: Warning messages for potential issues
 - **Error**: Error messages with stack traces
 
 **Log Context**:
+
 - Timestamp (ISO 8601)
 - Log level
 - Component/service name
@@ -1407,6 +1432,7 @@ if (!result.success) {
 - Request/response data (sanitized)
 
 **Example Log Entry**:
+
 ```json
 {
   "timestamp": "2024-01-15T10:30:45.123Z",
@@ -1448,12 +1474,14 @@ if (!result.success) {
 **Implementation**: React Error Boundaries at strategic points
 
 **Boundary Locations**:
+
 - Root application boundary (catches all errors)
 - Avatar Component boundary (isolates 3D rendering errors)
 - Chat Interface boundary (isolates conversation errors)
 - Persona Switcher boundary (isolates agent selection errors)
 
 **Fallback UI**:
+
 - Error message with description
 - "Reload Component" button
 - "Report Issue" link (optional)
@@ -1468,12 +1496,14 @@ The Avatar Client follows a comprehensive testing approach combining unit tests,
 ### Dual Testing Approach
 
 **Unit Tests**: Verify specific examples, edge cases, and error conditions
+
 - Focus on specific scenarios and concrete examples
 - Test individual functions and components in isolation
 - Fast execution for rapid feedback
 - Cover edge cases and error paths
 
 **Property-Based Tests**: Verify universal properties across all inputs
+
 - Test properties that should hold for any valid input
 - Use randomized input generation for comprehensive coverage
 - Minimum 100 iterations per property test
@@ -1522,6 +1552,7 @@ src/
 ### Unit Testing Strategy
 
 **What to Test**:
+
 - Individual component rendering
 - User interaction handlers
 - Service method behavior
@@ -1530,6 +1561,7 @@ src/
 - Utility functions
 
 **Example Unit Tests**:
+
 ```typescript
 // Component test
 describe('ChatInterface', () => {
@@ -1537,20 +1569,20 @@ describe('ChatInterface', () => {
     const { getByRole, getByText } = render(<ChatInterface />);
     const input = getByRole('textbox');
     const sendButton = getByRole('button', { name: /send/i });
-    
+
     await userEvent.type(input, 'Hello');
     await userEvent.click(sendButton);
-    
+
     expect(getByText('Hello')).toBeInTheDocument();
   });
-  
+
   it('should disable input during API request', async () => {
     const { getByRole } = render(<ChatInterface />);
     const input = getByRole('textbox');
-    
+
     await userEvent.type(input, 'Hello');
     await userEvent.click(getByRole('button', { name: /send/i }));
-    
+
     expect(input).toBeDisabled();
   });
 });
@@ -1561,14 +1593,14 @@ describe('TTSService', () => {
     const mockLogger = vi.fn();
     const mockNotify = vi.fn();
     const service = new TTSService(mockLogger, mockNotify);
-    
+
     // Mock Azure SDK to throw error
     vi.spyOn(service, 'synthesize').mockRejectedValue(
       new Error('Synthesis failed')
     );
-    
+
     await service.synthesizeSpeech('test', 'en-US-JennyNeural', 'en-US');
-    
+
     expect(mockLogger).toHaveBeenCalledWith(
       expect.objectContaining({ level: 'error' })
     );
@@ -1584,6 +1616,7 @@ describe('TTSService', () => {
 **Configuration**: Minimum 100 iterations per property test
 
 **Tagging**: Each property test must reference its design document property
+
 ```typescript
 /**
  * Feature: avatar-client, Property 2: Text-to-Speech Synthesis
@@ -1593,12 +1626,14 @@ describe('TTSService', () => {
 ```
 
 **What to Test**:
+
 - Universal properties that hold for all inputs
 - Round-trip properties (serialize/deserialize)
 - Invariants (properties that never change)
 - Metamorphic properties (relationships between inputs/outputs)
 
 **Example Property Tests**:
+
 ```typescript
 import fc from 'fast-check';
 
@@ -1614,7 +1649,7 @@ describe('Property: Viseme-to-Blendshape Mapping', () => {
         fc.integer({ min: 0, max: 21 }), // Valid viseme IDs
         (visemeId) => {
           const blendshapeName = mapVisemeToBlendshape(visemeId);
-          
+
           // Property: mapping should always return a non-empty string
           expect(blendshapeName).toBeTruthy();
           expect(typeof blendshapeName).toBe('string');
@@ -1643,14 +1678,14 @@ describe('Property: Audio-Viseme Synchronization', () => {
         (visemeEvents) => {
           const coordinator = new VisemeCoordinator();
           const audioBuffer = createMockAudioBuffer(10); // 10 seconds
-          
+
           coordinator.start(audioBuffer, visemeEvents);
-          
+
           // Check sync at multiple time points
           for (let t = 0; t < 10000; t += 100) {
             const currentViseme = coordinator.getCurrentVisemeAt(t);
             const expectedViseme = findExpectedVisemeAt(visemeEvents, t);
-            
+
             if (currentViseme && expectedViseme) {
               const timingDiff = Math.abs(
                 currentViseme.timestamp - expectedViseme.audioOffset
@@ -1684,12 +1719,12 @@ describe('Property: Message Chronological Ordering', () => {
           const { container } = render(
             <TranscriptDisplay messages={messages} />
           );
-          
+
           const displayedMessages = container.querySelectorAll('[data-message-id]');
           const displayedTimestamps = Array.from(displayedMessages).map(
             el => new Date(el.getAttribute('data-timestamp'))
           );
-          
+
           // Property: displayed messages should be sorted by timestamp
           for (let i = 1; i < displayedTimestamps.length; i++) {
             expect(displayedTimestamps[i].getTime())
@@ -1706,17 +1741,20 @@ describe('Property: Message Chronological Ordering', () => {
 ### Integration Testing Strategy
 
 **What to Test**:
+
 - API communication with Brain API
 - Azure Speech SDK integration
 - State management integration
 - Component interaction flows
 
 **Mocking Strategy**:
+
 - Use MSW (Mock Service Worker) for API mocking
 - Mock Azure Speech SDK at the boundary
 - Use real state management (no mocking)
 
 **Example Integration Tests**:
+
 ```typescript
 import { setupServer } from 'msw/node';
 import { rest } from 'msw';
@@ -1745,20 +1783,20 @@ afterAll(() => server.close());
 describe('Chat Flow Integration', () => {
   it('should complete full conversation flow', async () => {
     const { getByRole, getByText } = render(<App />);
-    
+
     // Wait for agents to load
     await waitFor(() => {
       expect(getByRole('combobox')).toBeInTheDocument();
     });
-    
+
     // Select agent
     await userEvent.selectOptions(getByRole('combobox'), '1');
-    
+
     // Send message
     const input = getByRole('textbox');
     await userEvent.type(input, 'Hello');
     await userEvent.click(getByRole('button', { name: /send/i }));
-    
+
     // Verify response appears
     await waitFor(() => {
       expect(getByText('Hello! How can I help you?')).toBeInTheDocument();
@@ -1770,12 +1808,14 @@ describe('Chat Flow Integration', () => {
 ### End-to-End Testing Strategy
 
 **What to Test**:
+
 - Critical user journeys
 - Cross-browser compatibility
 - Real API integration (staging environment)
 - Visual regression testing
 
 **Test Scenarios**:
+
 1. Complete conversation flow (select agent → send message → receive response → hear audio)
 2. Agent switching mid-conversation
 3. Error recovery (network failure → retry → success)
@@ -1783,66 +1823,72 @@ describe('Chat Flow Integration', () => {
 5. Accessibility with screen readers
 
 **Example E2E Tests**:
+
 ```typescript
 import { test, expect } from '@playwright/test';
 
 test('complete conversation flow', async ({ page }) => {
   await page.goto('http://localhost:3000');
-  
+
   // Select agent
   await page.selectOption('[data-testid="agent-selector"]', 'gpt-4');
-  
+
   // Send message
   await page.fill('[data-testid="message-input"]', 'Hello');
   await page.click('[data-testid="send-button"]');
-  
+
   // Wait for response
-  await expect(page.locator('[data-testid="agent-message"]').first())
-    .toBeVisible({ timeout: 10000 });
-  
+  await expect(page.locator('[data-testid="agent-message"]').first()).toBeVisible({
+    timeout: 10000,
+  });
+
   // Verify audio is playing
   const audioPlaying = await page.evaluate(() => {
     const audioContext = window.audioContext;
     return audioContext && audioContext.state === 'running';
   });
   expect(audioPlaying).toBe(true);
-  
+
   // Verify avatar is animating
-  await expect(page.locator('[data-testid="avatar-canvas"]'))
-    .toHaveAttribute('data-animating', 'true');
+  await expect(page.locator('[data-testid="avatar-canvas"]')).toHaveAttribute(
+    'data-animating',
+    'true'
+  );
 });
 
 test('error recovery flow', async ({ page }) => {
   // Simulate network failure
-  await page.route('**/api/chat', route => route.abort());
-  
+  await page.route('**/api/chat', (route) => route.abort());
+
   await page.goto('http://localhost:3000');
   await page.fill('[data-testid="message-input"]', 'Hello');
   await page.click('[data-testid="send-button"]');
-  
+
   // Verify error notification
-  await expect(page.locator('[data-testid="error-notification"]'))
-    .toBeVisible();
-  
+  await expect(page.locator('[data-testid="error-notification"]')).toBeVisible();
+
   // Restore network and retry
   await page.unroute('**/api/chat');
   await page.click('[data-testid="retry-button"]');
-  
+
   // Verify success
-  await expect(page.locator('[data-testid="agent-message"]').first())
-    .toBeVisible({ timeout: 10000 });
+  await expect(page.locator('[data-testid="agent-message"]').first()).toBeVisible({
+    timeout: 10000,
+  });
 });
 ```
 
 ### Test Coverage Goals
 
 **Minimum Coverage Targets**:
+
 - Business logic (services, repositories): 80%
 - Components: 70%
 - Utilities: 90%
 - Overall: 75%
 
 **Coverage Exclusions**:
+
 - Type definitions
 - Configuration files
 - Auto-generated code
@@ -1851,10 +1897,12 @@ test('error recovery flow', async ({ page }) => {
 ### Continuous Integration
 
 **Pre-Commit**:
+
 - Lint-staged runs linting and formatting
 - Husky runs tests on changed files (`--findRelatedTests`)
 
 **CI Pipeline** (GitHub Actions):
+
 1. Install dependencies
 2. Run linting (`npm run lint`)
 3. Run type checking (`tsc --noEmit`)
@@ -1869,6 +1917,7 @@ test('error recovery flow', async ({ page }) => {
 ### Test Maintenance
 
 **Best Practices**:
+
 - Keep tests focused and isolated
 - Use descriptive test names
 - Avoid test interdependencies
@@ -1878,6 +1927,7 @@ test('error recovery flow', async ({ page }) => {
 - Refactor tests alongside code
 
 **Test Review Checklist**:
+
 - ✅ Tests are readable and maintainable
 - ✅ Tests cover happy path and error cases
 - ✅ Property tests have sufficient iterations (100+)
@@ -1903,4 +1953,3 @@ This design document provides a comprehensive architecture for the Avatar Client
 9. **Observability**: Structured logging with contextual information
 
 The design adheres to The Horizon Standard principles and provides a solid foundation for building a production-grade conversational AI avatar interface.
-

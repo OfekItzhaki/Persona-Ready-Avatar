@@ -26,11 +26,11 @@ export function sanitizeMessage(input: string): string {
 
   let sanitized = input;
 
+  // Remove script tags and their content FIRST (before removing other HTML tags)
+  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
   // Remove HTML tags
   sanitized = sanitized.replace(/<[^>]*>/g, '');
-
-  // Remove script tags and their content
-  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
 
   // Remove event handlers (onclick, onerror, etc.)
   sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');

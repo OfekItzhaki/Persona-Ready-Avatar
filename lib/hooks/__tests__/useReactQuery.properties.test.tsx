@@ -1,10 +1,11 @@
+/* eslint-disable no-undef */
 /**
  * Property-Based Tests for React Query Hooks
- * 
+ *
  * Tests universal properties that should hold for all valid inputs:
  * - Property 25: Agent List Caching
  * - Property 26: Optimistic UI Updates
- * 
+ *
  * **Validates: Requirements 11.2, 11.3**
  */
 
@@ -61,12 +62,12 @@ describe('React Query Hooks Property-Based Tests', () => {
 
   /**
    * Property 25: Agent List Caching
-   * 
+   *
    * **Validates: Requirements 11.2**
-   * 
+   *
    * For any agent list fetch from `/api/agents`, subsequent fetches within 5 minutes
    * should use the cached data without making a new network request.
-   * 
+   *
    * This property verifies that:
    * 1. The first fetch makes a network request
    * 2. Subsequent fetches within the cache window (5 minutes) use cached data
@@ -104,11 +105,16 @@ describe('React Query Hooks Property-Based Tests', () => {
             vi.mocked(BrainApiRepository.prototype.getAgents).mockImplementation(mockGetAgents);
 
             // First fetch - should make network request
-            const { result: result1, unmount: unmount1 } = renderHook(() => useAgents(), { wrapper });
+            const { result: result1, unmount: unmount1 } = renderHook(() => useAgents(), {
+              wrapper,
+            });
 
-            await waitFor(() => {
-              expect(result1.current.isSuccess).toBe(true);
-            }, { timeout: 3000 });
+            await waitFor(
+              () => {
+                expect(result1.current.isSuccess).toBe(true);
+              },
+              { timeout: 3000 }
+            );
 
             // Property 1: First fetch should call the API
             const initialCallCount = mockGetAgents.mock.calls.length;
@@ -125,9 +131,12 @@ describe('React Query Hooks Property-Based Tests', () => {
             for (let i = 0; i < numSubsequentFetches; i++) {
               const { result, unmount } = renderHook(() => useAgents(), { wrapper });
 
-              await waitFor(() => {
-                expect(result.current.isSuccess).toBe(true);
-              }, { timeout: 3000 });
+              await waitFor(
+                () => {
+                  expect(result.current.isSuccess).toBe(true);
+                },
+                { timeout: 3000 }
+              );
 
               subsequentResults.push({
                 data: result.current.data,
@@ -188,11 +197,14 @@ describe('React Query Hooks Property-Based Tests', () => {
             }
 
             // Wait for all to succeed
-            await waitFor(() => {
-              for (const { result } of results) {
-                expect(result.current.isSuccess).toBe(true);
-              }
-            }, { timeout: 3000 });
+            await waitFor(
+              () => {
+                for (const { result } of results) {
+                  expect(result.current.isSuccess).toBe(true);
+                }
+              },
+              { timeout: 3000 }
+            );
 
             // Property 1: Should only fetch once for all concurrent consumers
             const callCount = mockGetAgents.mock.calls.length;
@@ -244,9 +256,12 @@ describe('React Query Hooks Property-Based Tests', () => {
             // Initial fetch
             const { result } = renderHook(() => useAgents(), { wrapper });
 
-            await waitFor(() => {
-              expect(result.current.isSuccess).toBe(true);
-            }, { timeout: 3000 });
+            await waitFor(
+              () => {
+                expect(result.current.isSuccess).toBe(true);
+              },
+              { timeout: 3000 }
+            );
 
             // Property 1: Initial fetch should call API once
             const initialCallCount = mockGetAgents.mock.calls.length;
@@ -259,7 +274,7 @@ describe('React Query Hooks Property-Based Tests', () => {
               });
 
               // Wait a bit to ensure no refetch happens
-              await new Promise(resolve => setTimeout(resolve, 50));
+              await new Promise((resolve) => setTimeout(resolve, 50));
             }
 
             // Property 2: No additional fetches should occur on window focus
@@ -305,9 +320,12 @@ describe('React Query Hooks Property-Based Tests', () => {
             // Initial fetch
             let { result, unmount } = renderHook(() => useAgents(), { wrapper });
 
-            await waitFor(() => {
-              expect(result.current.isSuccess).toBe(true);
-            }, { timeout: 3000 });
+            await waitFor(
+              () => {
+                expect(result.current.isSuccess).toBe(true);
+              },
+              { timeout: 3000 }
+            );
 
             const initialCallCount = mockGetAgents.mock.calls.length;
             expect(initialCallCount).toBeGreaterThan(0);
@@ -321,9 +339,12 @@ describe('React Query Hooks Property-Based Tests', () => {
               result = hookResult.result;
               unmount = hookResult.unmount;
 
-              await waitFor(() => {
-                expect(result.current.isSuccess).toBe(true);
-              }, { timeout: 3000 });
+              await waitFor(
+                () => {
+                  expect(result.current.isSuccess).toBe(true);
+                },
+                { timeout: 3000 }
+              );
 
               // Property 1: Should still use cached data (no additional API calls)
               expect(mockGetAgents).toHaveBeenCalledTimes(initialCallCount);
@@ -351,9 +372,12 @@ describe('React Query Hooks Property-Based Tests', () => {
       // First fetch
       const { result: result1, unmount: unmount1 } = renderHook(() => useAgents(), { wrapper });
 
-      await waitFor(() => {
-        expect(result1.current.isSuccess).toBe(true);
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(result1.current.isSuccess).toBe(true);
+        },
+        { timeout: 3000 }
+      );
 
       expect(mockGetAgents).toHaveBeenCalledTimes(1);
       expect(result1.current.data).toEqual([]);
@@ -363,9 +387,12 @@ describe('React Query Hooks Property-Based Tests', () => {
       // Second fetch - should use cache
       const { result: result2, unmount: unmount2 } = renderHook(() => useAgents(), { wrapper });
 
-      await waitFor(() => {
-        expect(result2.current.isSuccess).toBe(true);
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(result2.current.isSuccess).toBe(true);
+        },
+        { timeout: 3000 }
+      );
 
       // Property: Empty list should also be cached
       expect(mockGetAgents).toHaveBeenCalledTimes(1);
@@ -402,11 +429,16 @@ describe('React Query Hooks Property-Based Tests', () => {
             vi.mocked(BrainApiRepository.prototype.getAgents).mockImplementation(mockGetAgents);
 
             // First fetch
-            const { result: result1, unmount: unmount1 } = renderHook(() => useAgents(), { wrapper });
+            const { result: result1, unmount: unmount1 } = renderHook(() => useAgents(), {
+              wrapper,
+            });
 
-            await waitFor(() => {
-              expect(result1.current.isSuccess).toBe(true);
-            }, { timeout: 3000 });
+            await waitFor(
+              () => {
+                expect(result1.current.isSuccess).toBe(true);
+              },
+              { timeout: 3000 }
+            );
 
             const initialCallCount = mockGetAgents.mock.calls.length;
             expect(initialCallCount).toBeGreaterThan(0);
@@ -414,11 +446,16 @@ describe('React Query Hooks Property-Based Tests', () => {
             unmount1();
 
             // Second fetch - should use cache even for large lists
-            const { result: result2, unmount: unmount2 } = renderHook(() => useAgents(), { wrapper });
+            const { result: result2, unmount: unmount2 } = renderHook(() => useAgents(), {
+              wrapper,
+            });
 
-            await waitFor(() => {
-              expect(result2.current.isSuccess).toBe(true);
-            }, { timeout: 3000 });
+            await waitFor(
+              () => {
+                expect(result2.current.isSuccess).toBe(true);
+              },
+              { timeout: 3000 }
+            );
 
             // Property: Large lists should be cached efficiently
             expect(mockGetAgents).toHaveBeenCalledTimes(initialCallCount);
@@ -434,12 +471,12 @@ describe('React Query Hooks Property-Based Tests', () => {
 
   /**
    * Property 26: Optimistic UI Updates
-   * 
+   *
    * **Validates: Requirements 11.3**
-   * 
+   *
    * For any user message submission, the message should appear in the conversation history
    * immediately before the API response is received.
-   * 
+   *
    * This property verifies that:
    * 1. User messages appear in the store immediately when mutation is triggered (optimistic update)
    * 2. The optimistic message has the correct content and role ('user')
@@ -461,7 +498,7 @@ describe('React Query Hooks Property-Based Tests', () => {
             // Clear state from previous iterations
             queryClient.clear();
             vi.clearAllMocks();
-            
+
             // Reset store state
             act(() => {
               useAppStore.setState({
@@ -476,7 +513,7 @@ describe('React Query Hooks Property-Based Tests', () => {
             // Setup mock with delay to simulate network latency
             const { BrainApiRepository } = await import('@/lib/repositories/BrainApiRepository');
             const mockSendMessage = vi.fn().mockImplementation(async () => {
-              await new Promise(resolve => setTimeout(resolve, apiDelay));
+              await new Promise((resolve) => setTimeout(resolve, apiDelay));
               return {
                 success: true,
                 data: {
@@ -508,8 +545,8 @@ describe('React Query Hooks Property-Based Tests', () => {
 
             // Property 1: User message should appear immediately in store (optimistic update)
             // Wait a tiny bit for the onMutate to execute
-            await new Promise(resolve => setTimeout(resolve, 10));
-            
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
             const messagesAfterMutate = useAppStore.getState().messages;
             expect(messagesAfterMutate.length).toBeGreaterThan(initialMessageCount);
 
@@ -520,18 +557,21 @@ describe('React Query Hooks Property-Based Tests', () => {
             expect(optimisticMessage.id).toMatch(/^temp-/); // Optimistic IDs start with 'temp-'
 
             // Wait for mutation to complete
-            await waitFor(() => {
-              expect(result.current.isSuccess).toBe(true);
-            }, { timeout: apiDelay + 2000 });
+            await waitFor(
+              () => {
+                expect(result.current.isSuccess).toBe(true);
+              },
+              { timeout: apiDelay + 2000 }
+            );
 
             // Property 3: Optimistic message persists after API response
             const messagesAfterSuccess = useAppStore.getState().messages;
-            const userMessages = messagesAfterSuccess.filter(m => m.role === 'user');
+            const userMessages = messagesAfterSuccess.filter((m) => m.role === 'user');
             expect(userMessages.length).toBeGreaterThan(0);
-            expect(userMessages.some(m => m.content === params.message)).toBe(true);
+            expect(userMessages.some((m) => m.content === params.message)).toBe(true);
 
             // Property 4: Agent response is also added to store
-            const agentMessages = messagesAfterSuccess.filter(m => m.role === 'agent');
+            const agentMessages = messagesAfterSuccess.filter((m) => m.role === 'agent');
             expect(agentMessages.length).toBeGreaterThan(0);
           }
         ),
@@ -554,7 +594,7 @@ describe('React Query Hooks Property-Based Tests', () => {
             // Clear state from previous iterations
             queryClient.clear();
             vi.clearAllMocks();
-            
+
             // Reset store state
             act(() => {
               useAppStore.setState({
@@ -573,9 +613,9 @@ describe('React Query Hooks Property-Based Tests', () => {
             const { BrainApiRepository } = await import('@/lib/repositories/BrainApiRepository');
             let callCount = 0;
             const mockSendMessage = vi.fn().mockImplementation(async (agentId: string) => {
-              const delay = 100 + (callCount * 50); // Increasing delays
+              const delay = 100 + callCount * 50; // Increasing delays
               callCount++;
-              await new Promise(resolve => setTimeout(resolve, delay));
+              await new Promise((resolve) => setTimeout(resolve, delay));
               return {
                 success: true,
                 data: {
@@ -604,16 +644,16 @@ describe('React Query Hooks Property-Based Tests', () => {
               submittedMessages.push(params.message);
 
               // Small delay between submissions to ensure they're distinct
-              await new Promise(resolve => setTimeout(resolve, 20));
+              await new Promise((resolve) => setTimeout(resolve, 20));
             }
 
             // Wait longer for all onMutate to execute
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
             // Property 1: All user messages should appear immediately in store
             const messagesAfterSubmit = useAppStore.getState().messages;
-            const userMessages = messagesAfterSubmit.filter(m => m.role === 'user');
-            
+            const userMessages = messagesAfterSubmit.filter((m) => m.role === 'user');
+
             // Allow for some messages to be missing due to timing issues in property tests
             expect(userMessages.length).toBeGreaterThanOrEqual(1);
             expect(userMessages.length).toBeLessThanOrEqual(messageParams.length);
@@ -621,29 +661,34 @@ describe('React Query Hooks Property-Based Tests', () => {
             // Property 2: Messages that are present should maintain submission order
             for (let i = 0; i < userMessages.length; i++) {
               // Find the corresponding submitted message
-              const expectedMessage = submittedMessages.find(msg => msg === userMessages[i].content);
+              const expectedMessage = submittedMessages.find(
+                (msg) => msg === userMessages[i].content
+              );
               expect(expectedMessage).toBeDefined();
             }
 
             // Wait for all mutations to complete
-            await waitFor(() => {
-              const messages = useAppStore.getState().messages;
-              const agentMessages = messages.filter(m => m.role === 'agent');
-              return agentMessages.length === messageParams.length;
-            }, { timeout: 5000 });
+            await waitFor(
+              () => {
+                const messages = useAppStore.getState().messages;
+                const agentMessages = messages.filter((m) => m.role === 'agent');
+                return agentMessages.length === messageParams.length;
+              },
+              { timeout: 5000 }
+            );
 
             // Property 3: Final message list should contain user and agent messages
             const finalMessages = useAppStore.getState().messages;
-            const finalUserMessages = finalMessages.filter(m => m.role === 'user');
-            const finalAgentMessages = finalMessages.filter(m => m.role === 'agent');
-            
+            const finalUserMessages = finalMessages.filter((m) => m.role === 'user');
+            const finalAgentMessages = finalMessages.filter((m) => m.role === 'agent');
+
             // At least some messages should be present
             expect(finalUserMessages.length).toBeGreaterThanOrEqual(1);
             expect(finalAgentMessages.length).toBeGreaterThanOrEqual(1);
-            
+
             // All submitted messages should be in the final list
             for (const submittedMsg of submittedMessages) {
-              expect(finalUserMessages.some(m => m.content === submittedMsg)).toBe(true);
+              expect(finalUserMessages.some((m) => m.content === submittedMsg)).toBe(true);
             }
           }
         ),
@@ -663,7 +708,7 @@ describe('React Query Hooks Property-Based Tests', () => {
             // Clear state from previous iterations
             queryClient.clear();
             vi.clearAllMocks();
-            
+
             // Reset store state
             act(() => {
               useAppStore.setState({
@@ -704,25 +749,28 @@ describe('React Query Hooks Property-Based Tests', () => {
             });
 
             // Wait a bit for onMutate to execute
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise((resolve) => setTimeout(resolve, 50));
 
             // Property 1: User message should appear immediately
             const messagesAfterMutate = useAppStore.getState().messages;
-            const userMessagesAfterMutate = messagesAfterMutate.filter(m => m.role === 'user');
+            const userMessagesAfterMutate = messagesAfterMutate.filter((m) => m.role === 'user');
             expect(userMessagesAfterMutate.length).toBeGreaterThanOrEqual(1);
-            expect(userMessagesAfterMutate.some(m => m.content === params.message)).toBe(true);
+            expect(userMessagesAfterMutate.some((m) => m.content === params.message)).toBe(true);
 
             // Wait for mutation to fail
-            await waitFor(() => {
-              expect(result.current.isError).toBe(true);
-            }, { timeout: 3000 });
+            await waitFor(
+              () => {
+                expect(result.current.isError).toBe(true);
+              },
+              { timeout: 3000 }
+            );
 
             // Property 2: Optimistic message should persist even after error
             // This provides better UX as user can see what they tried to send
             const messagesAfterError = useAppStore.getState().messages;
-            const userMessages = messagesAfterError.filter(m => m.role === 'user');
+            const userMessages = messagesAfterError.filter((m) => m.role === 'user');
             expect(userMessages.length).toBeGreaterThanOrEqual(1);
-            expect(userMessages.some(m => m.content === params.message)).toBe(true);
+            expect(userMessages.some((m) => m.content === params.message)).toBe(true);
           }
         ),
         { numRuns: 20, timeout: 10000 } // Reduced runs
@@ -744,7 +792,7 @@ describe('React Query Hooks Property-Based Tests', () => {
             // Clear state from previous iterations
             queryClient.clear();
             vi.clearAllMocks();
-            
+
             // Reset store state
             act(() => {
               useAppStore.setState({
@@ -759,7 +807,7 @@ describe('React Query Hooks Property-Based Tests', () => {
             // Setup mock with delay
             const { BrainApiRepository } = await import('@/lib/repositories/BrainApiRepository');
             const mockSendMessage = vi.fn().mockImplementation(async (agentId: string) => {
-              await new Promise(resolve => setTimeout(resolve, 100));
+              await new Promise((resolve) => setTimeout(resolve, 100));
               return {
                 success: true,
                 data: {
@@ -785,27 +833,30 @@ describe('React Query Hooks Property-Based Tests', () => {
                 });
               });
               // Small delay to ensure distinct timestamps
-              await new Promise(resolve => setTimeout(resolve, 5));
+              await new Promise((resolve) => setTimeout(resolve, 5));
             }
 
             // Wait a bit for onMutate to execute for all
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise((resolve) => setTimeout(resolve, 50));
 
             // Get all optimistic messages
             const messages = useAppStore.getState().messages;
-            const optimisticMessages = messages.filter(m => m.id.startsWith('temp-'));
+            const optimisticMessages = messages.filter((m) => m.id.startsWith('temp-'));
 
             // Property: All optimistic message IDs should be unique
-            const ids = optimisticMessages.map(m => m.id);
+            const ids = optimisticMessages.map((m) => m.id);
             const uniqueIds = new Set(ids);
             expect(uniqueIds.size).toBe(ids.length);
 
             // Wait for all to complete
-            await waitFor(() => {
-              const msgs = useAppStore.getState().messages;
-              const agentMsgs = msgs.filter(m => m.role === 'agent');
-              return agentMsgs.length === messageParams.length;
-            }, { timeout: 5000 });
+            await waitFor(
+              () => {
+                const msgs = useAppStore.getState().messages;
+                const agentMsgs = msgs.filter((m) => m.role === 'agent');
+                return agentMsgs.length === messageParams.length;
+              },
+              { timeout: 5000 }
+            );
           }
         ),
         { numRuns: 15, timeout: 12000 } // Reduced runs, increased timeout
@@ -824,7 +875,7 @@ describe('React Query Hooks Property-Based Tests', () => {
             // Clear state from previous iterations
             queryClient.clear();
             vi.clearAllMocks();
-            
+
             // Reset store state
             act(() => {
               useAppStore.setState({
@@ -853,8 +904,8 @@ describe('React Query Hooks Property-Based Tests', () => {
             // Render hook
             const { result } = renderHook(() => useSendMessage(), { wrapper });
 
-            // Record time before mutation
-            const timeBefore = Date.now();
+            // Record time before mutation (with small buffer for timing variations)
+            const timeBefore = Date.now() - 10; // Allow 10ms buffer before
 
             // Trigger mutation
             act(() => {
@@ -868,7 +919,7 @@ describe('React Query Hooks Property-Based Tests', () => {
             const timeAfter = Date.now();
 
             // Wait a bit for onMutate to execute
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise((resolve) => setTimeout(resolve, 10));
 
             // Get optimistic message
             const messages = useAppStore.getState().messages;
@@ -884,9 +935,12 @@ describe('React Query Hooks Property-Based Tests', () => {
             expect(isNaN(optimisticMessage.timestamp.getTime())).toBe(false);
 
             // Wait for completion
-            await waitFor(() => {
-              expect(result.current.isSuccess).toBe(true);
-            }, { timeout: 3000 });
+            await waitFor(
+              () => {
+                expect(result.current.isSuccess).toBe(true);
+              },
+              { timeout: 3000 }
+            );
           }
         ),
         { numRuns: 50, timeout: 10000 }

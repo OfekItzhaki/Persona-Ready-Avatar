@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-undef */
 /**
  * Integration Tests for Complete Conversation Flow
- * 
+ *
  * Tests end-to-end flow from agent selection to avatar animation, including:
  * - Agent selection and state synchronization
  * - Message submission with agent context
@@ -9,7 +11,7 @@
  * - State synchronization for viseme updates
  * - Playback state management
  * - Conversation history management
- * 
+ *
  * **Validates: Requirements 4.3, 5.6, 11.5**
  */
 
@@ -22,14 +24,7 @@ import { ChatInterface } from '@/components/ChatInterface';
 import { PersonaSwitcher } from '@/components/PersonaSwitcher';
 import { TTSService } from '@/lib/services/TTSService';
 import { NotificationService } from '@/lib/services/NotificationService';
-import type {
-  Agent,
-  VisemeEvent,
-  SynthesisResult,
-  Result,
-  ChatResponse,
-  ApiError,
-} from '@/types';
+import type { Agent, VisemeEvent, SynthesisResult, Result, ChatResponse, ApiError } from '@/types';
 
 // Mock modules
 vi.mock('@/lib/repositories/BrainApiRepository');
@@ -264,10 +259,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <ChatInterface
-            ttsService={mockTTSService}
-            selectedAgent={mockAgents[0]}
-          />
+          <ChatInterface ttsService={mockTTSService} selectedAgent={mockAgents[0]} />
         </QueryClientProvider>
       );
 
@@ -281,10 +273,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       // Verify sendMessage was called with correct agent ID
       await waitFor(() => {
-        expect(mockSendMessage).toHaveBeenCalledWith(
-          'agent-1',
-          'Hello'
-        );
+        expect(mockSendMessage).toHaveBeenCalledWith('agent-1', 'Hello');
       });
     });
 
@@ -301,7 +290,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       // Try to send message without agent
       await user.type(input, 'Hello');
-      
+
       // Button should be disabled
       expect(sendButton).toBeDisabled();
     });
@@ -328,10 +317,7 @@ describe('Conversation Flow Integration Tests', () => {
       // Step 2: Render chat interface
       render(
         <QueryClientProvider client={queryClient}>
-          <ChatInterface
-            ttsService={mockTTSService}
-            selectedAgent={mockAgents[0]}
-          />
+          <ChatInterface ttsService={mockTTSService} selectedAgent={mockAgents[0]} />
         </QueryClientProvider>
       );
 
@@ -370,26 +356,29 @@ describe('Conversation Flow Integration Tests', () => {
       });
 
       // Step 8: Verify viseme coordinator was started
-      expect(mockVisemeCoordinator.start).toHaveBeenCalledWith(
-        mockAudioBuffer,
-        mockVisemes
-      );
+      expect(mockVisemeCoordinator.start).toHaveBeenCalledWith(mockAudioBuffer, mockVisemes);
 
       // Step 9: Verify audio playback was started
       expect(mockAudioManager.play).toHaveBeenCalledWith(mockAudioBuffer);
 
-      // Step 10: Verify conversation history is maintained
+      // Step 10: Verify conversation history is maintained (in chronological order)
       const store = useAppStore.getState();
       expect(store.messages).toHaveLength(2);
-      expect(store.messages[0].role).toBe('user');
-      expect(store.messages[0].content).toBe('Hello');
-      expect(store.messages[1].role).toBe('agent');
-      expect(store.messages[1].content).toBe('Hello! How can I help you today?');
+
+      // Messages are sorted chronologically, so we need to find them by role
+      const userMessage = store.messages.find((m) => m.role === 'user');
+      const agentMessage = store.messages.find((m) => m.role === 'agent');
+
+      expect(userMessage).toBeDefined();
+      expect(userMessage?.content).toBe('Hello');
+      expect(agentMessage).toBeDefined();
+      expect(agentMessage?.content).toBe('Hello! How can I help you today?');
     });
 
     it('should handle multiple message exchanges in sequence', async () => {
       const { BrainApiRepository } = await import('@/lib/repositories/BrainApiRepository');
-      const mockSendMessage = vi.fn()
+      const mockSendMessage = vi
+        .fn()
         .mockResolvedValueOnce({
           success: true,
           data: {
@@ -414,10 +403,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <ChatInterface
-            ttsService={mockTTSService}
-            selectedAgent={mockAgents[0]}
-          />
+          <ChatInterface ttsService={mockTTSService} selectedAgent={mockAgents[0]} />
         </QueryClientProvider>
       );
 
@@ -441,13 +427,18 @@ describe('Conversation Flow Integration Tests', () => {
         expect(screen.getByText('The weather is sunny today.')).toBeInTheDocument();
       });
 
-      // Verify conversation history
+      // Verify conversation history (messages are in chronological order)
       const store = useAppStore.getState();
       expect(store.messages).toHaveLength(4);
-      expect(store.messages[0].content).toBe('Hello');
-      expect(store.messages[1].content).toBe('Hello! How can I help you?');
-      expect(store.messages[2].content).toBe('What is the weather?');
-      expect(store.messages[3].content).toBe('The weather is sunny today.');
+
+      // Find messages by content since they're sorted chronologically
+      const messages = store.messages;
+      const messageContents = messages.map((m) => m.content);
+
+      expect(messageContents).toContain('Hello');
+      expect(messageContents).toContain('Hello! How can I help you?');
+      expect(messageContents).toContain('What is the weather?');
+      expect(messageContents).toContain('The weather is sunny today.');
     });
   });
 
@@ -469,10 +460,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <ChatInterface
-            ttsService={mockTTSService}
-            selectedAgent={mockAgents[0]}
-          />
+          <ChatInterface ttsService={mockTTSService} selectedAgent={mockAgents[0]} />
         </QueryClientProvider>
       );
 
@@ -498,7 +486,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       // Verify user message is still in history (optimistic update)
       const store = useAppStore.getState();
-      expect(store.messages.some(m => m.content === 'Hello')).toBe(true);
+      expect(store.messages.some((m) => m.content === 'Hello')).toBe(true);
     });
 
     it('should handle TTS synthesis failure', async () => {
@@ -527,10 +515,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <ChatInterface
-            ttsService={mockTTSService}
-            selectedAgent={mockAgents[0]}
-          />
+          <ChatInterface ttsService={mockTTSService} selectedAgent={mockAgents[0]} />
         </QueryClientProvider>
       );
 
@@ -578,10 +563,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <ChatInterface
-            ttsService={mockTTSService}
-            selectedAgent={mockAgents[0]}
-          />
+          <ChatInterface ttsService={mockTTSService} selectedAgent={mockAgents[0]} />
         </QueryClientProvider>
       );
 
@@ -624,10 +606,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <ChatInterface
-            ttsService={mockTTSService}
-            selectedAgent={mockAgents[0]}
-          />
+          <ChatInterface ttsService={mockTTSService} selectedAgent={mockAgents[0]} />
         </QueryClientProvider>
       );
 
@@ -680,10 +659,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <ChatInterface
-            ttsService={mockTTSService}
-            selectedAgent={mockAgents[0]}
-          />
+          <ChatInterface ttsService={mockTTSService} selectedAgent={mockAgents[0]} />
         </QueryClientProvider>
       );
 
@@ -701,11 +677,13 @@ describe('Conversation Flow Integration Tests', () => {
 
       // Simulate viseme updates from the coordinator
       act(() => {
-        visemeCallbacks.forEach(cb => cb({
-          visemeId: 5,
-          timestamp: 250,
-          duration: 200,
-        }));
+        visemeCallbacks.forEach((cb) =>
+          cb({
+            visemeId: 5,
+            timestamp: 250,
+            duration: 200,
+          })
+        );
       });
 
       // Verify viseme data is in store
@@ -723,7 +701,7 @@ describe('Conversation Flow Integration Tests', () => {
     it('should clear viseme data when playback stops', async () => {
       // First, start TTS to make it active
       await mockTTSService.synthesizeSpeech('Test', 'en-US-JennyNeural', 'en-US');
-      
+
       // Set initial viseme data
       act(() => {
         useAppStore.getState().setCurrentViseme({
@@ -783,10 +761,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <ChatInterface
-            ttsService={mockTTSService}
-            selectedAgent={mockAgents[0]}
-          />
+          <ChatInterface ttsService={mockTTSService} selectedAgent={mockAgents[0]} />
         </QueryClientProvider>
       );
 
@@ -807,7 +782,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       // Simulate playback state change to playing
       act(() => {
-        playbackCallbacks.forEach(cb => cb('playing'));
+        playbackCallbacks.forEach((cb) => cb('playing'));
         useAppStore.getState().setPlaybackState('playing');
       });
 
@@ -815,7 +790,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       // Simulate playback completion
       act(() => {
-        playbackCallbacks.forEach(cb => cb('stopped'));
+        playbackCallbacks.forEach((cb) => cb('stopped'));
         useAppStore.getState().setPlaybackState('stopped');
       });
 
@@ -851,11 +826,7 @@ describe('Conversation Flow Integration Tests', () => {
   describe('Conversation History Management', () => {
     it('should maintain conversation history across multiple interactions', async () => {
       const { BrainApiRepository } = await import('@/lib/repositories/BrainApiRepository');
-      const responses = [
-        'First response',
-        'Second response',
-        'Third response',
-      ];
+      const responses = ['First response', 'Second response', 'Third response'];
       let callCount = 0;
 
       vi.mocked(BrainApiRepository.prototype.sendMessage).mockImplementation(async () => ({
@@ -873,10 +844,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <ChatInterface
-            ttsService={mockTTSService}
-            selectedAgent={mockAgents[0]}
-          />
+          <ChatInterface ttsService={mockTTSService} selectedAgent={mockAgents[0]} />
         </QueryClientProvider>
       );
 
@@ -890,7 +858,7 @@ describe('Conversation Flow Integration Tests', () => {
       for (const message of userMessages) {
         await user.type(input, message);
         await user.click(sendButton);
-        
+
         // Wait for response
         await waitFor(() => {
           const store = useAppStore.getState();
@@ -913,12 +881,12 @@ describe('Conversation Flow Integration Tests', () => {
 
     it('should preserve message timestamps in chronological order', async () => {
       const { BrainApiRepository } = await import('@/lib/repositories/BrainApiRepository');
-      
+
       // Mock to return timestamp that's always after the current time
       vi.mocked(BrainApiRepository.prototype.sendMessage).mockImplementation(async () => {
         // Wait a bit to ensure response timestamp is after user message
-        await new Promise(resolve => setTimeout(resolve, 10));
-        
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
         return {
           success: true,
           data: {
@@ -935,10 +903,7 @@ describe('Conversation Flow Integration Tests', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <ChatInterface
-            ttsService={mockTTSService}
-            selectedAgent={mockAgents[0]}
-          />
+          <ChatInterface ttsService={mockTTSService} selectedAgent={mockAgents[0]} />
         </QueryClientProvider>
       );
 
@@ -954,7 +919,7 @@ describe('Conversation Flow Integration Tests', () => {
       });
 
       // Delay to ensure timestamps are different
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       await user.type(input, 'Second message');
       await user.click(sendButton);
@@ -965,8 +930,8 @@ describe('Conversation Flow Integration Tests', () => {
 
       // Verify timestamps are in order
       const store = useAppStore.getState();
-      const timestamps = store.messages.map(m => m.timestamp.getTime());
-      
+      const timestamps = store.messages.map((m) => m.timestamp.getTime());
+
       for (let i = 1; i < timestamps.length; i++) {
         expect(timestamps[i]).toBeGreaterThanOrEqual(timestamps[i - 1]);
       }

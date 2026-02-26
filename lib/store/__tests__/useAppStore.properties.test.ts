@@ -1,17 +1,27 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import fc from 'fast-check';
 import { useAppStore } from '../useAppStore';
 
 /**
+ * Helper to generate unique message IDs
+ * Ensures no duplicate IDs in the same test run
+ */
+let messageIdCounter = 0;
+const uniqueMessageId = () => {
+  return fc.uuid().map((uuid) => `${uuid}-${messageIdCounter++}`);
+};
+
+/**
  * Property-Based Tests for Agent Selection State Management
- * 
+ *
  * Feature: avatar-client, Property 9: Agent Selection State Management
- * 
+ *
  * For any agent selected from the dropdown, the application state should update
  * to reflect that agent as the active conversation context, and all subsequent
  * operations should use that agent.
- * 
+ *
  * **Validates: Requirements 4.3**
  */
 describe('Property: Agent Selection State Management', () => {
@@ -35,19 +45,16 @@ describe('Property: Agent Selection State Management', () => {
    */
   it('should update selectedAgentId to exact value for any agent ID', () => {
     fc.assert(
-      fc.property(
-        fc.string({ minLength: 1, maxLength: 100 }),
-        (agentId) => {
-          const { result } = renderHook(() => useAppStore());
+      fc.property(fc.string({ minLength: 1, maxLength: 100 }), (agentId) => {
+        const { result } = renderHook(() => useAppStore());
 
-          act(() => {
-            result.current.setSelectedAgent(agentId);
-          });
+        act(() => {
+          result.current.setSelectedAgent(agentId);
+        });
 
-          // Property: selectedAgentId should match the input exactly
-          expect(result.current.selectedAgentId).toBe(agentId);
-        }
-      ),
+        // Property: selectedAgentId should match the input exactly
+        expect(result.current.selectedAgentId).toBe(agentId);
+      }),
       { numRuns: 25 }
     );
   });
@@ -89,10 +96,10 @@ describe('Property: Agent Selection State Management', () => {
         fc.record({
           agentId: fc.string({ minLength: 1, maxLength: 50 }),
           messageCount: fc.integer({ min: 0, max: 10 }),
-          playbackStates: fc.array(
-            fc.constantFrom('idle', 'playing', 'paused', 'stopped'),
-            { minLength: 0, maxLength: 5 }
-          ),
+          playbackStates: fc.array(fc.constantFrom('idle', 'playing', 'paused', 'stopped'), {
+            minLength: 0,
+            maxLength: 5,
+          }),
         }),
         ({ agentId, messageCount, playbackStates }) => {
           const { result } = renderHook(() => useAppStore());
@@ -146,38 +153,37 @@ describe('Property: Agent Selection State Management', () => {
    */
   it('should make agent selection immediately available for subsequent operations', () => {
     fc.assert(
-      fc.property(
-        fc.string({ minLength: 1, maxLength: 50 }),
-        (agentId) => {
-          const { result } = renderHook(() => useAppStore());
+      fc.property(fc.string({ minLength: 1, maxLength: 50 }), (agentId) => {
+        const { result } = renderHook(() => useAppStore());
 
-          // Clear any existing state
-          act(() => {
-            result.current.clearMessages();
+        // Clear any existing state
+        act(() => {
+          result.current.clearMessages();
+        });
+
+        act(() => {
+          result.current.setSelectedAgent(agentId);
+        });
+
+        // Property: State should be immediately readable
+        const readAgentId = result.current.selectedAgentId;
+        expect(readAgentId).toBe(agentId);
+
+        // Property: State should be usable in subsequent operations
+        const messageContent = `Message for agent ${result.current.selectedAgentId}`;
+        act(() => {
+          result.current.addMessage({
+            id: 'msg-1',
+            role: 'user',
+            content: messageContent,
+            timestamp: new Date(),
           });
+        });
 
-          act(() => {
-            result.current.setSelectedAgent(agentId);
-          });
-
-          // Property: State should be immediately readable
-          const readAgentId = result.current.selectedAgentId;
-          expect(readAgentId).toBe(agentId);
-
-          // Property: State should be usable in subsequent operations
-          const messageContent = `Message for agent ${result.current.selectedAgentId}`;
-          act(() => {
-            result.current.addMessage({
-              id: 'msg-1',
-              role: 'user',
-              content: messageContent,
-              timestamp: new Date(),
-            });
-          });
-
-          expect(result.current.messages[result.current.messages.length - 1].content).toBe(messageContent);
-        }
-      ),
+        expect(result.current.messages[result.current.messages.length - 1].content).toBe(
+          messageContent
+        );
+      }),
       { numRuns: 25 }
     );
   });
@@ -222,14 +228,16 @@ describe('Property: Agent Selection State Management', () => {
   it('should persist agent selection across state operations until changed', () => {
     fc.assert(
       fc.property(
-        fc.record({
-          initialAgent: fc.string({ minLength: 1, maxLength: 50 }),
-          operations: fc.array(
-            fc.constantFrom('addMessage', 'clearMessages', 'addNotification', 'setPlayback'),
-            { minLength: 1, maxLength: 20 }
-          ),
-          newAgent: fc.string({ minLength: 1, maxLength: 50 }),
-        }).filter(({ initialAgent, newAgent }) => initialAgent !== newAgent), // Ensure agents are different
+        fc
+          .record({
+            initialAgent: fc.string({ minLength: 1, maxLength: 50 }),
+            operations: fc.array(
+              fc.constantFrom('addMessage', 'clearMessages', 'addNotification', 'setPlayback'),
+              { minLength: 1, maxLength: 20 }
+            ),
+            newAgent: fc.string({ minLength: 1, maxLength: 50 }),
+          })
+          .filter(({ initialAgent, newAgent }) => initialAgent !== newAgent), // Ensure agents are different
         ({ initialAgent, operations, newAgent }) => {
           const { result } = renderHook(() => useAppStore());
 
@@ -294,7 +302,9 @@ describe('Property: Agent Selection State Management', () => {
       fc.property(
         fc.oneof(
           fc.uuid(), // UUID format
-          fc.string({ minLength: 1, maxLength: 50 }).map((s) => s.toLowerCase().replace(/\s/g, '-')), // Slug format
+          fc
+            .string({ minLength: 1, maxLength: 50 })
+            .map((s) => s.toLowerCase().replace(/\s/g, '-')), // Slug format
           fc.integer({ min: 1, max: 999999 }).map((n) => n.toString()), // Numeric ID
           fc.string({ minLength: 1, maxLength: 50 }) // Arbitrary string
         ),
@@ -320,23 +330,20 @@ describe('Property: Agent Selection State Management', () => {
    */
   it('should maintain consistent state across multiple hook instances', () => {
     fc.assert(
-      fc.property(
-        fc.string({ minLength: 1, maxLength: 50 }),
-        (agentId) => {
-          const { result: result1 } = renderHook(() => useAppStore());
-          const { result: result2 } = renderHook(() => useAppStore());
+      fc.property(fc.string({ minLength: 1, maxLength: 50 }), (agentId) => {
+        const { result: result1 } = renderHook(() => useAppStore());
+        const { result: result2 } = renderHook(() => useAppStore());
 
-          // Set agent in first instance
-          act(() => {
-            result1.current.setSelectedAgent(agentId);
-          });
+        // Set agent in first instance
+        act(() => {
+          result1.current.setSelectedAgent(agentId);
+        });
 
-          // Property: Both instances should see the same state
-          expect(result1.current.selectedAgentId).toBe(agentId);
-          expect(result2.current.selectedAgentId).toBe(agentId);
-          expect(result1.current.selectedAgentId).toBe(result2.current.selectedAgentId);
-        }
-      ),
+        // Property: Both instances should see the same state
+        expect(result1.current.selectedAgentId).toBe(agentId);
+        expect(result2.current.selectedAgentId).toBe(agentId);
+        expect(result1.current.selectedAgentId).toBe(result2.current.selectedAgentId);
+      }),
       { numRuns: 25 }
     );
   });
@@ -454,12 +461,12 @@ describe('Property: Agent Selection State Management', () => {
 
 /**
  * Property-Based Tests for Session Conversation Persistence
- * 
+ *
  * Feature: avatar-client, Property 27: Session Conversation Persistence
- * 
+ *
  * For any message added to the conversation history, the message should persist
  * in client-side state for the duration of the session.
- * 
+ *
  * **Validates: Requirements 11.4**
  */
 describe('Property: Session Conversation Persistence', () => {
@@ -518,14 +525,14 @@ describe('Property: Session Conversation Persistence', () => {
 
   /**
    * Property: For any sequence of messages added, all messages should persist
-   * in the order they were added
+   * in chronological order (sorted by timestamp)
    */
-  it('should persist all messages in a sequence in the order added', () => {
+  it('should persist all messages in a sequence in chronological order', () => {
     fc.assert(
       fc.property(
         fc.array(
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constantFrom('user', 'agent'),
             content: fc.string({ minLength: 1, maxLength: 500 }),
             timestamp: fc.date(),
@@ -550,8 +557,18 @@ describe('Property: Session Conversation Persistence', () => {
           // Property: All messages should be persisted
           expect(result.current.messages).toHaveLength(messages.length);
 
-          // Property: Messages should be in the same order
-          messages.forEach((msg, index) => {
+          // Property: Messages should be in chronological order (sorted by timestamp)
+          const sortedMessages = [...messages].sort((a, b) => {
+            const timeA = a.timestamp.getTime();
+            const timeB = b.timestamp.getTime();
+            if (isNaN(timeA) && isNaN(timeB)) return 0;
+            if (isNaN(timeA)) return -1;
+            if (isNaN(timeB)) return 1;
+            if (timeA === timeB) return 0;
+            return timeA - timeB;
+          });
+
+          sortedMessages.forEach((msg, index) => {
             expect(result.current.messages[index]).toEqual(msg);
           });
         }
@@ -570,7 +587,7 @@ describe('Property: Session Conversation Persistence', () => {
         fc.record({
           messages: fc.array(
             fc.record({
-              id: fc.uuid(),
+              id: uniqueMessageId(),
               role: fc.constantFrom('user', 'agent'),
               content: fc.string({ minLength: 1, maxLength: 200 }),
               timestamp: fc.date(),
@@ -581,10 +598,10 @@ describe('Property: Session Conversation Persistence', () => {
             minLength: 0,
             maxLength: 5,
           }),
-          playbackStates: fc.array(
-            fc.constantFrom('idle', 'playing', 'paused', 'stopped'),
-            { minLength: 0, maxLength: 5 }
-          ),
+          playbackStates: fc.array(fc.constantFrom('idle', 'playing', 'paused', 'stopped'), {
+            minLength: 0,
+            maxLength: 5,
+          }),
           notificationCount: fc.integer({ min: 0, max: 5 }),
         }),
         ({ messages, agentChanges, playbackStates, notificationCount }) => {
@@ -659,7 +676,7 @@ describe('Property: Session Conversation Persistence', () => {
       fc.property(
         fc.array(
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constantFrom('user', 'agent'),
             content: fc.string({ minLength: 1, maxLength: 200 }),
             timestamp: fc.date(),
@@ -686,13 +703,21 @@ describe('Property: Session Conversation Persistence', () => {
           expect(result1.current.messages).toHaveLength(messages.length);
           expect(result2.current.messages).toHaveLength(messages.length);
 
-          // Property: Message content should be identical in both instances
-          messages.forEach((msg, index) => {
+          // Property: Message content should be identical in both instances (in chronological order)
+          const sortedMessages = [...messages].sort((a, b) => {
+            const timeA = a.timestamp.getTime();
+            const timeB = b.timestamp.getTime();
+            if (isNaN(timeA) && isNaN(timeB)) return 0;
+            if (isNaN(timeA)) return -1;
+            if (isNaN(timeB)) return 1;
+            if (timeA === timeB) return 0;
+            return timeA - timeB;
+          });
+
+          sortedMessages.forEach((msg, index) => {
             expect(result1.current.messages[index]).toEqual(msg);
             expect(result2.current.messages[index]).toEqual(msg);
-            expect(result1.current.messages[index]).toEqual(
-              result2.current.messages[index]
-            );
+            expect(result1.current.messages[index]).toEqual(result2.current.messages[index]);
           });
         }
       ),
@@ -709,7 +734,7 @@ describe('Property: Session Conversation Persistence', () => {
         fc.record({
           initialMessages: fc.array(
             fc.record({
-              id: fc.uuid(),
+              id: uniqueMessageId(),
               role: fc.constantFrom('user', 'agent'),
               content: fc.string({ minLength: 1, maxLength: 200 }),
               timestamp: fc.date(),
@@ -718,7 +743,7 @@ describe('Property: Session Conversation Persistence', () => {
           ),
           additionalMessages: fc.array(
             fc.record({
-              id: fc.uuid(),
+              id: uniqueMessageId(),
               role: fc.constantFrom('user', 'agent'),
               content: fc.string({ minLength: 1, maxLength: 200 }),
               timestamp: fc.date(),
@@ -777,7 +802,7 @@ describe('Property: Session Conversation Persistence', () => {
       fc.property(
         fc.array(
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constantFrom('user', 'agent'),
             content: fc.string({ minLength: 1, maxLength: 500 }),
             timestamp: fc.date(),
@@ -802,8 +827,19 @@ describe('Property: Session Conversation Persistence', () => {
             });
           });
 
+          // Sort the copy to match the chronological order in the store
+          const sortedMessagesCopy = messagesCopy.sort((a, b) => {
+            const timeA = a.timestamp.getTime();
+            const timeB = b.timestamp.getTime();
+            if (isNaN(timeA) && isNaN(timeB)) return 0;
+            if (isNaN(timeA)) return -1;
+            if (isNaN(timeB)) return 1;
+            if (timeA === timeB) return 0;
+            return timeA - timeB;
+          });
+
           // Property: Each message property should be preserved exactly
-          messagesCopy.forEach((originalMsg, index) => {
+          sortedMessagesCopy.forEach((originalMsg, index) => {
             const persistedMsg = result.current.messages[index];
 
             expect(persistedMsg.id).toBe(originalMsg.id);
@@ -812,9 +848,7 @@ describe('Property: Session Conversation Persistence', () => {
             expect(persistedMsg.timestamp).toEqual(originalMsg.timestamp);
 
             // Property: No additional properties should be added
-            expect(Object.keys(persistedMsg).sort()).toEqual(
-              Object.keys(originalMsg).sort()
-            );
+            expect(Object.keys(persistedMsg).sort()).toEqual(Object.keys(originalMsg).sort());
           });
         }
       ),
@@ -831,7 +865,7 @@ describe('Property: Session Conversation Persistence', () => {
         fc.array(
           fc.array(
             fc.record({
-              id: fc.uuid(),
+              id: uniqueMessageId(),
               role: fc.constantFrom('user', 'agent'),
               content: fc.string({ minLength: 1, maxLength: 200 }),
               timestamp: fc.date(),
@@ -866,9 +900,20 @@ describe('Property: Session Conversation Persistence', () => {
             expect(result.current.messages).toHaveLength(expectedTotalMessages);
           });
 
-          // Property: All messages should be present in order
+          // Property: All messages should be present in chronological order
           expect(result.current.messages).toHaveLength(allMessages.length);
-          allMessages.forEach((msg, index) => {
+
+          const sortedAllMessages = allMessages.sort((a, b) => {
+            const timeA = a.timestamp.getTime();
+            const timeB = b.timestamp.getTime();
+            if (isNaN(timeA) && isNaN(timeB)) return 0;
+            if (isNaN(timeA)) return -1;
+            if (isNaN(timeB)) return 1;
+            if (timeA === timeB) return 0;
+            return timeA - timeB;
+          });
+
+          sortedAllMessages.forEach((msg, index) => {
             expect(result.current.messages[index]).toEqual(msg);
           });
         }
@@ -886,7 +931,7 @@ describe('Property: Session Conversation Persistence', () => {
       fc.property(
         fc.array(
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constantFrom('user', 'agent'),
             content: fc.oneof(
               fc.constant(''), // Empty string (edge case)
@@ -920,7 +965,18 @@ describe('Property: Session Conversation Persistence', () => {
           expect(result.current.messages).toHaveLength(messages.length);
 
           // Property: Content should be preserved exactly (no sanitization or mutation)
-          messages.forEach((msg, index) => {
+          // Sort messages to match chronological order
+          const sortedMessages = [...messages].sort((a, b) => {
+            const timeA = a.timestamp.getTime();
+            const timeB = b.timestamp.getTime();
+            if (isNaN(timeA) && isNaN(timeB)) return 0;
+            if (isNaN(timeA)) return -1;
+            if (isNaN(timeB)) return 1;
+            if (timeA === timeB) return 0;
+            return timeA - timeB;
+          });
+
+          sortedMessages.forEach((msg, index) => {
             expect(result.current.messages[index].content).toBe(msg.content);
           });
         }
@@ -939,7 +995,7 @@ describe('Property: Session Conversation Persistence', () => {
         fc.record({
           userMessages: fc.array(
             fc.record({
-              id: fc.uuid(),
+              id: uniqueMessageId(),
               role: fc.constant('user' as const),
               content: fc.string({ minLength: 1, maxLength: 200 }),
               timestamp: fc.date(),
@@ -948,7 +1004,7 @@ describe('Property: Session Conversation Persistence', () => {
           ),
           agentMessages: fc.array(
             fc.record({
-              id: fc.uuid(),
+              id: uniqueMessageId(),
               role: fc.constant('agent' as const),
               content: fc.string({ minLength: 1, maxLength: 200 }),
               timestamp: fc.date(),
@@ -988,17 +1044,23 @@ describe('Property: Session Conversation Persistence', () => {
           expect(result.current.messages).toHaveLength(interleavedMessages.length);
 
           // Property: Messages should maintain their roles
-          interleavedMessages.forEach((msg, index) => {
+          const sortedInterleaved = interleavedMessages.sort((a, b) => {
+            const timeA = a.timestamp.getTime();
+            const timeB = b.timestamp.getTime();
+            if (isNaN(timeA) && isNaN(timeB)) return 0;
+            if (isNaN(timeA)) return -1;
+            if (isNaN(timeB)) return 1;
+            if (timeA === timeB) return 0;
+            return timeA - timeB;
+          });
+
+          sortedInterleaved.forEach((msg, index) => {
             expect(result.current.messages[index].role).toBe(msg.role);
           });
 
           // Property: User and agent messages should be treated equally
-          const persistedUserMessages = result.current.messages.filter(
-            (m) => m.role === 'user'
-          );
-          const persistedAgentMessages = result.current.messages.filter(
-            (m) => m.role === 'agent'
-          );
+          const persistedUserMessages = result.current.messages.filter((m) => m.role === 'user');
+          const persistedAgentMessages = result.current.messages.filter((m) => m.role === 'agent');
 
           expect(persistedUserMessages).toHaveLength(userMessages.length);
           expect(persistedAgentMessages).toHaveLength(agentMessages.length);
@@ -1017,7 +1079,7 @@ describe('Property: Session Conversation Persistence', () => {
       fc.property(
         fc.array(
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constantFrom('user', 'agent'),
             content: fc.string({ minLength: 1, maxLength: 100 }),
             timestamp: fc.date(),
@@ -1047,8 +1109,18 @@ describe('Property: Session Conversation Persistence', () => {
           const uniqueIds = new Set(messageIds);
           expect(uniqueIds.size).toBe(messages.length);
 
-          // Property: Order should be preserved
-          messages.forEach((msg, index) => {
+          // Property: Chronological order should be preserved
+          const sortedMessages = [...messages].sort((a, b) => {
+            const timeA = a.timestamp.getTime();
+            const timeB = b.timestamp.getTime();
+            if (isNaN(timeA) && isNaN(timeB)) return 0;
+            if (isNaN(timeA)) return -1;
+            if (isNaN(timeB)) return 1;
+            if (timeA === timeB) return 0;
+            return timeA - timeB;
+          });
+
+          sortedMessages.forEach((msg, index) => {
             expect(result.current.messages[index]).toEqual(msg);
           });
         }

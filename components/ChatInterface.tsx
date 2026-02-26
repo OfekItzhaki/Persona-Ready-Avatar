@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-undef */
 'use client';
 
 import { useState, useRef, useEffect, FormEvent, KeyboardEvent } from 'react';
@@ -127,8 +129,14 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
 
   /**
    * Format timestamp for display
+   * Handles invalid dates gracefully
    */
   const formatTime = (date: Date) => {
+    // Handle invalid dates
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+
     return new Intl.DateTimeFormat('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -191,9 +199,7 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
             onKeyDown={handleKeyDown}
             disabled={isPending} // Disable during pending request (Requirement 5.7)
             placeholder={
-              selectedAgent
-                ? 'Type your message...'
-                : 'Select an agent to start chatting'
+              selectedAgent ? 'Type your message...' : 'Select an agent to start chatting'
             }
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             aria-label="Message input"

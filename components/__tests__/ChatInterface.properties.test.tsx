@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-undef */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -10,6 +12,15 @@ import { useAppStore } from '@/lib/store/useAppStore';
 
 // Mock scrollIntoView which is not available in jsdom
 Element.prototype.scrollIntoView = vi.fn();
+
+/**
+ * Helper to generate unique message IDs
+ * Ensures no duplicate IDs in the same test run
+ */
+let messageIdCounter = 0;
+const uniqueMessageId = () => {
+  return fc.uuid().map((uuid) => `${uuid}-${messageIdCounter++}`);
+};
 
 /**
  * Helper function to get form elements
@@ -30,10 +41,10 @@ const getFormElements = (container: HTMLElement) => {
 
 // Arbitraries for generating test data
 const agentArbitrary = fc.record({
-  id: fc.string({ minLength: 8, maxLength: 36 }).filter(s => s.trim().length >= 8),
-  name: fc.string({ minLength: 2, maxLength: 50 }).filter(s => s.trim().length >= 2),
+  id: fc.string({ minLength: 8, maxLength: 36 }).filter((s) => s.trim().length >= 8),
+  name: fc.string({ minLength: 2, maxLength: 50 }).filter((s) => s.trim().length >= 2),
   description: fc.option(
-    fc.string({ minLength: 5, maxLength: 200 }).filter(s => s.trim().length >= 5),
+    fc.string({ minLength: 5, maxLength: 200 }).filter((s) => s.trim().length >= 5),
     { nil: undefined }
   ),
   voice: fc.constantFrom(
@@ -48,7 +59,9 @@ const agentArbitrary = fc.record({
   language: fc.constantFrom('en-US', 'es-ES', 'fr-FR', 'de-DE', 'ja-JP', 'zh-CN'),
 });
 
-const messageArbitrary = fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0);
+const messageArbitrary = fc
+  .string({ minLength: 1, maxLength: 500 })
+  .filter((s) => s.trim().length > 0);
 
 describe('ChatInterface Property Tests', () => {
   /**
@@ -85,10 +98,10 @@ describe('ChatInterface Property Tests', () => {
           async (agent: Agent, message: string) => {
             // Clear mocks before each iteration
             mockFetch.mockClear();
-            
+
             // Arrange
             const expectedEndpoint = `${process.env.NEXT_PUBLIC_BRAIN_API_URL || 'http://localhost:3001'}/api/chat`;
-            
+
             mockFetch.mockResolvedValueOnce({
               ok: true,
               json: async () => ({
@@ -142,7 +155,7 @@ describe('ChatInterface Property Tests', () => {
           async (agent: Agent, message: string) => {
             // Clear mocks before each iteration
             mockFetch.mockClear();
-            
+
             // Arrange
             mockFetch.mockResolvedValueOnce({
               ok: true,
@@ -193,7 +206,7 @@ describe('ChatInterface Property Tests', () => {
           async (agent: Agent, message: string) => {
             // Clear mocks before each iteration
             mockFetch.mockClear();
-            
+
             // Arrange
             mockFetch.mockResolvedValueOnce({
               ok: true,
@@ -240,7 +253,7 @@ describe('ChatInterface Property Tests', () => {
           async (agent: Agent, message: string) => {
             // Clear mocks before each iteration
             mockFetch.mockClear();
-            
+
             // Arrange
             mockFetch.mockResolvedValueOnce({
               ok: true,
@@ -302,7 +315,7 @@ describe('ChatInterface Property Tests', () => {
 
             // Assert - Property: Method should always be POST
             const callArgs = mockFetch.mock.calls[0];
-            
+
             // Property 1: Method should be POST
             expect(callArgs[1]?.method).toBe('POST');
 
@@ -421,7 +434,7 @@ describe('ChatInterface Property Tests', () => {
           async (agent: Agent, messages: string[]) => {
             // Clear mocks before each iteration
             mockFetch.mockClear();
-            
+
             // Arrange
             const { BrainApiRepository } = await import('@/lib/repositories/BrainApiRepository');
             const repository = new BrainApiRepository();
@@ -601,221 +614,233 @@ describe('ChatInterface Property Tests', () => {
      * Property: For any sequence of messages, user messages should have
      * different background color than agent messages
      */
-    it('should apply distinct background colors for user and agent messages', { timeout: 30000 }, async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          agentArbitrary,
-          fc.array(
-            fc.record({
-              id: fc.uuid(),
-              role: fc.constantFrom('user' as const, 'agent' as const),
-              content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
-              timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
-            }),
-            { minLength: 2, maxLength: 20 }
-          ),
-          async (agent, messages) => {
-            // Ensure we have at least one user and one agent message
-            const hasUserMessage = messages.some(m => m.role === 'user');
-            const hasAgentMessage = messages.some(m => m.role === 'agent');
-            
-            if (!hasUserMessage || !hasAgentMessage) {
-              // Add at least one of each type if missing
-              if (!hasUserMessage) {
-                messages.push({
-                  id: 'user-msg',
-                  role: 'user' as const,
-                  content: 'User message',
-                  timestamp: new Date(),
-                });
+    it(
+      'should apply distinct background colors for user and agent messages',
+      { timeout: 30000 },
+      async () => {
+        await fc.assert(
+          fc.asyncProperty(
+            agentArbitrary,
+            fc.array(
+              fc.record({
+                id: uniqueMessageId(),
+                role: fc.constantFrom('user' as const, 'agent' as const),
+                content: fc
+                  .string({ minLength: 1, maxLength: 500 })
+                  .filter((s) => s.trim().length > 0),
+                timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
+              }),
+              { minLength: 2, maxLength: 20 }
+            ),
+            async (agent, messages) => {
+              // Ensure we have at least one user and one agent message
+              const hasUserMessage = messages.some((m) => m.role === 'user');
+              const hasAgentMessage = messages.some((m) => m.role === 'agent');
+
+              if (!hasUserMessage || !hasAgentMessage) {
+                // Add at least one of each type if missing
+                if (!hasUserMessage) {
+                  messages.push({
+                    id: 'user-msg',
+                    role: 'user' as const,
+                    content: 'User message',
+                    timestamp: new Date(),
+                  });
+                }
+                if (!hasAgentMessage) {
+                  messages.push({
+                    id: 'agent-msg',
+                    role: 'agent' as const,
+                    content: 'Agent message',
+                    timestamp: new Date(),
+                  });
+                }
               }
-              if (!hasAgentMessage) {
-                messages.push({
-                  id: 'agent-msg',
-                  role: 'agent' as const,
-                  content: 'Agent message',
-                  timestamp: new Date(),
-                });
+
+              // Arrange
+              const store = useAppStore.getState();
+              store.clearMessages();
+
+              for (const message of messages) {
+                store.addMessage(message);
               }
-            }
 
-            // Arrange
-            const store = useAppStore.getState();
-            store.clearMessages();
+              // Act
+              const { container } = render(
+                <QueryClientProvider client={queryClient}>
+                  <ChatInterface selectedAgent={agent} />
+                </QueryClientProvider>
+              );
 
-            for (const message of messages) {
-              store.addMessage(message);
-            }
+              // Assert - Property: User and agent messages should have distinct styling
+              await waitFor(() => {
+                const messageElements = container.querySelectorAll('[role="article"]');
+                expect(messageElements.length).toBeGreaterThan(0);
+              });
 
-            // Act
-            const { container } = render(
-              <QueryClientProvider client={queryClient}>
-                <ChatInterface selectedAgent={agent} />
-              </QueryClientProvider>
-            );
-
-            // Assert - Property: User and agent messages should have distinct styling
-            await waitFor(() => {
               const messageElements = container.querySelectorAll('[role="article"]');
-              expect(messageElements.length).toBeGreaterThan(0);
-            });
+              const storeMessages = useAppStore.getState().messages;
 
-            const messageElements = container.querySelectorAll('[role="article"]');
-            const storeMessages = useAppStore.getState().messages;
+              // Property 1: Each message should have appropriate background color based on role
+              messageElements.forEach((element, index) => {
+                const message = storeMessages[index];
+                const classList = element.className;
 
-            // Property 1: Each message should have appropriate background color based on role
-            messageElements.forEach((element, index) => {
-              const message = storeMessages[index];
-              const classList = element.className;
+                if (message.role === 'user') {
+                  // User messages should have blue background
+                  expect(classList).toContain('bg-blue-600');
+                  expect(classList).toContain('text-white');
+                } else {
+                  // Agent messages should have gray background
+                  expect(classList).toContain('bg-gray-200');
+                  expect(classList).toContain('text-gray-900');
+                }
+              });
 
-              if (message.role === 'user') {
-                // User messages should have blue background
-                expect(classList).toContain('bg-blue-600');
-                expect(classList).toContain('text-white');
-              } else {
-                // Agent messages should have gray background
-                expect(classList).toContain('bg-gray-200');
-                expect(classList).toContain('text-gray-900');
+              // Property 2: User and agent messages should have different background colors
+              const userMessages = Array.from(messageElements).filter(
+                (_, index) => storeMessages[index].role === 'user'
+              );
+              const agentMessages = Array.from(messageElements).filter(
+                (_, index) => storeMessages[index].role === 'agent'
+              );
+
+              if (userMessages.length > 0 && agentMessages.length > 0) {
+                const userBgClass = userMessages[0].className.match(/bg-\w+-\d+/)?.[0];
+                const agentBgClass = agentMessages[0].className.match(/bg-\w+-\d+/)?.[0];
+
+                // Background colors should be different
+                expect(userBgClass).toBeDefined();
+                expect(agentBgClass).toBeDefined();
+                expect(userBgClass).not.toBe(agentBgClass);
               }
-            });
 
-            // Property 2: User and agent messages should have different background colors
-            const userMessages = Array.from(messageElements).filter((_, index) => 
-              storeMessages[index].role === 'user'
-            );
-            const agentMessages = Array.from(messageElements).filter((_, index) => 
-              storeMessages[index].role === 'agent'
-            );
+              // Property 3: All user messages should have consistent styling
+              userMessages.forEach((element) => {
+                expect(element.className).toContain('bg-blue-600');
+                expect(element.className).toContain('text-white');
+              });
 
-            if (userMessages.length > 0 && agentMessages.length > 0) {
-              const userBgClass = userMessages[0].className.match(/bg-\w+-\d+/)?.[0];
-              const agentBgClass = agentMessages[0].className.match(/bg-\w+-\d+/)?.[0];
-
-              // Background colors should be different
-              expect(userBgClass).toBeDefined();
-              expect(agentBgClass).toBeDefined();
-              expect(userBgClass).not.toBe(agentBgClass);
+              // Property 4: All agent messages should have consistent styling
+              agentMessages.forEach((element) => {
+                expect(element.className).toContain('bg-gray-200');
+                expect(element.className).toContain('text-gray-900');
+              });
             }
-
-            // Property 3: All user messages should have consistent styling
-            userMessages.forEach(element => {
-              expect(element.className).toContain('bg-blue-600');
-              expect(element.className).toContain('text-white');
-            });
-
-            // Property 4: All agent messages should have consistent styling
-            agentMessages.forEach(element => {
-              expect(element.className).toContain('bg-gray-200');
-              expect(element.className).toContain('text-gray-900');
-            });
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
+          ),
+          { numRuns: 25 }
+        );
+      }
+    );
 
     /**
      * Property: For any sequence of messages, user and agent messages should
      * be visually distinguishable by their styling
      */
-    it('should maintain visual distinction across various message sequences', { timeout: 30000 }, async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          agentArbitrary,
-          fc.array(
-            fc.record({
-              id: fc.uuid(),
-              role: fc.constantFrom('user' as const, 'agent' as const),
-              content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
-              timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
-            }),
-            { minLength: 3, maxLength: 15 }
-          ),
-          async (agent, messages) => {
-            // Arrange
-            const store = useAppStore.getState();
-            store.clearMessages();
+    it(
+      'should maintain visual distinction across various message sequences',
+      { timeout: 30000 },
+      async () => {
+        await fc.assert(
+          fc.asyncProperty(
+            agentArbitrary,
+            fc.array(
+              fc.record({
+                id: uniqueMessageId(),
+                role: fc.constantFrom('user' as const, 'agent' as const),
+                content: fc
+                  .string({ minLength: 1, maxLength: 500 })
+                  .filter((s) => s.trim().length > 0),
+                timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
+              }),
+              { minLength: 3, maxLength: 15 }
+            ),
+            async (agent, messages) => {
+              // Arrange
+              const store = useAppStore.getState();
+              store.clearMessages();
 
-            for (const message of messages) {
-              store.addMessage(message);
-            }
+              for (const message of messages) {
+                store.addMessage(message);
+              }
 
-            // Act
-            const { container } = render(
-              <QueryClientProvider client={queryClient}>
-                <ChatInterface selectedAgent={agent} />
-              </QueryClientProvider>
-            );
+              // Act
+              const { container } = render(
+                <QueryClientProvider client={queryClient}>
+                  <ChatInterface selectedAgent={agent} />
+                </QueryClientProvider>
+              );
 
-            // Assert
-            await waitFor(() => {
+              // Assert
+              await waitFor(() => {
+                const messageElements = container.querySelectorAll('[role="article"]');
+                expect(messageElements.length).toBe(messages.length);
+              });
+
               const messageElements = container.querySelectorAll('[role="article"]');
-              expect(messageElements.length).toBe(messages.length);
-            });
+              const storeMessages = useAppStore.getState().messages;
 
-            const messageElements = container.querySelectorAll('[role="article"]');
-            const storeMessages = useAppStore.getState().messages;
+              // Property 1: Each message should have role-specific styling
+              for (let i = 0; i < messageElements.length; i++) {
+                const element = messageElements[i];
+                const message = storeMessages[i];
+                const classList = element.className;
 
-            // Property 1: Each message should have role-specific styling
-            for (let i = 0; i < messageElements.length; i++) {
-              const element = messageElements[i];
-              const message = storeMessages[i];
-              const classList = element.className;
+                // Verify role-specific styling is applied
+                if (message.role === 'user') {
+                  expect(classList).toMatch(/bg-blue-\d+/);
+                  expect(classList).toContain('text-white');
+                } else {
+                  expect(classList).toMatch(/bg-gray-\d+/);
+                  expect(classList).toContain('text-gray-900');
+                }
+              }
 
-              // Verify role-specific styling is applied
-              if (message.role === 'user') {
-                expect(classList).toMatch(/bg-blue-\d+/);
-                expect(classList).toContain('text-white');
-              } else {
-                expect(classList).toMatch(/bg-gray-\d+/);
-                expect(classList).toContain('text-gray-900');
+              // Property 2: Adjacent messages with different roles should have different styling
+              for (let i = 1; i < messageElements.length; i++) {
+                const prevMessage = storeMessages[i - 1];
+                const currMessage = storeMessages[i];
+
+                if (prevMessage.role !== currMessage.role) {
+                  const prevBg = messageElements[i - 1].className.match(/bg-\w+-\d+/)?.[0];
+                  const currBg = messageElements[i].className.match(/bg-\w+-\d+/)?.[0];
+
+                  // Different roles should have different backgrounds
+                  expect(prevBg).not.toBe(currBg);
+                }
+              }
+
+              // Property 3: Messages with the same role should have the same styling
+              const userMessageElements = Array.from(messageElements).filter(
+                (_, index) => storeMessages[index].role === 'user'
+              );
+              const agentMessageElements = Array.from(messageElements).filter(
+                (_, index) => storeMessages[index].role === 'agent'
+              );
+
+              // All user messages should have identical styling
+              if (userMessageElements.length > 1) {
+                const firstUserBg = userMessageElements[0].className.match(/bg-\w+-\d+/)?.[0];
+                userMessageElements.forEach((element) => {
+                  const bg = element.className.match(/bg-\w+-\d+/)?.[0];
+                  expect(bg).toBe(firstUserBg);
+                });
+              }
+
+              // All agent messages should have identical styling
+              if (agentMessageElements.length > 1) {
+                const firstAgentBg = agentMessageElements[0].className.match(/bg-\w+-\d+/)?.[0];
+                agentMessageElements.forEach((element) => {
+                  const bg = element.className.match(/bg-\w+-\d+/)?.[0];
+                  expect(bg).toBe(firstAgentBg);
+                });
               }
             }
-
-            // Property 2: Adjacent messages with different roles should have different styling
-            for (let i = 1; i < messageElements.length; i++) {
-              const prevMessage = storeMessages[i - 1];
-              const currMessage = storeMessages[i];
-
-              if (prevMessage.role !== currMessage.role) {
-                const prevBg = messageElements[i - 1].className.match(/bg-\w+-\d+/)?.[0];
-                const currBg = messageElements[i].className.match(/bg-\w+-\d+/)?.[0];
-
-                // Different roles should have different backgrounds
-                expect(prevBg).not.toBe(currBg);
-              }
-            }
-
-            // Property 3: Messages with the same role should have the same styling
-            const userMessageElements = Array.from(messageElements).filter((_, index) =>
-              storeMessages[index].role === 'user'
-            );
-            const agentMessageElements = Array.from(messageElements).filter((_, index) =>
-              storeMessages[index].role === 'agent'
-            );
-
-            // All user messages should have identical styling
-            if (userMessageElements.length > 1) {
-              const firstUserBg = userMessageElements[0].className.match(/bg-\w+-\d+/)?.[0];
-              userMessageElements.forEach(element => {
-                const bg = element.className.match(/bg-\w+-\d+/)?.[0];
-                expect(bg).toBe(firstUserBg);
-              });
-            }
-
-            // All agent messages should have identical styling
-            if (agentMessageElements.length > 1) {
-              const firstAgentBg = agentMessageElements[0].className.match(/bg-\w+-\d+/)?.[0];
-              agentMessageElements.forEach(element => {
-                const bg = element.className.match(/bg-\w+-\d+/)?.[0];
-                expect(bg).toBe(firstAgentBg);
-              });
-            }
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
+          ),
+          { numRuns: 25 }
+        );
+      }
+    );
 
     /**
      * Property: For any single user message, it should have user-specific styling
@@ -825,9 +850,9 @@ describe('ChatInterface Property Tests', () => {
         fc.asyncProperty(
           agentArbitrary,
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constant('user' as const),
-            content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
+            content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
             timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
           }),
           async (agent, message) => {
@@ -869,9 +894,9 @@ describe('ChatInterface Property Tests', () => {
         fc.asyncProperty(
           agentArbitrary,
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constant('agent' as const),
-            content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
+            content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
             timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
           }),
           async (agent, message) => {
@@ -909,125 +934,133 @@ describe('ChatInterface Property Tests', () => {
      * Property: For any alternating sequence of user and agent messages,
      * each message should have the correct role-specific styling
      */
-    it('should maintain correct styling for alternating user and agent messages', { timeout: 30000 }, async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          agentArbitrary,
-          fc.integer({ min: 3, max: 10 }),
-          async (agent, messageCount) => {
-            // Arrange - Create alternating user and agent messages
-            const messages = [];
-            const baseTime = new Date('2024-01-01T00:00:00Z').getTime();
+    it(
+      'should maintain correct styling for alternating user and agent messages',
+      { timeout: 30000 },
+      async () => {
+        await fc.assert(
+          fc.asyncProperty(
+            agentArbitrary,
+            fc.integer({ min: 3, max: 10 }),
+            async (agent, messageCount) => {
+              // Arrange - Create alternating user and agent messages
+              const messages = [];
+              const baseTime = new Date('2024-01-01T00:00:00Z').getTime();
 
-            for (let i = 0; i < messageCount; i++) {
-              messages.push({
-                id: `msg-${i}`,
-                role: (i % 2 === 0 ? 'user' : 'agent') as const,
-                content: `Message ${i}`,
-                timestamp: new Date(baseTime + i * 1000),
-              });
-            }
-
-            const store = useAppStore.getState();
-            store.clearMessages();
-
-            for (const message of messages) {
-              store.addMessage(message);
-            }
-
-            // Act
-            const { container } = render(
-              <QueryClientProvider client={queryClient}>
-                <ChatInterface selectedAgent={agent} />
-              </QueryClientProvider>
-            );
-
-            // Assert
-            await waitFor(() => {
-              const messageElements = container.querySelectorAll('[role="article"]');
-              expect(messageElements.length).toBe(messageCount);
-            });
-
-            const messageElements = container.querySelectorAll('[role="article"]');
-
-            // Property: Each message should have correct styling based on its role
-            messageElements.forEach((element, index) => {
-              const expectedRole = index % 2 === 0 ? 'user' : 'agent';
-
-              if (expectedRole === 'user') {
-                expect(element.className).toContain('bg-blue-600');
-                expect(element.className).toContain('text-white');
-              } else {
-                expect(element.className).toContain('bg-gray-200');
-                expect(element.className).toContain('text-gray-900');
+              for (let i = 0; i < messageCount; i++) {
+                messages.push({
+                  id: `msg-${i}`,
+                  role: (i % 2 === 0 ? 'user' : 'agent') as const,
+                  content: `Message ${i}`,
+                  timestamp: new Date(baseTime + i * 1000),
+                });
               }
-            });
 
-            // Property: Adjacent messages should have different styling
-            for (let i = 1; i < messageElements.length; i++) {
-              const prevBg = messageElements[i - 1].className.match(/bg-\w+-\d+/)?.[0];
-              const currBg = messageElements[i].className.match(/bg-\w+-\d+/)?.[0];
+              const store = useAppStore.getState();
+              store.clearMessages();
 
-              // Alternating messages should have different backgrounds
-              expect(prevBg).not.toBe(currBg);
+              for (const message of messages) {
+                store.addMessage(message);
+              }
+
+              // Act
+              const { container } = render(
+                <QueryClientProvider client={queryClient}>
+                  <ChatInterface selectedAgent={agent} />
+                </QueryClientProvider>
+              );
+
+              // Assert
+              await waitFor(() => {
+                const messageElements = container.querySelectorAll('[role="article"]');
+                expect(messageElements.length).toBe(messageCount);
+              });
+
+              const messageElements = container.querySelectorAll('[role="article"]');
+
+              // Property: Each message should have correct styling based on its role
+              messageElements.forEach((element, index) => {
+                const expectedRole = index % 2 === 0 ? 'user' : 'agent';
+
+                if (expectedRole === 'user') {
+                  expect(element.className).toContain('bg-blue-600');
+                  expect(element.className).toContain('text-white');
+                } else {
+                  expect(element.className).toContain('bg-gray-200');
+                  expect(element.className).toContain('text-gray-900');
+                }
+              });
+
+              // Property: Adjacent messages should have different styling
+              for (let i = 1; i < messageElements.length; i++) {
+                const prevBg = messageElements[i - 1].className.match(/bg-\w+-\d+/)?.[0];
+                const currBg = messageElements[i].className.match(/bg-\w+-\d+/)?.[0];
+
+                // Alternating messages should have different backgrounds
+                expect(prevBg).not.toBe(currBg);
+              }
             }
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
+          ),
+          { numRuns: 25 }
+        );
+      }
+    );
 
     /**
      * Property: For any message content length, the styling should remain consistent
      */
-    it('should maintain consistent styling regardless of message content length', { timeout: 30000 }, async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          agentArbitrary,
-          fc.constantFrom('user' as const, 'agent' as const),
-          fc.string({ minLength: 1, maxLength: 1000 }).filter(s => s.trim().length > 0),
-          async (agent, role, content) => {
-            // Arrange
-            const message = {
-              id: 'test-msg',
-              role,
-              content,
-              timestamp: new Date(),
-            };
+    it(
+      'should maintain consistent styling regardless of message content length',
+      { timeout: 30000 },
+      async () => {
+        await fc.assert(
+          fc.asyncProperty(
+            agentArbitrary,
+            fc.constantFrom('user' as const, 'agent' as const),
+            fc.string({ minLength: 1, maxLength: 1000 }).filter((s) => s.trim().length > 0),
+            async (agent, role, content) => {
+              // Arrange
+              const message = {
+                id: 'test-msg',
+                role,
+                content,
+                timestamp: new Date(),
+              };
 
-            const store = useAppStore.getState();
-            store.clearMessages();
-            store.addMessage(message);
+              const store = useAppStore.getState();
+              store.clearMessages();
+              store.addMessage(message);
 
-            // Act
-            const { container } = render(
-              <QueryClientProvider client={queryClient}>
-                <ChatInterface selectedAgent={agent} />
-              </QueryClientProvider>
-            );
+              // Act
+              const { container } = render(
+                <QueryClientProvider client={queryClient}>
+                  <ChatInterface selectedAgent={agent} />
+                </QueryClientProvider>
+              );
 
-            // Assert
-            await waitFor(() => {
-              const messageElements = container.querySelectorAll('[role="article"]');
-              expect(messageElements.length).toBe(1);
-            });
+              // Assert
+              await waitFor(() => {
+                const messageElements = container.querySelectorAll('[role="article"]');
+                expect(messageElements.length).toBe(1);
+              });
 
-            const messageElement = container.querySelector('[role="article"]');
-            expect(messageElement).toBeTruthy();
+              const messageElement = container.querySelector('[role="article"]');
+              expect(messageElement).toBeTruthy();
 
-            // Property: Styling should be consistent regardless of content length
-            if (role === 'user') {
-              expect(messageElement!.className).toContain('bg-blue-600');
-              expect(messageElement!.className).toContain('text-white');
-            } else {
-              expect(messageElement!.className).toContain('bg-gray-200');
-              expect(messageElement!.className).toContain('text-gray-900');
+              // Property: Styling should be consistent regardless of content length
+              if (role === 'user') {
+                expect(messageElement!.className).toContain('bg-blue-600');
+                expect(messageElement!.className).toContain('text-white');
+              } else {
+                expect(messageElement!.className).toContain('bg-gray-200');
+                expect(messageElement!.className).toContain('text-gray-900');
+              }
             }
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
+          ),
+          { numRuns: 25 }
+        );
+      }
+    );
   });
 
   /**
@@ -1230,9 +1263,12 @@ describe('ChatInterface Property Tests', () => {
             });
 
             // Property 1: Input should be re-enabled after failure
-            await waitFor(() => {
-              expect(input.disabled).toBe(false);
-            }, { timeout: 3000 });
+            await waitFor(
+              () => {
+                expect(input.disabled).toBe(false);
+              },
+              { timeout: 3000 }
+            );
 
             // Property 2: Send button should be re-enabled after failure
             expect(sendButton.disabled).toBe(false);
@@ -1291,9 +1327,12 @@ describe('ChatInterface Property Tests', () => {
               });
 
               // Property 3: Wait for request to complete and input to re-enable
-              await waitFor(() => {
-                expect(input.disabled).toBe(false);
-              }, { timeout: 3000 });
+              await waitFor(
+                () => {
+                  expect(input.disabled).toBe(false);
+                },
+                { timeout: 3000 }
+              );
             }
 
             // Property 4: After all requests, input should be enabled
@@ -1351,10 +1390,10 @@ describe('ChatInterface Property Tests', () => {
 
             // Property 1: Attempting to type should not work while disabled
             const initialCallCount = mockFetch.mock.calls.length;
-            
+
             // Try to type (should not work because input is disabled)
             await userEvent.type(input, 'another message');
-            
+
             // Property 2: Input value should remain empty (cleared after submission)
             expect(input.value).toBe('');
 
@@ -1485,9 +1524,9 @@ describe('Property 19: Message Chronological Ordering', () => {
         agentArbitrary,
         fc.array(
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constantFrom('user' as const, 'agent' as const),
-            content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
+            content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
             timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
           }),
           { minLength: 2, maxLength: 20 }
@@ -1544,14 +1583,16 @@ describe('Property 19: Message Chronological Ordering', () => {
           }
 
           // Property 3: Displayed order should match sorted order
-          const sortedMessages = [...messages].sort((a, b) =>
-            a.timestamp.getTime() - b.timestamp.getTime()
+          const sortedMessages = [...messages].sort(
+            (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
           );
 
           const storeMessages = useAppStore.getState().messages;
           for (let i = 0; i < sortedMessages.length; i++) {
             expect(storeMessages[i].id).toBe(sortedMessages[i].id);
-            expect(storeMessages[i].timestamp.getTime()).toBe(sortedMessages[i].timestamp.getTime());
+            expect(storeMessages[i].timestamp.getTime()).toBe(
+              sortedMessages[i].timestamp.getTime()
+            );
           }
         }
       ),
@@ -1570,15 +1611,15 @@ describe('Property 19: Message Chronological Ordering', () => {
         fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
         fc.array(
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constantFrom('user' as const, 'agent' as const),
-            content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
+            content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
           }),
           { minLength: 2, maxLength: 10 }
         ),
         async (agent, sharedTimestamp, messageData) => {
           // Arrange - Create messages with identical timestamps
-          const messages = messageData.map(data => ({
+          const messages = messageData.map((data) => ({
             ...data,
             timestamp: new Date(sharedTimestamp.getTime()), // Same timestamp for all
           }));
@@ -1632,9 +1673,9 @@ describe('Property 19: Message Chronological Ordering', () => {
         agentArbitrary,
         fc.array(
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constantFrom('user' as const, 'agent' as const),
-            content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
+            content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
             timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
           }),
           { minLength: 3, maxLength: 15 }
@@ -1645,8 +1686,8 @@ describe('Property 19: Message Chronological Ordering', () => {
           store.clearMessages();
 
           // Sort messages by timestamp descending (newest first)
-          const reversedMessages = [...messages].sort((a, b) =>
-            b.timestamp.getTime() - a.timestamp.getTime()
+          const reversedMessages = [...messages].sort(
+            (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
           );
 
           // Add messages in reverse order
@@ -1678,8 +1719,8 @@ describe('Property 19: Message Chronological Ordering', () => {
           }
 
           // Property: Should match the correctly sorted order
-          const correctlySorted = [...messages].sort((a, b) =>
-            a.timestamp.getTime() - b.timestamp.getTime()
+          const correctlySorted = [...messages].sort(
+            (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
           );
 
           for (let i = 0; i < correctlySorted.length; i++) {
@@ -1708,7 +1749,7 @@ describe('Property 19: Message Chronological Ordering', () => {
           for (let i = 0; i < messageCount; i++) {
             // Random time gap between 1 second and 1 hour
             const timeGap = Math.floor(Math.random() * 3600000) + 1000;
-            const timestamp = new Date(baseTime + (i * timeGap));
+            const timestamp = new Date(baseTime + i * timeGap);
 
             messages.push({
               id: `msg-${i}-${Math.random()}`,
@@ -1744,8 +1785,9 @@ describe('Property 19: Message Chronological Ordering', () => {
 
           // Property 1: Each message should come after the previous one
           for (let i = 1; i < storeMessages.length; i++) {
-            expect(storeMessages[i].timestamp.getTime())
-              .toBeGreaterThanOrEqual(storeMessages[i - 1].timestamp.getTime());
+            expect(storeMessages[i].timestamp.getTime()).toBeGreaterThanOrEqual(
+              storeMessages[i - 1].timestamp.getTime()
+            );
           }
 
           // Property 2: First message should be the oldest
@@ -1774,9 +1816,9 @@ describe('Property 19: Message Chronological Ordering', () => {
       fc.asyncProperty(
         agentArbitrary,
         fc.record({
-          id: fc.uuid(),
+          id: uniqueMessageId(),
           role: fc.constantFrom('user' as const, 'agent' as const),
-          content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
+          content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
           timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
         }),
         async (agent, message) => {
@@ -1821,9 +1863,9 @@ describe('Property 19: Message Chronological Ordering', () => {
         agentArbitrary,
         fc.array(
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constantFrom('user' as const, 'agent' as const),
-            content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
+            content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
             timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
           }),
           { minLength: 4, maxLength: 20 }
@@ -1856,14 +1898,15 @@ describe('Property 19: Message Chronological Ordering', () => {
 
           // Property 1: Chronological order should be maintained
           for (let i = 1; i < storeMessages.length; i++) {
-            expect(storeMessages[i].timestamp.getTime())
-              .toBeGreaterThanOrEqual(storeMessages[i - 1].timestamp.getTime());
+            expect(storeMessages[i].timestamp.getTime()).toBeGreaterThanOrEqual(
+              storeMessages[i - 1].timestamp.getTime()
+            );
           }
 
           // Property 2: Role should not affect ordering
           // Verify that messages are not grouped by role
-          const sortedByTimestamp = [...messages].sort((a, b) =>
-            a.timestamp.getTime() - b.timestamp.getTime()
+          const sortedByTimestamp = [...messages].sort(
+            (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
           );
 
           for (let i = 0; i < sortedByTimestamp.length; i++) {
@@ -1876,437 +1919,440 @@ describe('Property 19: Message Chronological Ordering', () => {
   });
 });
 
+/**
+ * Feature: avatar-client, Property 19: Message Chronological Ordering
+ * For any sequence of messages in the conversation history, the messages should
+ * be displayed in chronological order based on their timestamps.
+ *
+ * **Validates: Requirements 9.3**
+ */
+describe('Property 19: Message Chronological Ordering', () => {
+  let queryClient: QueryClient;
+
+  beforeEach(() => {
+    // Create a new QueryClient for each test
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    // Initialize NotificationService
+    NotificationService.reset();
+    NotificationService.initialize(useAppStore.getState());
+    // Clear messages from store
+    useAppStore.getState().clearMessages();
+    // Clear all mocks before each test
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    queryClient.clear();
+    useAppStore.getState().clearMessages();
+  });
 
   /**
-   * Feature: avatar-client, Property 19: Message Chronological Ordering
-   * For any sequence of messages in the conversation history, the messages should
-   * be displayed in chronological order based on their timestamps.
-   *
-   * **Validates: Requirements 9.3**
+   * Property: For any sequence of messages with random timestamps,
+   * messages should be displayed in chronological order (oldest first)
    */
-  describe('Property 19: Message Chronological Ordering', () => {
-    let queryClient: QueryClient;
-
-    beforeEach(() => {
-      // Create a new QueryClient for each test
-      queryClient = new QueryClient({
-        defaultOptions: {
-          queries: { retry: false },
-          mutations: { retry: false },
-        },
-      });
-      // Initialize NotificationService
-      NotificationService.reset();
-      NotificationService.initialize(useAppStore.getState());
-      // Clear messages from store
-      useAppStore.getState().clearMessages();
-      // Clear all mocks before each test
-      vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-      vi.restoreAllMocks();
-      queryClient.clear();
-      useAppStore.getState().clearMessages();
-    });
-
-    /**
-     * Property: For any sequence of messages with random timestamps,
-     * messages should be displayed in chronological order (oldest first)
-     */
-    it('should display messages in chronological order for any message sequence', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          agentArbitrary,
-          fc.array(
-            fc.record({
-              id: fc.uuid(),
-              role: fc.constantFrom('user' as const, 'agent' as const),
-              content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
-              timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
-            }),
-            { minLength: 2, maxLength: 20 }
-          ),
-          async (agent, messages) => {
-            // Arrange - Add messages to store in random order
-            const store = useAppStore.getState();
-            store.clearMessages();
-            
-            // Shuffle messages to ensure they're not already sorted
-            const shuffledMessages = [...messages].sort(() => Math.random() - 0.5);
-            
-            for (const message of shuffledMessages) {
-              store.addMessage(message);
-            }
-
-            // Act - Render component
-            const { container } = render(
-              <QueryClientProvider client={queryClient}>
-                <ChatInterface selectedAgent={agent} />
-              </QueryClientProvider>
-            );
-
-            // Assert - Property: Messages should be displayed in chronological order
-            await waitFor(() => {
-              const messageElements = container.querySelectorAll('[role="article"]');
-              expect(messageElements.length).toBeGreaterThan(0);
-            });
-
-            const messageElements = container.querySelectorAll('[role="article"]');
-            const displayedMessages = Array.from(messageElements);
-
-            // Property 1: Number of displayed messages should match input
-            expect(displayedMessages.length).toBe(messages.length);
-
-            // Property 2: Messages should be in chronological order
-            // Extract timestamps from the displayed messages
-            const displayedTimestamps: Date[] = [];
-            displayedMessages.forEach((element, index) => {
-              // Get the timestamp from the store messages (which should be sorted)
-              const storeMessages = useAppStore.getState().messages;
-              if (storeMessages[index]) {
-                displayedTimestamps.push(storeMessages[index].timestamp);
-              }
-            });
-
-            // Verify chronological ordering (each timestamp >= previous)
-            for (let i = 1; i < displayedTimestamps.length; i++) {
-              const prevTime = displayedTimestamps[i - 1].getTime();
-              const currTime = displayedTimestamps[i].getTime();
-              
-              // Property: Current message timestamp should be >= previous message timestamp
-              expect(currTime).toBeGreaterThanOrEqual(prevTime);
-            }
-
-            // Property 3: Displayed order should match sorted order
-            const sortedMessages = [...messages].sort((a, b) => 
-              a.timestamp.getTime() - b.timestamp.getTime()
-            );
-            
-            const storeMessages = useAppStore.getState().messages;
-            for (let i = 0; i < sortedMessages.length; i++) {
-              expect(storeMessages[i].id).toBe(sortedMessages[i].id);
-              expect(storeMessages[i].timestamp.getTime()).toBe(sortedMessages[i].timestamp.getTime());
-            }
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
-
-    /**
-     * Property: For any sequence of messages with identical timestamps,
-     * the order should be stable (maintain insertion order)
-     */
-    it('should maintain stable order for messages with identical timestamps', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          agentArbitrary,
-          fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
-          fc.array(
-            fc.record({
-              id: fc.uuid(),
-              role: fc.constantFrom('user' as const, 'agent' as const),
-              content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
-            }),
-            { minLength: 2, maxLength: 10 }
-          ),
-          async (agent, sharedTimestamp, messageData) => {
-            // Arrange - Create messages with identical timestamps
-            const messages = messageData.map(data => ({
-              ...data,
-              timestamp: new Date(sharedTimestamp.getTime()), // Same timestamp for all
-            }));
-
-            const store = useAppStore.getState();
-            store.clearMessages();
-            
-            // Add messages in order
-            for (const message of messages) {
-              store.addMessage(message);
-            }
-
-            // Act - Render component
-            const { container } = render(
-              <QueryClientProvider client={queryClient}>
-                <ChatInterface selectedAgent={agent} />
-              </QueryClientProvider>
-            );
-
-            // Assert - Property: Messages with same timestamp should maintain insertion order
-            await waitFor(() => {
-              const messageElements = container.querySelectorAll('[role="article"]');
-              expect(messageElements.length).toBe(messages.length);
-            });
-
-            const storeMessages = useAppStore.getState().messages;
-
-            // Property 1: All messages should have the same timestamp
-            for (let i = 0; i < storeMessages.length; i++) {
-              expect(storeMessages[i].timestamp.getTime()).toBe(sharedTimestamp.getTime());
-            }
-
-            // Property 2: Order should match insertion order
-            for (let i = 0; i < messages.length; i++) {
-              expect(storeMessages[i].id).toBe(messages[i].id);
-              expect(storeMessages[i].content).toBe(messages[i].content);
-            }
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
-
-    /**
-     * Property: For any sequence where older messages are added after newer ones,
-     * the display should still show chronological order
-     */
-    it('should maintain chronological order even when older messages are added later', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          agentArbitrary,
-          fc.array(
-            fc.record({
-              id: fc.uuid(),
-              role: fc.constantFrom('user' as const, 'agent' as const),
-              content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
-              timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
-            }),
-            { minLength: 3, maxLength: 15 }
-          ),
-          async (agent, messages) => {
-            // Arrange - Add messages in reverse chronological order
-            const store = useAppStore.getState();
-            store.clearMessages();
-            
-            // Sort messages by timestamp descending (newest first)
-            const reversedMessages = [...messages].sort((a, b) => 
-              b.timestamp.getTime() - a.timestamp.getTime()
-            );
-            
-            // Add messages in reverse order
-            for (const message of reversedMessages) {
-              store.addMessage(message);
-            }
-
-            // Act - Render component
-            const { container } = render(
-              <QueryClientProvider client={queryClient}>
-                <ChatInterface selectedAgent={agent} />
-              </QueryClientProvider>
-            );
-
-            // Assert - Property: Despite reverse insertion, display should be chronological
-            await waitFor(() => {
-              const messageElements = container.querySelectorAll('[role="article"]');
-              expect(messageElements.length).toBe(messages.length);
-            });
-
-            const storeMessages = useAppStore.getState().messages;
-
-            // Property: Messages should be in chronological order (oldest first)
-            for (let i = 1; i < storeMessages.length; i++) {
-              const prevTime = storeMessages[i - 1].timestamp.getTime();
-              const currTime = storeMessages[i].timestamp.getTime();
-              
-              expect(currTime).toBeGreaterThanOrEqual(prevTime);
-            }
-
-            // Property: Should match the correctly sorted order
-            const correctlySorted = [...messages].sort((a, b) => 
-              a.timestamp.getTime() - b.timestamp.getTime()
-            );
-            
-            for (let i = 0; i < correctlySorted.length; i++) {
-              expect(storeMessages[i].id).toBe(correctlySorted[i].id);
-            }
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
-
-    /**
-     * Property: For any sequence of messages with various timestamp gaps,
-     * the chronological ordering should be maintained
-     */
-    it('should maintain chronological order with various timestamp gaps', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          agentArbitrary,
-          fc.integer({ min: 5, max: 15 }),
-          async (agent, messageCount) => {
-            // Arrange - Create messages with varying time gaps
-            const baseTime = new Date('2024-01-01T00:00:00Z').getTime();
-            const messages = [];
-            
-            for (let i = 0; i < messageCount; i++) {
-              // Random time gap between 1 second and 1 hour
-              const timeGap = Math.floor(Math.random() * 3600000) + 1000;
-              const timestamp = new Date(baseTime + (i * timeGap));
-              
-              messages.push({
-                id: `msg-${i}-${Math.random()}`,
-                role: (i % 2 === 0 ? 'user' : 'agent') as const,
-                content: `Message ${i}`,
-                timestamp,
-              });
-            }
-
-            const store = useAppStore.getState();
-            store.clearMessages();
-            
-            // Add messages in random order
-            const shuffled = [...messages].sort(() => Math.random() - 0.5);
-            for (const message of shuffled) {
-              store.addMessage(message);
-            }
-
-            // Act - Render component
-            const { container } = render(
-              <QueryClientProvider client={queryClient}>
-                <ChatInterface selectedAgent={agent} />
-              </QueryClientProvider>
-            );
-
-            // Assert - Property: Messages should be chronologically ordered
-            await waitFor(() => {
-              const messageElements = container.querySelectorAll('[role="article"]');
-              expect(messageElements.length).toBe(messageCount);
-            });
-
-            const storeMessages = useAppStore.getState().messages;
-
-            // Property 1: Each message should come after the previous one
-            for (let i = 1; i < storeMessages.length; i++) {
-              expect(storeMessages[i].timestamp.getTime())
-                .toBeGreaterThanOrEqual(storeMessages[i - 1].timestamp.getTime());
-            }
-
-            // Property 2: First message should be the oldest
-            const oldestMessage = messages.reduce((oldest, msg) => 
-              msg.timestamp.getTime() < oldest.timestamp.getTime() ? msg : oldest
-            );
-            expect(storeMessages[0].id).toBe(oldestMessage.id);
-
-            // Property 3: Last message should be the newest
-            const newestMessage = messages.reduce((newest, msg) => 
-              msg.timestamp.getTime() > newest.timestamp.getTime() ? msg : newest
-            );
-            expect(storeMessages[storeMessages.length - 1].id).toBe(newestMessage.id);
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
-
-    /**
-     * Property: For any single message, it should be displayed correctly
-     * (edge case: single element is trivially sorted)
-     */
-    it('should handle single message correctly', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          agentArbitrary,
+  it('should display messages in chronological order for any message sequence', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        agentArbitrary,
+        fc.array(
           fc.record({
-            id: fc.uuid(),
+            id: uniqueMessageId(),
             role: fc.constantFrom('user' as const, 'agent' as const),
-            content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
+            content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
             timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
           }),
-          async (agent, message) => {
-            // Arrange
-            const store = useAppStore.getState();
-            store.clearMessages();
+          { minLength: 2, maxLength: 20 }
+        ),
+        async (agent, messages) => {
+          // Arrange - Add messages to store in random order
+          const store = useAppStore.getState();
+          store.clearMessages();
+
+          // Shuffle messages to ensure they're not already sorted
+          const shuffledMessages = [...messages].sort(() => Math.random() - 0.5);
+
+          for (const message of shuffledMessages) {
             store.addMessage(message);
-
-            // Act
-            const { container } = render(
-              <QueryClientProvider client={queryClient}>
-                <ChatInterface selectedAgent={agent} />
-              </QueryClientProvider>
-            );
-
-            // Assert - Property: Single message should be displayed
-            await waitFor(() => {
-              const messageElements = container.querySelectorAll('[role="article"]');
-              expect(messageElements.length).toBe(1);
-            });
-
-            const storeMessages = useAppStore.getState().messages;
-
-            // Property: Message should match the input
-            expect(storeMessages.length).toBe(1);
-            expect(storeMessages[0].id).toBe(message.id);
-            expect(storeMessages[0].content).toBe(message.content);
-            expect(storeMessages[0].timestamp.getTime()).toBe(message.timestamp.getTime());
           }
-        ),
-        { numRuns: 25 }
-      );
-    });
 
-    /**
-     * Property: For any sequence of alternating user and agent messages,
-     * chronological order should be maintained regardless of role
-     */
-    it('should maintain chronological order regardless of message role', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          agentArbitrary,
-          fc.array(
-            fc.record({
-              id: fc.uuid(),
-              role: fc.constantFrom('user' as const, 'agent' as const),
-              content: fc.string({ minLength: 1, maxLength: 500 }).filter(s => s.trim().length > 0),
-              timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
-            }),
-            { minLength: 4, maxLength: 20 }
-          ),
-          async (agent, messages) => {
-            // Arrange
-            const store = useAppStore.getState();
-            store.clearMessages();
-            
-            // Add messages in random order
-            const shuffled = [...messages].sort(() => Math.random() - 0.5);
-            for (const message of shuffled) {
-              store.addMessage(message);
-            }
+          // Act - Render component
+          const { container } = render(
+            <QueryClientProvider client={queryClient}>
+              <ChatInterface selectedAgent={agent} />
+            </QueryClientProvider>
+          );
 
-            // Act
-            const { container } = render(
-              <QueryClientProvider client={queryClient}>
-                <ChatInterface selectedAgent={agent} />
-              </QueryClientProvider>
-            );
+          // Assert - Property: Messages should be displayed in chronological order
+          await waitFor(() => {
+            const messageElements = container.querySelectorAll('[role="article"]');
+            expect(messageElements.length).toBeGreaterThan(0);
+          });
 
-            // Assert
-            await waitFor(() => {
-              const messageElements = container.querySelectorAll('[role="article"]');
-              expect(messageElements.length).toBe(messages.length);
-            });
+          const messageElements = container.querySelectorAll('[role="article"]');
+          const displayedMessages = Array.from(messageElements);
 
+          // Property 1: Number of displayed messages should match input
+          expect(displayedMessages.length).toBe(messages.length);
+
+          // Property 2: Messages should be in chronological order
+          // Extract timestamps from the displayed messages
+          const displayedTimestamps: Date[] = [];
+          displayedMessages.forEach((element, index) => {
+            // Get the timestamp from the store messages (which should be sorted)
             const storeMessages = useAppStore.getState().messages;
-
-            // Property 1: Chronological order should be maintained
-            for (let i = 1; i < storeMessages.length; i++) {
-              expect(storeMessages[i].timestamp.getTime())
-                .toBeGreaterThanOrEqual(storeMessages[i - 1].timestamp.getTime());
+            if (storeMessages[index]) {
+              displayedTimestamps.push(storeMessages[index].timestamp);
             }
+          });
 
-            // Property 2: Role should not affect ordering
-            // Verify that messages are not grouped by role
-            const sortedByTimestamp = [...messages].sort((a, b) => 
-              a.timestamp.getTime() - b.timestamp.getTime()
-            );
-            
-            for (let i = 0; i < sortedByTimestamp.length; i++) {
-              expect(storeMessages[i].role).toBe(sortedByTimestamp[i].role);
-            }
+          // Verify chronological ordering (each timestamp >= previous)
+          for (let i = 1; i < displayedTimestamps.length; i++) {
+            const prevTime = displayedTimestamps[i - 1].getTime();
+            const currTime = displayedTimestamps[i].getTime();
+
+            // Property: Current message timestamp should be >= previous message timestamp
+            expect(currTime).toBeGreaterThanOrEqual(prevTime);
           }
-        ),
-        { numRuns: 25 }
-      );
-    });
+
+          // Property 3: Displayed order should match sorted order
+          const sortedMessages = [...messages].sort(
+            (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+          );
+
+          const storeMessages = useAppStore.getState().messages;
+          for (let i = 0; i < sortedMessages.length; i++) {
+            expect(storeMessages[i].id).toBe(sortedMessages[i].id);
+            expect(storeMessages[i].timestamp.getTime()).toBe(
+              sortedMessages[i].timestamp.getTime()
+            );
+          }
+        }
+      ),
+      { numRuns: 25 }
+    );
   });
+
+  /**
+   * Property: For any sequence of messages with identical timestamps,
+   * the order should be stable (maintain insertion order)
+   */
+  it('should maintain stable order for messages with identical timestamps', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        agentArbitrary,
+        fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
+        fc.array(
+          fc.record({
+            id: uniqueMessageId(),
+            role: fc.constantFrom('user' as const, 'agent' as const),
+            content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
+          }),
+          { minLength: 2, maxLength: 10 }
+        ),
+        async (agent, sharedTimestamp, messageData) => {
+          // Arrange - Create messages with identical timestamps
+          const messages = messageData.map((data) => ({
+            ...data,
+            timestamp: new Date(sharedTimestamp.getTime()), // Same timestamp for all
+          }));
+
+          const store = useAppStore.getState();
+          store.clearMessages();
+
+          // Add messages in order
+          for (const message of messages) {
+            store.addMessage(message);
+          }
+
+          // Act - Render component
+          const { container } = render(
+            <QueryClientProvider client={queryClient}>
+              <ChatInterface selectedAgent={agent} />
+            </QueryClientProvider>
+          );
+
+          // Assert - Property: Messages with same timestamp should maintain insertion order
+          await waitFor(() => {
+            const messageElements = container.querySelectorAll('[role="article"]');
+            expect(messageElements.length).toBe(messages.length);
+          });
+
+          const storeMessages = useAppStore.getState().messages;
+
+          // Property 1: All messages should have the same timestamp
+          for (let i = 0; i < storeMessages.length; i++) {
+            expect(storeMessages[i].timestamp.getTime()).toBe(sharedTimestamp.getTime());
+          }
+
+          // Property 2: Order should match insertion order
+          for (let i = 0; i < messages.length; i++) {
+            expect(storeMessages[i].id).toBe(messages[i].id);
+            expect(storeMessages[i].content).toBe(messages[i].content);
+          }
+        }
+      ),
+      { numRuns: 25 }
+    );
+  });
+
+  /**
+   * Property: For any sequence where older messages are added after newer ones,
+   * the display should still show chronological order
+   */
+  it('should maintain chronological order even when older messages are added later', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        agentArbitrary,
+        fc.array(
+          fc.record({
+            id: uniqueMessageId(),
+            role: fc.constantFrom('user' as const, 'agent' as const),
+            content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
+            timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
+          }),
+          { minLength: 3, maxLength: 15 }
+        ),
+        async (agent, messages) => {
+          // Arrange - Add messages in reverse chronological order
+          const store = useAppStore.getState();
+          store.clearMessages();
+
+          // Sort messages by timestamp descending (newest first)
+          const reversedMessages = [...messages].sort(
+            (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+          );
+
+          // Add messages in reverse order
+          for (const message of reversedMessages) {
+            store.addMessage(message);
+          }
+
+          // Act - Render component
+          const { container } = render(
+            <QueryClientProvider client={queryClient}>
+              <ChatInterface selectedAgent={agent} />
+            </QueryClientProvider>
+          );
+
+          // Assert - Property: Despite reverse insertion, display should be chronological
+          await waitFor(() => {
+            const messageElements = container.querySelectorAll('[role="article"]');
+            expect(messageElements.length).toBe(messages.length);
+          });
+
+          const storeMessages = useAppStore.getState().messages;
+
+          // Property: Messages should be in chronological order (oldest first)
+          for (let i = 1; i < storeMessages.length; i++) {
+            const prevTime = storeMessages[i - 1].timestamp.getTime();
+            const currTime = storeMessages[i].timestamp.getTime();
+
+            expect(currTime).toBeGreaterThanOrEqual(prevTime);
+          }
+
+          // Property: Should match the correctly sorted order
+          const correctlySorted = [...messages].sort(
+            (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+          );
+
+          for (let i = 0; i < correctlySorted.length; i++) {
+            expect(storeMessages[i].id).toBe(correctlySorted[i].id);
+          }
+        }
+      ),
+      { numRuns: 25 }
+    );
+  });
+
+  /**
+   * Property: For any sequence of messages with various timestamp gaps,
+   * the chronological ordering should be maintained
+   */
+  it('should maintain chronological order with various timestamp gaps', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        agentArbitrary,
+        fc.integer({ min: 5, max: 15 }),
+        async (agent, messageCount) => {
+          // Arrange - Create messages with varying time gaps
+          const baseTime = new Date('2024-01-01T00:00:00Z').getTime();
+          const messages = [];
+
+          for (let i = 0; i < messageCount; i++) {
+            // Random time gap between 1 second and 1 hour
+            const timeGap = Math.floor(Math.random() * 3600000) + 1000;
+            const timestamp = new Date(baseTime + i * timeGap);
+
+            messages.push({
+              id: `msg-${i}-${Math.random()}`,
+              role: (i % 2 === 0 ? 'user' : 'agent') as const,
+              content: `Message ${i}`,
+              timestamp,
+            });
+          }
+
+          const store = useAppStore.getState();
+          store.clearMessages();
+
+          // Add messages in random order
+          const shuffled = [...messages].sort(() => Math.random() - 0.5);
+          for (const message of shuffled) {
+            store.addMessage(message);
+          }
+
+          // Act - Render component
+          const { container } = render(
+            <QueryClientProvider client={queryClient}>
+              <ChatInterface selectedAgent={agent} />
+            </QueryClientProvider>
+          );
+
+          // Assert - Property: Messages should be chronologically ordered
+          await waitFor(() => {
+            const messageElements = container.querySelectorAll('[role="article"]');
+            expect(messageElements.length).toBe(messageCount);
+          });
+
+          const storeMessages = useAppStore.getState().messages;
+
+          // Property 1: Each message should come after the previous one
+          for (let i = 1; i < storeMessages.length; i++) {
+            expect(storeMessages[i].timestamp.getTime()).toBeGreaterThanOrEqual(
+              storeMessages[i - 1].timestamp.getTime()
+            );
+          }
+
+          // Property 2: First message should be the oldest
+          const oldestMessage = messages.reduce((oldest, msg) =>
+            msg.timestamp.getTime() < oldest.timestamp.getTime() ? msg : oldest
+          );
+          expect(storeMessages[0].id).toBe(oldestMessage.id);
+
+          // Property 3: Last message should be the newest
+          const newestMessage = messages.reduce((newest, msg) =>
+            msg.timestamp.getTime() > newest.timestamp.getTime() ? msg : newest
+          );
+          expect(storeMessages[storeMessages.length - 1].id).toBe(newestMessage.id);
+        }
+      ),
+      { numRuns: 25 }
+    );
+  });
+
+  /**
+   * Property: For any single message, it should be displayed correctly
+   * (edge case: single element is trivially sorted)
+   */
+  it('should handle single message correctly', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        agentArbitrary,
+        fc.record({
+          id: uniqueMessageId(),
+          role: fc.constantFrom('user' as const, 'agent' as const),
+          content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
+          timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
+        }),
+        async (agent, message) => {
+          // Arrange
+          const store = useAppStore.getState();
+          store.clearMessages();
+          store.addMessage(message);
+
+          // Act
+          const { container } = render(
+            <QueryClientProvider client={queryClient}>
+              <ChatInterface selectedAgent={agent} />
+            </QueryClientProvider>
+          );
+
+          // Assert - Property: Single message should be displayed
+          await waitFor(() => {
+            const messageElements = container.querySelectorAll('[role="article"]');
+            expect(messageElements.length).toBe(1);
+          });
+
+          const storeMessages = useAppStore.getState().messages;
+
+          // Property: Message should match the input
+          expect(storeMessages.length).toBe(1);
+          expect(storeMessages[0].id).toBe(message.id);
+          expect(storeMessages[0].content).toBe(message.content);
+          expect(storeMessages[0].timestamp.getTime()).toBe(message.timestamp.getTime());
+        }
+      ),
+      { numRuns: 25 }
+    );
+  });
+
+  /**
+   * Property: For any sequence of alternating user and agent messages,
+   * chronological order should be maintained regardless of role
+   */
+  it('should maintain chronological order regardless of message role', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        agentArbitrary,
+        fc.array(
+          fc.record({
+            id: uniqueMessageId(),
+            role: fc.constantFrom('user' as const, 'agent' as const),
+            content: fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0),
+            timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
+          }),
+          { minLength: 4, maxLength: 20 }
+        ),
+        async (agent, messages) => {
+          // Arrange
+          const store = useAppStore.getState();
+          store.clearMessages();
+
+          // Add messages in random order
+          const shuffled = [...messages].sort(() => Math.random() - 0.5);
+          for (const message of shuffled) {
+            store.addMessage(message);
+          }
+
+          // Act
+          const { container } = render(
+            <QueryClientProvider client={queryClient}>
+              <ChatInterface selectedAgent={agent} />
+            </QueryClientProvider>
+          );
+
+          // Assert
+          await waitFor(() => {
+            const messageElements = container.querySelectorAll('[role="article"]');
+            expect(messageElements.length).toBe(messages.length);
+          });
+
+          const storeMessages = useAppStore.getState().messages;
+
+          // Property 1: Chronological order should be maintained
+          for (let i = 1; i < storeMessages.length; i++) {
+            expect(storeMessages[i].timestamp.getTime()).toBeGreaterThanOrEqual(
+              storeMessages[i - 1].timestamp.getTime()
+            );
+          }
+
+          // Property 2: Role should not affect ordering
+          // Verify that messages are not grouped by role
+          const sortedByTimestamp = [...messages].sort(
+            (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+          );
+
+          for (let i = 0; i < sortedByTimestamp.length; i++) {
+            expect(storeMessages[i].role).toBe(sortedByTimestamp[i].role);
+          }
+        }
+      ),
+      { numRuns: 25 }
+    );
+  });
+});

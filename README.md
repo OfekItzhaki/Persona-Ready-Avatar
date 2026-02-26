@@ -157,6 +157,24 @@ npm run test:coverage
 npm run test:e2e
 ```
 
+### Known Test Issues
+
+Some complex integration property tests in `__tests__/integration/response-display-tts.properties.test.tsx` are currently skipped due to timeout issues with the full test suite. These tests validate response display and TTS triggering with extensive property-based testing iterations. The functionality is covered by:
+
+- Unit tests for individual components
+- Other integration tests for the conversation flow
+- Manual testing during development
+
+To run tests for specific files or components:
+
+```bash
+# Run tests for a specific file
+npm test -- components/__tests__/ChatInterface.test.tsx
+
+# Run tests matching a pattern
+npm test -- --grep "ChatInterface"
+```
+
 ## API Integration
 
 ### Brain API Endpoints
@@ -254,6 +272,7 @@ type(scope): description
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -263,6 +282,7 @@ type(scope): description
 - `chore`: Maintenance tasks
 
 **Examples:**
+
 ```
 feat(avatar): add blendshape interpolation
 fix(tts): handle synthesis timeout errors
@@ -273,6 +293,7 @@ test(chat): add property tests for message validation
 ### Pre-commit Hooks
 
 Pre-commit hooks automatically run on staged files:
+
 - ESLint for code linting
 - Prettier for code formatting
 - TypeScript type checking

@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { afterEach, beforeAll } from 'vitest';
@@ -71,3 +72,10 @@ global.AudioContext = class AudioContext {
     return Promise.resolve();
   }
 } as unknown as typeof AudioContext;
+
+// Mock ResizeObserver for react-three-fiber
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver;

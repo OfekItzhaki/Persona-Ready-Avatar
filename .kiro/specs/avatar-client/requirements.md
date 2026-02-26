@@ -288,3 +288,29 @@ The Avatar Client is a Next.js web application that provides a 3D animated avata
 3. THE Avatar_Client SHALL document the git workflow and branching strategy in the README.md
 4. THE Avatar_Client SHALL use Husky to enforce pre-commit checks including linting, formatting, and tests
 5. THE Avatar_Client SHALL configure lint-staged to run checks only on staged files for faster commits
+
+### Requirement 21: Message Chronological Ordering Test Reliability
+
+**User Story:** As a developer, I want reliable property-based tests for message ordering, so that I can verify the store maintains chronological order without flaky test failures.
+
+#### Acceptance Criteria
+
+1. THE ChatInterface property tests SHALL verify messages are displayed in chronological order based on timestamp
+2. THE property tests SHALL use content-based verification instead of ID comparison to avoid unstable sort issues
+3. WHEN messages have identical timestamps, THE tests SHALL verify all messages are present without requiring specific ordering
+4. THE tests SHALL verify chronological ordering by comparing adjacent message timestamps
+5. THE tests SHALL generate unique message IDs to prevent duplicate UUID collisions in property-based tests
+6. THE tests SHALL pass consistently with randomly generated message sequences
+
+### Requirement 22: Input Disabling During Request Test Reliability
+
+**User Story:** As a developer, I want reliable property-based tests for input disabling behavior, so that I can verify the UI correctly disables inputs during pending requests.
+
+#### Acceptance Criteria
+
+1. THE ChatInterface property tests SHALL verify input field is disabled while a request is pending
+2. THE ChatInterface property tests SHALL verify send button is disabled while a request is pending
+3. THE tests SHALL verify inputs are re-enabled after request completion or failure
+4. THE tests SHALL properly handle React Query mutation state in the test environment
+5. THE tests SHALL use appropriate timing and cleanup to avoid timeout failures
+6. THE tests SHALL verify duplicate submission prevention during pending requests

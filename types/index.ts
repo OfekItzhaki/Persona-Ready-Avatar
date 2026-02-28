@@ -270,3 +270,87 @@ export const VISEME_BLENDSHAPE_MAP: Record<number, string> = {
   20: 'viseme_aa', // a (about)
   21: 'viseme_E',  // e (taken)
 };
+
+// Avatar System Types
+
+export interface AvatarConfig {
+  id: string;
+  name: string;
+  url: string;
+  thumbnailUrl?: string;
+  description?: string;
+  source: 'ready-player-me' | 'local' | 'fallback';
+  metadata?: {
+    author?: string;
+    license?: string;
+    version?: string;
+  };
+}
+
+export interface AvatarOption {
+  id: string;
+  name: string;
+  url: string;
+  thumbnailUrl?: string;
+  description?: string;
+}
+
+export interface AvatarPreferences {
+  selectedAvatarId: string;
+  lastUpdated: Date;
+  loadHistory: Array<{
+    avatarId: string;
+    timestamp: Date;
+    success: boolean;
+    loadTimeMs?: number;
+  }>;
+}
+
+export type AvatarLoadError =
+  | { type: 'NETWORK_ERROR'; message: string; retryable: true }
+  | { type: 'TIMEOUT'; duration: number; retryable: true }
+  | { type: 'INVALID_FORMAT'; details: string; retryable: false }
+  | { type: 'NOT_FOUND'; url: string; retryable: false }
+  | { type: 'WEBGL_ERROR'; message: string; retryable: false };
+
+export interface AvatarLoadResult {
+  success: boolean;
+  model?: any; // GLTF type from @react-three/drei
+  error?: AvatarLoadError;
+  fromCache: boolean;
+}
+
+export interface AvatarMetadata {
+  meshCount: number;
+  triangleCount: number;
+  blendshapeCount: number;
+  availableBlendshapes: string[];
+  missingVisemeBlendshapes: string[];
+  fileSize: number;
+}
+
+export type AvatarValidationError =
+  | { type: 'INVALID_GLB'; message: string }
+  | { type: 'NO_MESH'; message: string }
+  | { type: 'CORRUPTED_FILE'; message: string };
+
+export type AvatarValidationWarning =
+  | { type: 'MISSING_BLENDSHAPES'; blendshapes: string[] }
+  | { type: 'HIGH_POLY_COUNT'; triangles: number }
+  | { type: 'LARGE_FILE_SIZE'; sizeBytes: number };
+
+export interface AvatarValidationResult {
+  valid: boolean;
+  errors: AvatarValidationError[];
+  warnings: AvatarValidationWarning[];
+  metadata: AvatarMetadata;
+}
+
+export interface WebGLContextState {
+  contextLost: boolean;
+  restoreAttempts: number;
+  maxRestoreAttempts: number;
+  lastContextLossTime: Date | null;
+}
+
+export type AvatarLoadingState = 'idle' | 'loading' | 'loaded' | 'error' | 'fallback';

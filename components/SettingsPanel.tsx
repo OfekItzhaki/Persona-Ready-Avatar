@@ -5,6 +5,7 @@ import { useAppStore } from '@/lib/store/useAppStore';
 import { PreferencesService } from '@/lib/services/PreferencesService';
 import { LocalStorageRepository } from '@/lib/repositories/LocalStorageRepository';
 import { ThemeManager } from '@/lib/services/ThemeManager';
+import AvatarSelector from './AvatarSelector';
 
 /**
  * GraphicsSettingsSection Component
@@ -1927,7 +1928,27 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                   </button>
                 </div>
 
-                <AppearanceSettingsSection />
+                {/* Avatar Selection Section */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-md font-medium text-gray-900 mb-2">Avatar Selection</h4>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Choose your preferred 3D avatar. Your selection will be saved and loaded automatically.
+                    </p>
+                  </div>
+                  <AvatarSelector
+                    options={useAppStore.getState().availableAvatars}
+                    selectedId={useAppStore.getState().selectedAvatarId}
+                    onSelect={(id) => {
+                      useAppStore.getState().setSelectedAvatar(id);
+                      useAppStore.getState().setAvatarLoadingState('loading');
+                    }}
+                  />
+                </div>
+
+                <div className="border-t border-gray-200 pt-6">
+                  <AppearanceSettingsSection />
+                </div>
               </div>
             </div>
           )}

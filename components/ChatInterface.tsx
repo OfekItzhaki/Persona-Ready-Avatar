@@ -39,7 +39,7 @@ interface ChatInterfaceProps {
   ttsService?: {
     synthesizeSpeech: (text: string, voice: string, language: string) => Promise<any>;
   };
-  selectedAgent?: Agent | null;
+  selectedAgent?: Agent;
   className?: string;
 }
 

@@ -5,8 +5,10 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useAppStore } from '@/lib/store/useAppStore';
-import { VISEME_BLENDSHAPE_MAP } from '@/types';
+import { VISEME_BLENDSHAPE_MAP, WebGLContextState } from '@/types';
 import * as THREE from 'three';
+import FallbackAvatar from './FallbackAvatar';
+import { avatarValidatorService } from '@/lib/services/AvatarValidatorService';
 
 /**
  * Simple Error Boundary for catching errors in child components
@@ -54,6 +56,11 @@ interface AvatarCanvasProps {
  * Memory Management (Requirement 42):
  * - Disposes Three.js resources on unmount
  * - Reuses shader programs and materials
+ * 
+ * Validation (Requirements 1.3, 8.1, 8.3):
+ * - Validates model on load
+ * - Checks for missing viseme blendshapes
+ * - Logs warnings for incompatible models
  */
 function AvatarModel({ modelUrl }: { modelUrl: string }) {
   const { scene, nodes } = useGLTF(modelUrl, undefined, undefined, (error) => {
@@ -63,8 +70,34 @@ function AvatarModel({ modelUrl }: { modelUrl: string }) {
   });
   
   const currentViseme = useAppStore((state) => state.currentViseme);
+  const setAvatarLoadingState = useAppStore((state) => state.setAvatarLoadingState);
   const [targetBlendshapes, setTargetBlendshapes] = useState<Record<string, number>>({});
   const [currentBlendshapes, setCurrentBlendshapes] = useState<Record<string, number>>({});
+  const [lipSyncDisabled, setLipSyncDisabled] = useState(false);
+
+  // Validate model on load (Requirements 1.3, 8.1, 8.3)
+  useEffect(() => {
+    const gltf = { scene, nodes } as any;
+    const validationResult = avatarValidatorService.validateModel(gltf);
+
+    if (!validationResult.valid) {
+      console.error('Avatar model validation failed:', validationResult.errors);
+    }
+
+    // Check for missing viseme blendshapes
+    if (validationResult.metadata.missingVisemeBlendshapes.length > 0) {
+      console.warn('Avatar model is missing viseme blendshapes:', validationResult.metadata.missingVisemeBlendshapes);
+      console.warn('Lip synchronization will be disabled for this model');
+      setLipSyncDisabled(true);
+    }
+
+    // Log validation warnings
+    if (validationResult.warnings.length > 0) {
+      console.warn('Avatar model validation warnings:', validationResult.warnings);
+    }
+
+    setAvatarLoadingState('loaded');
+  }, [scene, nodes, setAvatarLoadingState]);
 
   // Cleanup Three.js resources on unmount (Requirement 42.1)
   useEffect(() => {
@@ -117,9 +150,9 @@ function AvatarModel({ modelUrl }: { modelUrl: string }) {
       node.morphTargetInfluences !== undefined
   );
 
-  // Update target blendshapes when viseme changes
+  // Update target blendshapes when viseme changes (only if lip sync is enabled)
   useEffect(() => {
-    if (!avatarMesh?.morphTargetDictionary) return;
+    if (lipSyncDisabled || !avatarMesh?.morphTargetDictionary) return;
 
     if (currentViseme) {
       // Map viseme ID to blendshape name
@@ -145,7 +178,7 @@ function AvatarModel({ modelUrl }: { modelUrl: string }) {
       }
       setTargetBlendshapes(newTargets);
     }
-  }, [currentViseme, avatarMesh]);
+  }, [currentViseme, avatarMesh, lipSyncDisabled]);
 
   // Animate blendshapes using lerp interpolation at 60 FPS
   useFrame((_state, delta) => {
@@ -181,28 +214,12 @@ function AvatarModel({ modelUrl }: { modelUrl: string }) {
 }
 
 /**
- * Loading Component
- * 
- * Displays a loading indicator while the 3D model is being loaded.
- */
-function LoadingFallback() {
-  return (
-    <div className="flex items-center justify-center h-full">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading avatar model...</p>
-      </div>
-    </div>
-  );
-}
-
-/**
  * Error Boundary Component
  * 
  * Displays an error message when the model fails to load.
- * Includes failure reason, troubleshooting steps, and reload button.
+ * Includes failure reason, troubleshooting steps, retry button, and fallback option.
  */
-function ErrorFallback({ error, onRetry }: { error: Error; onRetry: () => void }) {
+function ErrorFallback({ error, onRetry, onUseFallback }: { error: Error; onRetry: () => void; onUseFallback?: () => void }) {
   useEffect(() => {
     // Log detailed error information for debugging
     console.error('Avatar model load failed:', {
@@ -334,6 +351,16 @@ function ErrorFallback({ error, onRetry }: { error: Error; onRetry: () => void }
             Retry Loading Avatar
           </button>
           
+          {onUseFallback && (
+            <button
+              onClick={onUseFallback}
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              aria-label="Use fallback avatar"
+            >
+              Use Fallback Avatar
+            </button>
+          )}
+          
           <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
             The application will continue in text-only mode. You can still send and receive messages.
           </p>
@@ -357,41 +384,134 @@ function ErrorFallback({ error, onRetry }: { error: Error; onRetry: () => void }
  * - 60 FPS animation loop
  * - OrbitControls for camera manipulation
  * - Loading and error states with retry functionality
- * - WebGL context loss handling
+ * - WebGL context loss handling with automatic recovery
+ * - Fallback avatar for error scenarios
  * - Responsive canvas sizing
- * - Graceful fallback to text-only mode
+ * - Graceful degradation
  * 
- * Requirements: 1.1-1.5, 3.3, 3.4, 3.6, 3.7, 12.4, 40
+ * Requirements: 1.1-1.5, 3.3, 3.4, 3.6, 3.7, 9.1-9.5, 12.4, 40
  */
 export default function AvatarCanvas({ modelUrl, className = '' }: AvatarCanvasProps) {
   const [error, setError] = useState<Error | null>(null);
   const [retryKey, setRetryKey] = useState(0);
+  // Use fallback by default if no modelUrl is provided or if explicitly requested
+  const [useFallback, setUseFallback] = useState(!modelUrl || modelUrl.trim() === '');
+  const [webglContextState, setWebglContextState] = useState<WebGLContextState>({
+    contextLost: false,
+    restoreAttempts: 0,
+    maxRestoreAttempts: 3,
+    lastContextLossTime: null,
+  });
+
+  const avatarLoadingState = useAppStore((state) => state.avatarLoadingState);
+  const setAvatarLoadingState = useAppStore((state) => state.setAvatarLoadingState);
+  const setAvatarError = useAppStore((state) => state.setAvatarError);
 
   const handleRetry = () => {
     setError(null);
+    setUseFallback(false);
     setRetryKey((prev) => prev + 1);
+    setAvatarLoadingState('idle');
+    setAvatarError(null);
     // Clear the GLTF cache to force reload
     useGLTF.clear(modelUrl);
   };
 
   const handleWebGLContextLost = (event: Event) => {
     event.preventDefault();
+    
+    const now = new Date();
+    setWebglContextState((prev) => ({
+      ...prev,
+      contextLost: true,
+      lastContextLossTime: now,
+    }));
+
     console.error('WebGL context lost event:', {
-      timestamp: new Date().toISOString(),
+      timestamp: now.toISOString(),
       modelUrl,
+      restoreAttempts: webglContextState.restoreAttempts,
     });
+
     setError(new Error('WebGL context lost'));
+    setAvatarError({
+      type: 'WEBGL_ERROR',
+      message: 'WebGL context lost',
+      retryable: false,
+    });
   };
 
   const handleWebGLContextRestored = () => {
     console.log('WebGL context restored, attempting to reload avatar');
-    handleRetry();
+    
+    setWebglContextState((prev) => {
+      const newAttempts = prev.restoreAttempts + 1;
+      
+      // Check if we've exceeded max restore attempts
+      if (newAttempts >= prev.maxRestoreAttempts) {
+        console.error('Max WebGL context restore attempts exceeded, using fallback');
+        setUseFallback(true);
+        setAvatarLoadingState('fallback');
+        return {
+          ...prev,
+          contextLost: false,
+          restoreAttempts: newAttempts,
+        };
+      }
+
+      // Attempt to reload avatar
+      handleRetry();
+      
+      return {
+        ...prev,
+        contextLost: false,
+        restoreAttempts: newAttempts,
+      };
+    });
   };
+
+  // Use fallback if error is set or if explicitly requested
+  if (error && useFallback) {
+    const fallbackType = (process.env.NEXT_PUBLIC_AVATAR_FALLBACK_TYPE as 'cube' | 'sphere') || 'cube';
+    const fallbackColor = process.env.NEXT_PUBLIC_AVATAR_FALLBACK_COLOR || '#4A90E2';
+
+    return (
+      <div className={`w-full h-full ${className}`}>
+        <Canvas
+          camera={{ position: [0, 0, 5], fov: 50 }}
+          className="w-full h-full"
+          style={{ background: '#f0f0f0' }}
+        >
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[10, 10, 5]} intensity={1} />
+          <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
+          <FallbackAvatar type={fallbackType} animated={true} color={fallbackColor} errorReason={error.message} />
+        </Canvas>
+        
+        {/* Fallback explanation overlay */}
+        <div className="absolute bottom-4 left-4 right-4 bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3">
+          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            <strong>Using fallback avatar:</strong> {error.message}
+          </p>
+          <button
+            onClick={handleRetry}
+            className="mt-2 text-xs px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
       <div className={`w-full h-full ${className}`}>
-        <ErrorFallback error={error} onRetry={handleRetry} />
+        <ErrorFallback 
+          error={error} 
+          onRetry={handleRetry}
+          onUseFallback={() => setUseFallback(true)}
+        />
       </div>
     );
   }
@@ -407,7 +527,7 @@ export default function AvatarCanvas({ modelUrl, className = '' }: AvatarCanvasP
         camera={{ position: [0, 0, 5], fov: 50 }}
         className="w-full h-full"
         onCreated={({ gl }) => {
-          // Handle WebGL context loss and restoration
+          // Handle WebGL context loss and restoration (Requirements 9.1, 9.2, 9.3, 9.4)
           gl.domElement.addEventListener('webglcontextlost', handleWebGLContextLost);
           gl.domElement.addEventListener('webglcontextrestored', handleWebGLContextRestored);
         }}
@@ -415,6 +535,11 @@ export default function AvatarCanvas({ modelUrl, className = '' }: AvatarCanvasP
         onError={(error) => {
           console.error('Canvas error:', error);
           setError(error instanceof Error ? error : new Error(String(error)));
+          setAvatarError({
+            type: 'WEBGL_ERROR',
+            message: error instanceof Error ? error.message : String(error),
+            retryable: false,
+          });
         }}
       >
         {/* Lighting */}
@@ -433,16 +558,28 @@ export default function AvatarCanvas({ modelUrl, className = '' }: AvatarCanvasP
 
         {/* Avatar Model with Suspense for loading state */}
         <Suspense fallback={null}>
-          <ErrorBoundary onError={(error) => setError(error)}>
+          <ErrorBoundary onError={(error) => {
+            setError(error);
+            setAvatarError({
+              type: 'INVALID_FORMAT',
+              details: error.message,
+              retryable: false,
+            });
+          }}>
             <AvatarModel modelUrl={modelUrl} />
           </ErrorBoundary>
         </Suspense>
       </Canvas>
 
       {/* Loading overlay */}
-      <Suspense fallback={<LoadingFallback />}>
-        <div style={{ display: 'none' }} />
-      </Suspense>
+      {avatarLoadingState === 'loading' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 dark:bg-gray-900/80">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading avatar model...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

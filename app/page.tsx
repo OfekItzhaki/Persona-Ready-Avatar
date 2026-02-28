@@ -18,6 +18,8 @@ import { useAgents } from '@/lib/hooks/useReactQuery';
 import { TTSService } from '@/lib/services/TTSService';
 import { AzureSpeechRepository } from '@/lib/repositories/AzureSpeechRepository';
 import { AudioManager } from '@/lib/services/AudioManager';
+import { LocalStorageRepository } from '@/lib/repositories/LocalStorageRepository';
+import { PreferencesService } from '@/lib/services/PreferencesService';
 import { VisemeCoordinator } from '@/lib/services/VisemeCoordinator';
 import { LanguageVoiceMapper } from '@/lib/services/LanguageVoiceMapper';
 import { preloadAvatarModel } from '@/components/AvatarCanvas';
@@ -59,10 +61,10 @@ export default function Home() {
 
   const selectedAgentId = useAppStore((state) => state.selectedAgentId);
   const { data: agents } = useAgents();
-  const selectedAgent = agents?.find((agent: Agent) => agent.id === selectedAgentId) || null;
+  const selectedAgent = agents?.find((agent: Agent) => agent.id === selectedAgentId);
 
-  // Model URL - replace with actual model path
-  const modelUrl = '/models/avatar.glb';
+  // Model URL - use environment variable or empty string to trigger fallback
+  const modelUrl = process.env.NEXT_PUBLIC_AVATAR_MODEL_URL || '';
 
   const setCurrentViseme = useAppStore((state) => state.setCurrentViseme);
   const setPlaybackState = useAppStore((state) => state.setPlaybackState);
@@ -92,6 +94,13 @@ export default function Home() {
       const visemeCoordinator = new VisemeCoordinator();
       const languageVoiceMapper = new LanguageVoiceMapper();
       
+      // Initialize PreferencesService with Zustand store
+      const localStorageRepo = new LocalStorageRepository();
+      const preferencesService = PreferencesService.initialize(
+        useAppStore.getState() as any,
+        localStorageRepo
+      );
+      
       // Connect VisemeCoordinator to Zustand store (Requirement 20)
       // Subscribe to viseme changes and update store
       const unsubscribeViseme = visemeCoordinator.subscribeToVisemeChanges((viseme) => {
@@ -109,13 +118,17 @@ export default function Home() {
         azureSpeechRepository,
         audioManager,
         visemeCoordinator,
-        languageVoiceMapper
+        languageVoiceMapper,
+        preferencesService
       );
 
       setTtsService(tts);
 
       // Preload GLB model for better performance (Requirement 11.5)
-      preloadAvatarModel(modelUrl);
+      // Only preload if modelUrl is provided
+      if (modelUrl && modelUrl.trim() !== '') {
+        preloadAvatarModel(modelUrl);
+      }
 
       setIsInitialized(true);
 

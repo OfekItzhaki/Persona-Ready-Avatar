@@ -22,20 +22,12 @@ function validateEnv(): EnvConfig {
   if (missingVars.length > 0) {
     const errorMessage = `Missing required environment variables: ${missingVars.join(', ')}`;
 
-    // Only throw error in browser (runtime), not during build
-    if (typeof window !== 'undefined') {
-      logger.error(errorMessage, {
-        component: 'EnvValidation',
-        missingVariables: missingVars,
-      });
-      throw new Error(errorMessage);
-    } else {
-      // During build/SSR, just log a warning
-      logger.warn(`${errorMessage} (build-time warning)`, {
-        component: 'EnvValidation',
-        missingVariables: missingVars,
-      });
-    }
+    // Log warning but don't crash the app
+    logger.warn(errorMessage, {
+      component: 'EnvValidation',
+      missingVariables: missingVars,
+      note: 'Application will continue with limited functionality. TTS and AI features will not work until credentials are provided.',
+    });
   } else {
     logger.info('Environment variables validated successfully', {
       component: 'EnvValidation',
@@ -58,6 +50,22 @@ export function getEnvConfig(): EnvConfig {
     envConfig = validateEnv();
   }
   return envConfig;
+}
+
+export function isEnvConfigured(): boolean {
+  const config = getEnvConfig();
+  return !!(config.azureSpeechKey && config.azureSpeechRegion && config.brainApiUrl);
+}
+
+export function getMissingEnvVars(): string[] {
+  const config = getEnvConfig();
+  const missing: string[] = [];
+  
+  if (!config.azureSpeechKey) missing.push('AZURE_SPEECH_KEY');
+  if (!config.azureSpeechRegion) missing.push('AZURE_SPEECH_REGION');
+  if (!config.brainApiUrl) missing.push('BRAIN_API_URL');
+  
+  return missing;
 }
 
 // Validate environment variables at module load time (application startup)

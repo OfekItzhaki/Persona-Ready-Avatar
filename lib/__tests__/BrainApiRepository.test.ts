@@ -77,7 +77,7 @@ describe('BrainApiRepository', () => {
         'Sending chat message',
         expect.objectContaining({
           component: 'BrainApiRepository',
-          endpoint: '/api/chat',
+          endpoint: '/chat',
           method: 'POST',
           agentId,
         })
@@ -345,7 +345,7 @@ describe('BrainApiRepository', () => {
         'Fetching agents',
         expect.objectContaining({
           component: 'BrainApiRepository',
-          endpoint: '/api/agents',
+          endpoint: '/agents',
           method: 'GET',
         })
       );

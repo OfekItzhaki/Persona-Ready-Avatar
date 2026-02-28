@@ -39,7 +39,7 @@ export class BrainApiRepository implements IBrainApiRepository {
    * @returns Result containing ChatResponse or ApiError
    */
   async sendMessage(agentId: string, message: string): Promise<Result<ChatResponse, ApiError>> {
-    const endpoint = '/api/chat';
+    const endpoint = '/chat';
     const url = `${this.baseUrl}${endpoint}`;
     const method = 'POST';
 
@@ -70,7 +70,7 @@ export class BrainApiRepository implements IBrainApiRepository {
    * @returns Result containing Agent array or ApiError
    */
   async getAgents(): Promise<Result<Agent[], ApiError>> {
-    const endpoint = '/api/agents';
+    const endpoint = '/agents';
     const url = `${this.baseUrl}${endpoint}`;
     const method = 'GET';
 

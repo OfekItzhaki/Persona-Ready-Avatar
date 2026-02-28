@@ -52,40 +52,42 @@ export const PostProcessingSystem: React.FC<PostProcessingSystemProps> = ({ conf
 
   return (
     <EffectComposer>
-      {finalConfig.enableAntiAliasing && <SMAA />}
+      <>
+        {finalConfig.enableAntiAliasing && <SMAA />}
 
-      {finalConfig.enableBloom && (
-        <Bloom
-          intensity={finalConfig.bloomIntensity}
-          luminanceThreshold={0.9}
-          luminanceSmoothing={0.9}
-          radius={finalConfig.bloomRadius}
-          mipmapBlur
-        />
-      )}
+        {finalConfig.enableBloom && (
+          <Bloom
+            intensity={finalConfig.bloomIntensity}
+            luminanceThreshold={0.9}
+            luminanceSmoothing={0.9}
+            radius={finalConfig.bloomRadius}
+            mipmapBlur
+          />
+        )}
 
-      {finalConfig.enableSSAO && (
-        <SSAO
-          blendFunction={BlendFunction.MULTIPLY}
-          samples={16}
-          radius={finalConfig.ssaoRadius}
-          intensity={finalConfig.ssaoIntensity}
-          luminanceInfluence={0.5}
-          color={new THREE.Color('black')}
-        />
-      )}
+        {finalConfig.enableSSAO && (
+          <SSAO
+            blendFunction={BlendFunction.MULTIPLY}
+            samples={16}
+            radius={finalConfig.ssaoRadius}
+            intensity={finalConfig.ssaoIntensity}
+            luminanceInfluence={0.5}
+            color={new THREE.Color('black')}
+          />
+        )}
 
-      {finalConfig.enableColorGrading && (
-        <ToneMapping
-          mode={ToneMappingMode.ACES_FILMIC}
-          resolution={256}
-          whitePoint={4.0}
-          middleGrey={0.6}
-          minLuminance={0.01}
-          averageLuminance={1.0}
-          adaptationRate={1.0}
-        />
-      )}
+        {finalConfig.enableColorGrading && (
+          <ToneMapping
+            mode={ToneMappingMode.ACES_FILMIC}
+            resolution={256}
+            whitePoint={4.0}
+            middleGrey={0.6}
+            minLuminance={0.01}
+            averageLuminance={1.0}
+            adaptationRate={1.0}
+          />
+        )}
+      </>
     </EffectComposer>
   );
 };

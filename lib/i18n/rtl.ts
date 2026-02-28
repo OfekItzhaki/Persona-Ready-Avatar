@@ -135,7 +135,7 @@ export function rtlTransform(
   // Mirror translateX values for RTL
   return transform.replace(
     /translateX\((-?\d+(?:\.\d+)?)(px|%|em|rem)\)/g,
-    (match, value, unit) => {
+    (_match, value, unit) => {
       const numValue = parseFloat(value);
       return `translateX(${-numValue}${unit})`;
     }

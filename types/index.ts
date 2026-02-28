@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Domain Models
 
 export interface Agent {
@@ -222,7 +224,81 @@ export interface IBrainApiRepository {
 }
 
 export interface IAzureSpeechRepository {
-  synthesize(text: string, config: SpeechConfig, isSSML?: boolean): Promise<Result<SynthesisResult, SpeechError>>;
+  synthesize(
+    text: string,
+    config: SpeechConfig,
+    isSSML?: boolean
+  ): Promise<Result<SynthesisResult, SpeechError>>;
+}
+
+export interface IVoiceInputService {
+  // Initialization
+  initialize(config: AzureSpeechConfig): Promise<void>;
+
+  // Recognition control
+  startRecognition(mode: RecognitionMode): Promise<void>;
+  stopRecognition(): Promise<void>;
+
+  // Configuration
+  updateLanguage(language: string): void;
+
+  // Event subscriptions
+  subscribeToResults(callback: (result: RecognitionResult) => void): () => void;
+  subscribeToErrors(callback: (error: RecognitionError) => void): () => void;
+
+  // State queries
+  isRecognizing(): boolean;
+  getMode(): RecognitionMode;
+}
+
+export interface IMicrophoneManager {
+  // Permission management
+  requestPermission(): Promise<PermissionResult>;
+  checkPermission(): Promise<PermissionState>;
+
+  // Audio capture
+  startCapture(): Promise<MediaStream>;
+  stopCapture(): void;
+
+  // Status queries
+  isAvailable(): boolean;
+  isCapturing(): boolean;
+
+  // Audio level monitoring
+  getAudioLevel(): number;
+  subscribeToAudioLevels(callback: (level: number) => void): () => void;
+}
+
+export interface ISpeechRecognizer {
+  // Configuration
+  configure(config: AzureSpeechConfig): void;
+
+  // Recognition control
+  startContinuousRecognition(audioStream: MediaStream): Promise<void>;
+  stopContinuousRecognition(): Promise<void>;
+
+  // Event handlers
+  onRecognizing(callback: (result: InterimResult) => void): void;
+  onRecognized(callback: (result: FinalResult) => void): void;
+  onError(callback: (error: RecognitionError) => void): void;
+  onSessionStarted(callback: () => void): void;
+  onSessionStopped(callback: () => void): void;
+
+  // State queries
+  isRecognizing(): boolean;
+}
+
+export interface IInputModeController {
+  // Mode management
+  setMode(mode: InputMode): void;
+  getMode(): InputMode;
+
+  // Persistence
+  savePreference(): void;
+  loadPreference(): InputMode;
+
+  // Event subscriptions
+  subscribeToModeChanges(callback: (mode: InputMode) => void): () => void;
 }
 
 export interface INotificationService {
@@ -239,36 +315,36 @@ export interface INotificationService {
 
 /**
  * Viseme-to-Blendshape Mapping
- * 
+ *
  * Azure Speech SDK provides 22 viseme IDs (0-21). These are mapped to blendshape targets
  * in the GLB model for lip synchronization.
- * 
+ *
  * Note: The GLB model must contain blendshape targets matching these names. If the model
  * uses different naming conventions, this mapping must be adjusted accordingly.
  */
 export const VISEME_BLENDSHAPE_MAP: Record<number, string> = {
   0: 'viseme_sil', // Silence
-  1: 'viseme_PP',  // p, b, m
-  2: 'viseme_FF',  // f, v
-  3: 'viseme_TH',  // th
-  4: 'viseme_DD',  // t, d
-  5: 'viseme_kk',  // k, g
-  6: 'viseme_CH',  // ch, j, sh
-  7: 'viseme_SS',  // s, z
-  8: 'viseme_nn',  // n, l
-  9: 'viseme_RR',  // r
+  1: 'viseme_PP', // p, b, m
+  2: 'viseme_FF', // f, v
+  3: 'viseme_TH', // th
+  4: 'viseme_DD', // t, d
+  5: 'viseme_kk', // k, g
+  6: 'viseme_CH', // ch, j, sh
+  7: 'viseme_SS', // s, z
+  8: 'viseme_nn', // n, l
+  9: 'viseme_RR', // r
   10: 'viseme_aa', // a (father)
-  11: 'viseme_E',  // e (bed)
-  12: 'viseme_I',  // i (feet)
-  13: 'viseme_O',  // o (boat)
-  14: 'viseme_U',  // u (book)
+  11: 'viseme_E', // e (bed)
+  12: 'viseme_I', // i (feet)
+  13: 'viseme_O', // o (boat)
+  14: 'viseme_U', // u (book)
   15: 'viseme_aa', // a (cat)
-  16: 'viseme_E',  // e (pet)
-  17: 'viseme_I',  // i (sit)
-  18: 'viseme_O',  // o (dog)
-  19: 'viseme_U',  // u (put)
+  16: 'viseme_E', // e (pet)
+  17: 'viseme_I', // i (sit)
+  18: 'viseme_O', // o (dog)
+  19: 'viseme_U', // u (put)
   20: 'viseme_aa', // a (about)
-  21: 'viseme_E',  // e (taken)
+  21: 'viseme_E', // e (taken)
 };
 
 // Avatar System Types
@@ -354,3 +430,103 @@ export interface WebGLContextState {
 }
 
 export type AvatarLoadingState = 'idle' | 'loading' | 'loaded' | 'error' | 'fallback';
+
+// Voice Input Types (Requirements: 2.1, 2.4, 6.1, 6.2, 6.3, 6.4)
+
+export type RecognitionMode = 'push-to-talk' | 'continuous';
+
+export interface AzureSpeechConfig {
+  subscriptionKey: string;
+  region: string;
+  language: string;
+}
+
+export interface RecognitionResult {
+  type: 'interim' | 'final';
+  text: string;
+  confidence?: number;
+  timestamp: number;
+}
+
+export type RecognitionError =
+  | { type: 'NETWORK_ERROR'; message: string; recoverable: boolean }
+  | { type: 'PERMISSION_DENIED'; message: string; recoverable: boolean }
+  | { type: 'MICROPHONE_UNAVAILABLE'; message: string; recoverable: boolean }
+  | { type: 'SYNTHESIS_FAILED'; message: string; recoverable: boolean }
+  | { type: 'AUTHENTICATION_ERROR'; message: string; recoverable: boolean }
+  | { type: 'TIMEOUT'; duration: number; recoverable: boolean };
+
+export type PermissionState = 'granted' | 'denied' | 'prompt';
+
+export interface PermissionResult {
+  granted: boolean;
+  error?: string;
+}
+
+export interface InterimResult {
+  text: string;
+  offset: number;
+}
+
+export interface FinalResult {
+  text: string;
+  confidence: number;
+  offset: number;
+  duration: number;
+}
+
+export type InputMode = 'voice' | 'text';
+
+export interface RecognitionSession {
+  id: string;
+  mode: RecognitionMode;
+  startTime: number;
+  endTime?: number;
+  status: SessionStatus;
+  interimResults: InterimResult[];
+  finalResults: FinalResult[];
+  errors: RecognitionError[];
+}
+
+export type SessionStatus = 'starting' | 'active' | 'stopping' | 'stopped' | 'error';
+
+export interface AudioConfig {
+  sampleRate: number; // 16000 Hz for Azure Speech Service
+  channelCount: number; // 1 (mono)
+  echoCancellation: boolean;
+  noiseSuppression: boolean;
+  autoGainControl: boolean;
+}
+
+export interface VoiceInputPreferences {
+  inputMode: InputMode;
+  defaultRecognitionMode: RecognitionMode;
+  showInterimResults: boolean;
+  autoSendOnFinal: boolean;
+}
+
+// Voice Input UI Component Props
+
+export interface VoiceInputButtonProps {
+  mode: RecognitionMode;
+  isRecognizing: boolean;
+  onPress: () => void;
+  onRelease: () => void;
+  disabled: boolean;
+}
+
+export interface InterimResultDisplayProps {
+  text: string;
+  visible: boolean;
+}
+
+export interface AudioLevelIndicatorProps {
+  level: number; // 0-100
+  isActive: boolean;
+}
+
+export interface InputModeToggleProps {
+  currentMode: InputMode;
+  onModeChange: (mode: InputMode) => void;
+  disabled: boolean;
+}

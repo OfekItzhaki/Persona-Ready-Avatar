@@ -1,5 +1,5 @@
 import { logger } from './logger';
-import { AvatarOption } from '@/types';
+import { AvatarOption, AzureSpeechConfig } from '@/types';
 
 interface EnvConfig {
   azureSpeechKey: string;
@@ -74,11 +74,11 @@ export function isEnvConfigured(): boolean {
 export function getMissingEnvVars(): string[] {
   const config = getEnvConfig();
   const missing: string[] = [];
-  
+
   if (!config.azureSpeechKey) missing.push('AZURE_SPEECH_KEY');
   if (!config.azureSpeechRegion) missing.push('AZURE_SPEECH_REGION');
   if (!config.brainApiUrl) missing.push('NEXT_PUBLIC_BRAIN_API_URL');
-  
+
   return missing;
 }
 
@@ -93,11 +93,11 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
 
 /**
  * Get avatar configuration from environment variables
- * 
+ *
  * Reads avatar-related environment variables and provides defaults
  * when variables are missing. Supports both development and production
  * configurations.
- * 
+ *
  * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
  */
 export function getAvatarConfig(): AvatarEnvConfig {
@@ -151,7 +151,8 @@ export function getAvatarConfig(): AvatarEnvConfig {
   }
 
   // Parse fallback configuration
-  const fallbackType = (process.env.NEXT_PUBLIC_AVATAR_FALLBACK_TYPE as 'cube' | 'sphere') || 'cube';
+  const fallbackType =
+    (process.env.NEXT_PUBLIC_AVATAR_FALLBACK_TYPE as 'cube' | 'sphere') || 'cube';
   const fallbackColor = process.env.NEXT_PUBLIC_AVATAR_FALLBACK_COLOR || '#4A90E2';
 
   // Parse loading configuration
@@ -164,5 +165,36 @@ export function getAvatarConfig(): AvatarEnvConfig {
     fallbackColor,
     loadTimeout,
     maxRetries,
+  };
+}
+
+/**
+ * Get Azure Speech Service configuration from environment variables
+ *
+ * Reads Azure Speech credentials and validates they are present.
+ * Returns configuration object for use with Azure Speech SDK.
+ *
+ * Requirements: 2.1
+ */
+export function getAzureSpeechConfig(): AzureSpeechConfig {
+  const config = getEnvConfig();
+
+  if (!config.azureSpeechKey || !config.azureSpeechRegion) {
+    logger.error('Azure Speech Service credentials not configured', {
+      component: 'EnvConfig',
+      operation: 'getAzureSpeechConfig',
+      hasKey: !!config.azureSpeechKey,
+      hasRegion: !!config.azureSpeechRegion,
+    });
+
+    throw new Error(
+      'Azure Speech Service credentials are required for voice input. Please configure AZURE_SPEECH_KEY and AZURE_SPEECH_REGION environment variables.'
+    );
+  }
+
+  return {
+    subscriptionKey: config.azureSpeechKey,
+    region: config.azureSpeechRegion,
+    language: 'en-US', // Default language, will be updated based on TTS voice
   };
 }

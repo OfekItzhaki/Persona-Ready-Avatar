@@ -1,0 +1,495 @@
+# Implementation Plan: Voice Input
+
+## Overview
+
+This implementation plan breaks down the voice input feature into discrete coding tasks. The feature enables users to speak to the avatar using Azure Speech Service for speech recognition, with support for both push-to-talk and continuous listening modes. Implementation follows a bottom-up approach, building core components first, then integrating them into the chat interface.
+
+## Tasks
+
+- [x] 1. Set up environment configuration and Azure Speech Service credentials
+  - Create environment variables for Azure Speech Service subscription key and region
+  - Add configuration validation to ensure credentials are present
+  - Create TypeScript types for Azure Speech configuration
+  - _Requirements: 2.1_
+
+- [x] 2. Implement core type definitions and interfaces
+  - [x] 2.1 Define VoiceInputService interface and types
+    - Create RecognitionMode, AzureSpeechConfig, RecognitionResult, RecognitionError types
+    - Define VoiceInputService interface with all required methods
+    - _Requirements: 2.1, 2.4, 6.1, 6.2, 6.3, 6.4_
+  - [x] 2.2 Define MicrophoneManager interface and types
+    - Create PermissionResult, PermissionState types
+    - Define MicrophoneManager interface with permission and capture methods
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [x] 2.3 Define SpeechRecognizer interface and types
+    - Create SpeechConfig, InterimResult, FinalResult types
+    - Define SpeechRecognizer interface with recognition control methods
+    - _Requirements: 2.4, 2.5_
+  - [x] 2.4 Define InputModeController interface and types
+    - Create InputMode type
+    - Define InputModeController interface with mode management methods
+    - _Requirements: 7.1, 7.4_
+  - [x] 2.5 Define UI component prop types
+    - Create prop types for VoiceInputButton, InterimResultDisplay, AudioLevelIndicator, InputModeToggle
+    - _Requirements: 3.6, 4.5, 5.4, 5.5, 7.1_
+
+- [x] 3. Implement MicrophoneManager component
+  - [x] 3.1 Implement permission request and checking
+    - Write requestPermission() method using navigator.mediaDevices.getUserMedia
+    - Write checkPermission() method using navigator.permissions.query
+    - Handle permission denied errors with appropriate error messages
+    - _Requirements: 1.1, 1.2_
+  - [x] 3.2 Implement audio capture functionality
+    - Write startCapture() method to initialize MediaStream
+    - Write stopCapture() method to release microphone access
+    - Configure audio constraints (mono, 16kHz sample rate, echo cancellation, noise suppression)
+    - _Requirements: 1.3, 12.2_
+  - [x] 3.3 Implement microphone availability checking
+    - Write isAvailable() method using navigator.mediaDevices.enumerateDevices
+    - Verify microphone device exists before starting capture
+    - _Requirements: 1.5_
+  - [x] 3.4 Implement audio level monitoring
+    - Create Web Audio API AudioContext and AnalyserNode
+    - Write getAudioLevel() method to calculate current audio input level (0-100)
+    - Implement subscribeToAudioLevels() for real-time level updates
+    - _Requirements: 5.5_
+  - [ ]\* 3.5 Write unit tests for MicrophoneManager
+    - Test permission request flow
+    - Test permission denied error handling
+    - Test audio capture initialization
+    - Test microphone availability checking
+    - Test audio level calculation
+    - _Requirements: 1.1, 1.2, 1.3, 1.5_
+  - [ ]\* 3.6 Write property test for MicrophoneManager
+    - **Property 1: Microphone Access Lost During Session**
+    - **Property 2: Microphone Availability Verification**
+    - **Property 29: Immediate Microphone Release**
+    - \*\*Validates: Requirements 1.4, 1.5, 12.2\_
+
+- [x] 4. Implement SpeechRecognizer wrapper for Azure Speech SDK
+  - [x] 4.1 Install and configure Azure Speech SDK for browser
+    - Add microsoft-cognitiveservices-speech-sdk package dependency
+    - Import and configure SDK for browser environment
+    - _Requirements: 2.1, 11.5_
+  - [x] 4.2 Implement speech recognizer configuration
+    - Write configure() method to initialize Azure Speech SDK with credentials
+    - Set up SpeechConfig with subscription key, region, and language
+    - Configure output format for recognition results
+    - _Requirements: 2.1, 2.5_
+  - [x] 4.3 Implement continuous recognition control
+    - Write startContinuousRecognition() method to begin recognition from MediaStream
+    - Write stopContinuousRecognition() method to end recognition session
+    - Handle WebSocket connection to Azure Speech Service
+    - _Requirements: 2.4_
+  - [x] 4.4 Implement recognition event handlers
+    - Write onRecognizing() callback for interim results
+    - Write onRecognized() callback for final results
+    - Write onError() callback for recognition errors
+    - Write onSessionStarted() and onSessionStopped() callbacks
+    - _Requirements: 5.1, 5.3, 6.1, 6.2, 6.3, 6.4_
+  - [x] 4.5 Implement language configuration updates
+    - Write updateLanguage() method to reconfigure recognizer with new language
+    - Ensure language changes take effect for next recognition session
+    - _Requirements: 2.3_
+  - [ ]\* 4.6 Write unit tests for SpeechRecognizer
+    - Test Azure Speech SDK initialization
+    - Test continuous recognition mode configuration
+    - Test recognition event handlers
+    - Test language configuration updates
+    - Test error handling for network failures and authentication errors
+    - _Requirements: 2.1, 2.4, 6.1, 6.2, 6.3_
+  - [ ]\* 4.7 Write property test for SpeechRecognizer
+    - **Property 3: Language Synchronization**
+    - **Property 28: Encrypted Audio Transmission**
+    - **Property 31: New Recognizer Instance Per Session**
+    - **Property 32: Recognizer Instance Disposal**
+    - \*\*Validates: Requirements 2.2, 2.3, 12.1, 13.1, 13.2\_
+
+- [x] 5. Implement InputModeController component
+  - [x] 5.1 Implement mode management
+    - Write setMode() method to switch between voice and text input
+    - Write getMode() method to retrieve current input mode
+    - Implement mode change event subscription system
+    - _Requirements: 7.1, 7.6_
+  - [x] 5.2 Implement preference persistence
+    - Write savePreference() method to store mode in localStorage
+    - Write loadPreference() method to restore mode from localStorage
+    - Handle missing or invalid localStorage data gracefully
+    - _Requirements: 7.4, 7.5_
+  - [ ]\* 5.3 Write unit tests for InputModeController
+    - Test mode switching functionality
+    - Test preference persistence to localStorage
+    - Test preference restoration on load
+    - Test mode change event subscriptions
+    - _Requirements: 7.1, 7.4, 7.5_
+  - [ ]\* 5.4 Write property test for InputModeController
+    - **Property 15: Input Mode Persistence Round-Trip**
+    - \*\*Validates: Requirements 7.4, 7.5\_
+
+- [x] 6. Implement VoiceInputService orchestrator
+  - [x] 6.1 Implement service initialization
+    - Write initialize() method to configure Azure Speech SDK
+    - Validate Azure Speech credentials from environment
+    - Initialize MicrophoneManager, SpeechRecognizer, and InputModeController
+    - _Requirements: 2.1_
+  - [x] 6.2 Implement push-to-talk recognition flow
+    - Write startRecognition() method for push-to-talk mode
+    - Coordinate microphone capture start with speech recognition start
+    - Handle button press and release events
+    - _Requirements: 3.1, 3.2, 3.3_
+  - [x] 6.3 Implement continuous listening recognition flow
+    - Write startRecognition() method for continuous mode
+    - Implement continuous recognition loop with phrase detection
+    - Handle start/stop button clicks
+    - _Requirements: 4.1, 4.2, 4.4_
+  - [x] 6.4 Implement recognition result handling
+    - Write result subscription callback for interim results
+    - Write result subscription callback for final results
+    - Forward final results to ChatInterface
+    - Trim whitespace from recognized text
+    - _Requirements: 3.4, 4.3, 5.1, 5.3, 8.1, 8.5_
+  - [x] 6.5 Implement recognition session lifecycle management
+    - Write stopRecognition() method to end session and cleanup resources
+    - Implement session timeout (60 seconds for continuous mode)
+    - Dispose of SpeechRecognizer instance after each session
+    - Cancel active sessions on navigation away from chat interface
+    - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
+  - [x] 6.6 Implement language synchronization with TTS
+    - Subscribe to TTS language change events
+    - Update SpeechRecognizer language when TTS language changes
+    - Use LanguageVoiceMapper to determine appropriate recognition language
+    - _Requirements: 2.2, 2.3_
+  - [x] 6.7 Implement error handling and recovery
+    - Handle permission denied errors with user-friendly messages
+    - Handle network errors with retry options
+    - Handle authentication errors with configuration guidance
+    - Handle recognition failures with fallback to text input
+    - Implement exponential backoff for transient errors
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+  - [ ]\* 6.8 Write unit tests for VoiceInputService
+    - Test service initialization with Azure credentials
+    - Test push-to-talk recognition flow
+    - Test continuous listening recognition flow
+    - Test recognition result handling and forwarding
+    - Test session lifecycle management
+    - Test language synchronization with TTS
+    - Test error handling for all error types
+    - _Requirements: 2.1, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4, 6.1, 6.2, 6.3, 6.4, 6.5, 13.1, 13.2, 13.3, 13.4, 13.5_
+  - [ ]\* 6.9 Write property tests for VoiceInputService
+    - **Property 4: Push-to-Talk Session Lifecycle**
+    - **Property 5: Recognized Text Forwarding**
+    - **Property 7: Continuous Listening Session Lifecycle**
+    - **Property 20: Whitespace Trimming**
+    - **Property 33: Navigation Cleanup**
+    - **Property 34: Continuous Listening Timeout**
+    - **Property 35: Timeout Notification**
+    - \*\*Validates: Requirements 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4, 8.1, 8.5, 13.3, 13.4, 13.5\_
+
+- [x] 7. Checkpoint - Ensure core services are working
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 8. Implement VoiceInputButton UI component
+  - [x] 8.1 Create VoiceInputButton component
+    - Implement button with press/release handlers for push-to-talk
+    - Implement click handler for continuous listening toggle
+    - Display appropriate icon based on recognition state (idle, recording, processing)
+    - Apply pulsing animation when recording is active
+    - _Requirements: 3.1, 3.3, 3.6, 4.1, 4.4, 15.1_
+  - [x] 8.2 Add keyboard accessibility to VoiceInputButton
+    - Implement keyboard shortcut (Ctrl/Cmd + Shift + V) for push-to-talk
+    - Implement keyboard shortcut (Ctrl/Cmd + Shift + L) for continuous listening
+    - Implement Escape key handler to cancel recognition
+    - Add visible focus indicator
+    - Ensure button is reachable via Tab navigation
+    - _Requirements: 9.1, 9.2, 9.3, 9.5, 9.6_
+  - [x] 8.3 Add screen reader support to VoiceInputButton
+    - Add ARIA label describing button purpose
+    - Add aria-pressed attribute for recording state
+    - Add role="button" attribute
+    - _Requirements: 10.1_
+  - [ ]\* 8.4 Write unit tests for VoiceInputButton
+    - Test button press/release handlers
+    - Test click handler for continuous mode
+    - Test keyboard shortcuts
+    - Test focus indicator visibility
+    - Test ARIA attributes
+    - _Requirements: 3.1, 3.3, 4.1, 4.4, 9.1, 9.2, 9.3, 9.5, 9.6, 10.1_
+  - [ ]\* 8.5 Write property test for VoiceInputButton
+    - **Property 6: Recording Visual Feedback**
+    - **Property 21: Escape Key Cancellation**
+    - **Property 22: Focus Indicator Visibility**
+    - \*\*Validates: Requirements 3.6, 4.5, 9.3, 9.5\_
+
+- [x] 9. Implement InterimResultDisplay UI component
+  - [x] 9.1 Create InterimResultDisplay component
+    - Display interim recognition text with distinct styling
+    - Show/hide based on recognition state
+    - Update text in real-time as recognition progresses
+    - _Requirements: 5.1, 5.4_
+  - [x] 9.2 Add screen reader support to InterimResultDisplay
+    - Add role="status" attribute
+    - Add aria-live="polite" for interim result announcements
+    - Add aria-atomic="true" to announce complete text
+    - _Requirements: 10.4_
+  - [ ]\* 9.3 Write unit tests for InterimResultDisplay
+    - Test text display and updates
+    - Test show/hide behavior
+    - Test distinct styling for interim vs final results
+    - Test ARIA attributes
+    - _Requirements: 5.1, 5.4, 10.4_
+  - [ ]\* 9.4 Write property tests for InterimResultDisplay
+    - **Property 8: Interim Results Display**
+    - **Property 9: Interim Results Latency**
+    - **Property 10: Final Results Replace Interim**
+    - **Property 11: Interim vs Final Visual Distinction**
+    - \*\*Validates: Requirements 4.6, 5.1, 5.2, 5.3, 5.4\_
+
+- [x] 10. Implement AudioLevelIndicator UI component
+  - [x] 10.1 Create AudioLevelIndicator component
+    - Display waveform or level meter visualization
+    - Subscribe to audio level updates from MicrophoneManager
+    - Update visualization at 30 FPS to reduce CPU load
+    - Show/hide based on recording state
+    - _Requirements: 5.5_
+  - [x] 10.2 Add accessibility to AudioLevelIndicator
+    - Add role="img" attribute
+    - Add aria-label with current audio level percentage
+    - Ensure visualization meets WCAG 2.1 Level AA contrast requirements
+    - _Requirements: 15.6_
+  - [ ]\* 10.3 Write unit tests for AudioLevelIndicator
+    - Test visualization updates based on audio level
+    - Test show/hide behavior
+    - Test ARIA attributes
+    - Test color contrast compliance
+    - _Requirements: 5.5, 15.6_
+  - [ ]\* 10.4 Write property test for AudioLevelIndicator
+    - **Property 12: Audio Level Indicator**
+    - \*\*Validates: Requirements 5.5\_
+
+- [x] 11. Implement InputModeToggle UI component
+  - [x] 11.1 Create InputModeToggle component
+    - Display toggle control for switching between voice and text modes
+    - Show current mode state visually
+    - Handle click events to switch modes
+    - _Requirements: 7.1_
+  - [x] 11.2 Add keyboard accessibility to InputModeToggle
+    - Implement keyboard shortcut (Ctrl/Cmd + Shift + I) for mode switching
+    - Add visible focus indicator
+    - Ensure toggle is reachable via Tab navigation
+    - _Requirements: 9.5, 9.6_
+  - [x] 11.3 Add screen reader support to InputModeToggle
+    - Add ARIA label describing toggle purpose
+    - Add aria-pressed attribute for current mode
+    - _Requirements: 10.1, 10.6_
+  - [ ]\* 11.4 Write unit tests for InputModeToggle
+    - Test mode switching on click
+    - Test keyboard shortcut
+    - Test focus indicator visibility
+    - Test ARIA attributes
+    - _Requirements: 7.1, 9.5, 9.6, 10.1, 10.6_
+  - [ ]\* 11.5 Write property tests for InputModeToggle
+    - **Property 14: Input Mode UI State Synchronization**
+    - **Property 16: Mode Switching During Active Session**
+    - **Property 23: Tab Navigation Completeness**
+    - **Property 24: ARIA Labels Presence**
+    - **Property 26: Input Mode ARIA Indication**
+    - \*\*Validates: Requirements 7.2, 7.3, 7.6, 9.6, 10.1, 10.6\_
+
+- [x] 12. Integrate voice input with ChatInterface
+  - [x] 12.1 Add voice input controls to ChatInterface
+    - Conditionally render voice input controls when voice mode is active
+    - Hide text input field when voice mode is active
+    - Show text input field when text mode is active
+    - _Requirements: 7.2, 7.3_
+  - [x] 12.2 Wire VoiceInputService to ChatInterface
+    - Connect recognized text to ChatInterface.handleSubmit method
+    - Ensure recognized messages trigger same processing flow as typed messages
+    - Include recognized messages in conversation history
+    - _Requirements: 8.1, 8.2, 8.3, 8.4_
+  - [x] 12.3 Handle mode switching in ChatInterface
+    - Stop active recognition session when switching to text mode
+    - Restore input mode preference on application load
+    - Allow mode switching during active recognition session
+    - _Requirements: 7.5, 7.6_
+  - [ ]\* 12.4 Write integration tests for ChatInterface
+    - Test voice input controls rendering based on mode
+    - Test recognized text forwarding to ChatInterface
+    - Test message format consistency between voice and text
+    - Test conversation history inclusion
+    - Test mode switching behavior
+    - _Requirements: 7.2, 7.3, 8.1, 8.2, 8.3, 8.4, 7.5, 7.6_
+  - [ ]\* 12.5 Write property tests for ChatInterface integration
+    - **Property 17: Message Format Consistency**
+    - **Property 18: Message Processing Flow Consistency**
+    - **Property 19: Conversation History Inclusion**
+    - \*\*Validates: Requirements 8.2, 8.3, 8.4\_
+
+- [x] 13. Implement browser compatibility checking
+  - [x] 13.1 Create browser compatibility detection function
+    - Check for navigator.mediaDevices support
+    - Check for getUserMedia support
+    - Check for AudioContext support
+    - Check for MediaRecorder support
+    - Return compatibility result with detailed checks
+    - _Requirements: 11.1, 11.3_
+  - [x] 13.2 Add compatibility warning UI
+    - Display warning message when browser is not supported
+    - Disable voice input controls when incompatible
+    - Provide link to supported browsers list
+    - Keep text input available as fallback
+    - _Requirements: 11.2, 11.4_
+  - [ ]\* 13.3 Write unit tests for browser compatibility
+    - Test compatibility detection for supported browsers
+    - Test compatibility detection for unsupported browsers
+    - Test warning UI display
+    - Test voice input controls disabled state
+    - _Requirements: 11.1, 11.2, 11.3, 11.4_
+  - [ ]\* 13.4 Write property test for browser compatibility
+    - **Property 27: Browser Compatibility Check Before Initialization**
+    - \*\*Validates: Requirements 11.3\_
+
+- [x] 14. Implement error notification system
+  - [x] 14.1 Integrate with NotificationService
+    - Display permission denied errors with recovery instructions
+    - Display network connectivity errors with retry options
+    - Display recognition failure errors with fallback options
+    - Display session timeout notifications
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 13.5_
+  - [x] 14.2 Add screen reader announcements for errors
+    - Announce error messages to screen readers
+    - Announce session start/stop events
+    - _Requirements: 10.2, 10.3, 10.5_
+  - [ ]\* 14.3 Write unit tests for error notifications
+    - Test notification display for each error type
+    - Test screen reader announcements
+    - Test recovery options (retry, switch to text)
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 10.2, 10.3, 10.5_
+  - [ ]\* 14.4 Write property tests for error handling
+    - **Property 13: Error Recovery Options**
+    - **Property 25: Screen Reader Announcements**
+    - \*\*Validates: Requirements 6.5, 10.2, 10.3, 10.4, 10.5\_
+
+- [ ] 15. Implement privacy notice and settings
+  - [ ] 15.1 Add privacy notice to settings panel
+    - Display privacy notice explaining audio processing by Azure Speech Service
+    - Provide link to Azure Speech Service privacy policy
+    - _Requirements: 12.4, 12.5_
+  - [ ] 15.2 Add voice input preferences to PreferencesService
+    - Extend AudioPreferences interface with voice input settings
+    - Persist voice input mode preference
+    - Persist default recognition mode preference
+    - Persist show interim results preference
+    - _Requirements: 7.4_
+  - [ ]\* 15.3 Write unit tests for privacy and settings
+    - Test privacy notice display
+    - Test privacy policy link
+    - Test preference persistence
+    - _Requirements: 12.4, 12.5, 7.4_
+  - [ ]\* 15.4 Write property test for privacy
+    - **Property 30: No Local Audio Storage**
+    - \*\*Validates: Requirements 12.3\_
+
+- [ ] 16. Checkpoint - Ensure UI components and integration are working
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 17. Implement keyboard shortcuts help dialog
+  - [ ] 17.1 Create keyboard shortcuts help dialog
+    - Display all voice input keyboard shortcuts
+    - Show shortcut descriptions and key combinations
+    - Make dialog accessible via help button or menu
+    - _Requirements: 9.4_
+  - [ ]\* 17.2 Write unit tests for help dialog
+    - Test dialog display
+    - Test keyboard shortcuts listed
+    - _Requirements: 9.4_
+
+- [ ] 18. Implement visual feedback and UI state management
+  - [ ] 18.1 Add state-based styling to voice input controls
+    - Apply distinct colors for idle, recording, processing, and error states
+    - Add pulsing animation for recording state
+    - Add loading indicator for processing state
+    - Add error icon for error state
+    - Ensure all colors meet WCAG 2.1 Level AA contrast requirements
+    - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6_
+  - [ ]\* 18.2 Write unit tests for visual feedback
+    - Test state-based styling application
+    - Test animation behavior
+    - Test color contrast compliance
+    - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6_
+  - [ ]\* 18.3 Write property test for visual feedback
+    - **Property 37: Session State Visual Feedback**
+    - \*\*Validates: Requirements 15.1, 15.2, 15.3, 15.4, 15.5\_
+
+- [ ] 19. Implement performance optimizations
+  - [ ] 19.1 Optimize recognition session start latency
+    - Preload Azure Speech SDK resources
+    - Optimize microphone initialization
+    - Target < 500ms from user activation to recognition start
+    - _Requirements: 14.1_
+  - [ ] 19.2 Optimize interim results display latency
+    - Minimize processing overhead in result handlers
+    - Target < 200ms from speech detection to display update
+    - _Requirements: 14.2_
+  - [ ] 19.3 Optimize resource cleanup
+    - Implement proper disposal of SpeechRecognizer instances
+    - Unsubscribe from all event handlers to prevent memory leaks
+    - Release MediaStream tracks immediately on session end
+    - _Requirements: 13.2, 12.2_
+  - [ ] 19.4 Optimize audio level visualization
+    - Throttle visualization updates to 30 FPS
+    - Use requestAnimationFrame for smooth rendering
+    - _Requirements: 5.5_
+  - [ ]\* 19.5 Write performance tests
+    - Test recognition session start latency
+    - Test interim results display latency
+    - Test final recognition latency
+    - Test text processing and forwarding latency
+    - Test microphone initialization latency
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
+  - [ ]\* 19.6 Write property test for performance
+    - **Property 36: Performance Latency Bounds**
+    - \*\*Validates: Requirements 14.1, 14.2, 14.3, 14.4, 14.5\_
+
+- [ ] 20. Final integration and end-to-end testing
+  - [ ] 20.1 Test complete push-to-talk flow
+    - Test button press → recognition start → audio capture → interim results → button release → final result → message sent
+    - Verify all components work together correctly
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.6_
+  - [ ] 20.2 Test complete continuous listening flow
+    - Test button click → recognition start → continuous audio processing → interim results → phrase detection → final results → button click → recognition stop
+    - Verify all components work together correctly
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
+  - [ ] 20.3 Test error scenarios end-to-end
+    - Test permission denied flow
+    - Test network error flow
+    - Test microphone unavailable flow
+    - Test recognition failure flow
+    - Verify error handling and recovery options work correctly
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+  - [ ] 20.4 Test accessibility features end-to-end
+    - Test keyboard navigation through all voice input controls
+    - Test keyboard shortcuts for all actions
+    - Test screen reader announcements for all events
+    - Verify ARIA attributes are correct
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6_
+  - [ ] 20.5 Test browser compatibility across supported browsers
+    - Test in Chrome 90+
+    - Test in Edge 90+
+    - Test in Safari 14+
+    - Verify compatibility warnings for unsupported browsers
+    - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
+
+- [ ] 21. Final checkpoint - Ensure all tests pass and feature is complete
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Notes
+
+- Tasks marked with `*` are optional and can be skipped for faster MVP
+- Each task references specific requirements for traceability
+- Checkpoints ensure incremental validation at key milestones
+- Property tests validate universal correctness properties across all inputs
+- Unit tests validate specific examples, edge cases, and error conditions
+- Implementation uses TypeScript for type safety and better developer experience
+- Azure Speech SDK for browser is used for speech recognition
+- All UI components follow WCAG 2.1 Level AA accessibility guidelines
+- Performance targets: recognition start < 500ms, interim results < 200ms, final recognition < 1s

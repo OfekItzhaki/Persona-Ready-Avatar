@@ -9,6 +9,9 @@ import type {
   UIPreferences,
   OfflineQueueItem,
   PerformanceMetrics,
+  AvatarOption,
+  AvatarLoadingState,
+  AvatarLoadError,
 } from '@/types';
 
 /**
@@ -72,6 +75,16 @@ interface AppState {
   incrementTTSFailures: () => void;
   resetTTSFailures: () => void;
   setTTSTextOnlyMode: (enabled: boolean) => void;
+
+  // Avatar system state (Ready Player Me integration)
+  selectedAvatarId: string;
+  avatarLoadingState: AvatarLoadingState;
+  avatarError: AvatarLoadError | null;
+  availableAvatars: AvatarOption[];
+  setSelectedAvatar: (id: string) => void;
+  setAvatarLoadingState: (state: AvatarLoadingState) => void;
+  setAvatarError: (error: AvatarLoadError | null) => void;
+  retryAvatarLoad: () => void;
 }
 
 /**
@@ -277,4 +290,64 @@ export const useAppStore = create<AppState>((set) => ({
     }),
   setTTSTextOnlyMode: (enabled: boolean) =>
     set({ ttsTextOnlyMode: enabled }),
+
+  // Avatar system state (Ready Player Me integration)
+  selectedAvatarId: 'default-1',
+  avatarLoadingState: 'idle',
+  avatarError: null,
+  availableAvatars: (() => {
+    // Initialize available avatars from environment configuration
+    const avatars: AvatarOption[] = [];
+    
+    const avatar1Url = process.env.NEXT_PUBLIC_AVATAR_DEFAULT_1;
+    const avatar2Url = process.env.NEXT_PUBLIC_AVATAR_DEFAULT_2;
+    const avatar3Url = process.env.NEXT_PUBLIC_AVATAR_DEFAULT_3;
+    
+    if (avatar1Url) {
+      avatars.push({
+        id: 'default-1',
+        name: 'Avatar 1',
+        url: avatar1Url,
+        description: 'Professional avatar option 1',
+      });
+    }
+    
+    if (avatar2Url) {
+      avatars.push({
+        id: 'default-2',
+        name: 'Avatar 2',
+        url: avatar2Url,
+        description: 'Professional avatar option 2',
+      });
+    }
+    
+    if (avatar3Url) {
+      avatars.push({
+        id: 'default-3',
+        name: 'Avatar 3',
+        url: avatar3Url,
+        description: 'Professional avatar option 3',
+      });
+    }
+    
+    // Fallback to default if no environment variables set
+    if (avatars.length === 0) {
+      avatars.push({
+        id: 'default-1',
+        name: 'Default Avatar',
+        url: process.env.NEXT_PUBLIC_AVATAR_MODEL_URL || '/models/avatar.glb',
+        description: 'Default avatar',
+      });
+    }
+    
+    return avatars;
+  })(),
+  setSelectedAvatar: (id: string) => set({ selectedAvatarId: id }),
+  setAvatarLoadingState: (state: AvatarLoadingState) => set({ avatarLoadingState: state }),
+  setAvatarError: (error: AvatarLoadError | null) => set({ avatarError: error }),
+  retryAvatarLoad: () =>
+    set({
+      avatarError: null,
+      avatarLoadingState: 'idle',
+    }),
 }));

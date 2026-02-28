@@ -12,12 +12,13 @@ import type { Notification } from '@/types';
  * Features:
  * - Renders notification queue with type-based styling (info, success, warning, error)
  * - Auto-dismiss after configurable duration
- * - Manual dismiss button
+ * - Manual dismiss button (Requirement 38.7)
+ * - Action buttons for retry and other actions (Requirement 38.3)
  * - ARIA live region for accessibility
  * - Positioned in top-right corner of viewport
  * - Animated entrance and exit
  *
- * Requirements: 10.1, 10.2
+ * Requirements: 10.1, 10.2, 38.3, 38.7
  */
 
 interface NotificationToastProps {
@@ -131,18 +132,34 @@ export function NotificationToast({
             <p className="text-sm font-medium break-words">
               {notification.message}
             </p>
+            
+            {/* Action Button (Requirement 38.3) */}
+            {notification.action && (
+              <button
+                onClick={() => {
+                  notification.action?.onClick();
+                  handleDismiss(notification.id);
+                }}
+                className="mt-2 px-3 py-1 text-xs font-medium bg-white bg-opacity-20 hover:bg-opacity-30 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label={notification.action.label}
+              >
+                {notification.action.label}
+              </button>
+            )}
           </div>
 
-          {/* Dismiss Button */}
-          <button
-            onClick={() => handleDismiss(notification.id)}
-            className="flex-shrink-0 ml-2 hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 rounded transition-opacity"
-            aria-label="Dismiss notification"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
+          {/* Dismiss Button (Requirement 38.7) */}
+          {notification.dismissible !== false && (
+            <button
+              onClick={() => handleDismiss(notification.id)}
+              className="flex-shrink-0 ml-2 hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 rounded transition-opacity"
+              aria-label="Dismiss notification"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
         </div>
       ))}
     </div>

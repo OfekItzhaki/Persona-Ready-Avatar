@@ -592,7 +592,7 @@ describe('React Query Hooks Integration Tests', () => {
         });
 
         expect(result.current.error).toBeTruthy();
-        expect((result.current.error as Error).message).toContain('Failed to connect to server');
+        expect((result.current.error as Error).message).toContain('Unable to connect to the server');
       });
 
       it('should handle timeout errors in mutation', async () => {
@@ -620,7 +620,7 @@ describe('React Query Hooks Integration Tests', () => {
         });
 
         expect(result.current.error).toBeTruthy();
-        expect((result.current.error as Error).message).toContain('timeout');
+        expect((result.current.error as Error).message).toContain('timed out');
       });
 
       it('should handle server errors in mutation', async () => {
@@ -649,7 +649,7 @@ describe('React Query Hooks Integration Tests', () => {
         });
 
         expect(result.current.error).toBeTruthy();
-        expect((result.current.error as Error).message).toContain('Internal server error');
+        expect((result.current.error as Error).message).toContain('server encountered an error');
       });
 
       it('should allow retry after error', async () => {

@@ -1,4 +1,5 @@
 import { logger } from '../logger';
+import { stripSSML as stripSSMLUtil, detectSSML as detectSSMLUtil } from '../utils/ssml';
 import type {
   ITTSService,
   IAzureSpeechRepository,
@@ -10,6 +11,7 @@ import type {
   SpeechConfig,
 } from '@/types';
 import { LanguageVoiceMapper } from './LanguageVoiceMapper';
+import { PreferencesService } from './PreferencesService';
 
 /**
  * TTSService
@@ -35,6 +37,7 @@ export class TTSService implements ITTSService {
   private audioManager: IAudioManager;
   private visemeCoordinator: IVisemeCoordinator;
   private languageVoiceMapper: LanguageVoiceMapper;
+  private preferencesService: PreferencesService;
   private visemeSubscribers: Set<(viseme: VisemeEvent) => void> = new Set();
   private isActive: boolean = false;
 
@@ -42,12 +45,14 @@ export class TTSService implements ITTSService {
     azureSpeechRepository: IAzureSpeechRepository,
     audioManager: IAudioManager,
     visemeCoordinator: IVisemeCoordinator,
-    languageVoiceMapper: LanguageVoiceMapper
+    languageVoiceMapper: LanguageVoiceMapper,
+    preferencesService: PreferencesService
   ) {
     this.azureSpeechRepository = azureSpeechRepository;
     this.audioManager = audioManager;
     this.visemeCoordinator = visemeCoordinator;
     this.languageVoiceMapper = languageVoiceMapper;
+    this.preferencesService = preferencesService;
 
     logger.info('TTSService initialized', {
       component: 'TTSService',
@@ -57,7 +62,7 @@ export class TTSService implements ITTSService {
   /**
    * Synthesize speech from text and start playback with viseme coordination
    * 
-   * @param text - The text to synthesize
+   * @param text - The text to synthesize (can contain SSML markup)
    * @param voice - The voice identifier (can be overridden by language-based selection)
    * @param language - The language code for voice selection
    * @returns Result containing AudioBuffer or TTSError
@@ -81,11 +86,52 @@ export class TTSService implements ITTSService {
       // Select appropriate voice based on language
       const selectedVoice = this.languageVoiceMapper.getVoiceForLanguage(language) || voice;
 
+      // Load speech rate and pitch from preferences
+      const audioPreferences = this.preferencesService['store'].audioPreferences;
+      const speechRate = audioPreferences.speechRate;
+      const speechPitch = audioPreferences.speechPitch;
+
+      // Detect and validate SSML markup
+      const hasSSML = detectSSMLUtil(text);
+      let processedText = text;
+      let isValidSSML = false;
+
+      if (hasSSML) {
+        logger.debug('SSML markup detected in text', {
+          component: 'TTSService',
+        });
+
+        // Validate SSML structure
+        const validationResult = this.validateSSML(text);
+        
+        if (validationResult.isValid) {
+          isValidSSML = true;
+          processedText = text;
+          
+          logger.debug('SSML validation passed', {
+            component: 'TTSService',
+          });
+        } else {
+          // SSML validation failed - fall back to plain text
+          logger.warn('SSML validation failed, falling back to plain text', {
+            component: 'TTSService',
+            error: validationResult.error,
+          });
+
+          // Strip SSML tags and use plain text
+          processedText = stripSSMLUtil(text);
+        }
+      }
+
       logger.debug('Voice selected', {
         component: 'TTSService',
         requestedVoice: voice,
         selectedVoice,
         language,
+        speechRate,
+        speechPitch,
+        hasSSML,
+        isValidSSML,
       });
 
       // Configure speech synthesis
@@ -93,10 +139,17 @@ export class TTSService implements ITTSService {
         voice: selectedVoice,
         language,
         outputFormat: 'audio-24khz-48kbitrate-mono-mp3',
+        rate: speechRate,
+        pitch: speechPitch,
       };
 
       // Call Azure Speech Repository to synthesize speech
-      const result = await this.azureSpeechRepository.synthesize(text, config);
+      // Pass isValidSSML flag to indicate whether to use SSML or plain text
+      const result = await this.azureSpeechRepository.synthesize(
+        processedText, 
+        config, 
+        isValidSSML
+      );
 
       if (!result.success) {
         // Transform SpeechError to TTSError
@@ -321,6 +374,91 @@ export class TTSService implements ITTSService {
    */
   isPlaying(): boolean {
     return this.isActive;
+  }
+
+  /**
+   * Validate SSML structure
+   * 
+   * @param text - The SSML text to validate
+   * @returns Validation result with isValid flag and optional error message
+   */
+  private validateSSML(text: string): { isValid: boolean; error?: string } {
+    try {
+      // Basic validation: check for balanced tags
+      // Check if text starts with <speak> and ends with </speak>
+      const trimmedText = text.trim();
+      
+      if (!trimmedText.startsWith('<speak')) {
+        return {
+          isValid: false,
+          error: 'SSML must start with <speak> tag',
+        };
+      }
+
+      if (!trimmedText.endsWith('</speak>')) {
+        return {
+          isValid: false,
+          error: 'SSML must end with </speak> tag',
+        };
+      }
+
+      // Check for balanced tags using a simple stack-based approach
+      const tagStack: string[] = [];
+      const tagPattern = /<\/?([a-zA-Z][a-zA-Z0-9-]*)[^>]*>/g;
+      let match;
+
+      while ((match = tagPattern.exec(text)) !== null) {
+        const fullTag = match[0];
+        const tagName = match[1];
+
+        // Self-closing tag (e.g., <break />)
+        if (fullTag.endsWith('/>')) {
+          continue;
+        }
+
+        // Closing tag
+        if (fullTag.startsWith('</')) {
+          if (tagStack.length === 0) {
+            return {
+              isValid: false,
+              error: `Unexpected closing tag: ${fullTag}`,
+            };
+          }
+
+          const lastOpenTag = tagStack.pop();
+          if (lastOpenTag !== tagName) {
+            return {
+              isValid: false,
+              error: `Mismatched tags: expected </${lastOpenTag}>, found ${fullTag}`,
+            };
+          }
+        } else {
+          // Opening tag
+          tagStack.push(tagName);
+        }
+      }
+
+      // Check if all tags are closed
+      if (tagStack.length > 0) {
+        return {
+          isValid: false,
+          error: `Unclosed tags: ${tagStack.join(', ')}`,
+        };
+      }
+
+      // Validation passed
+      return { isValid: true };
+    } catch (error) {
+      logger.error('Error during SSML validation', {
+        component: 'TTSService',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      return {
+        isValid: false,
+        error: error instanceof Error ? error.message : 'Unknown validation error',
+      };
+    }
   }
 
   /**

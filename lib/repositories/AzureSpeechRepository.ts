@@ -28,13 +28,15 @@ export class AzureSpeechRepository implements IAzureSpeechRepository {
   /**
    * Synthesize speech from text with viseme data collection
    * 
-   * @param text - The text to synthesize
-   * @param config - Speech configuration (voice, language, output format)
+   * @param text - The text to synthesize (can be SSML or plain text)
+   * @param config - Speech configuration (voice, language, output format, rate, pitch)
+   * @param isSSML - Whether the text is already valid SSML (default: false)
    * @returns Result containing SynthesisResult (audio buffer + visemes) or SpeechError
    */
   async synthesize(
     text: string,
-    config: SpeechConfig
+    config: SpeechConfig,
+    isSSML: boolean = false
   ): Promise<Result<SynthesisResult, SpeechError>> {
     logger.info('Starting speech synthesis', {
       component: 'AzureSpeechRepository',
@@ -42,6 +44,9 @@ export class AzureSpeechRepository implements IAzureSpeechRepository {
       voice: config.voice,
       language: config.language,
       outputFormat: config.outputFormat,
+      rate: config.rate,
+      pitch: config.pitch,
+      isSSML,
     });
 
     let synthesizer: sdk.SpeechSynthesizer | null = null;
@@ -82,8 +87,27 @@ export class AzureSpeechRepository implements IAzureSpeechRepository {
         });
       };
 
+      // Build SSML if rate or pitch are specified, or use provided SSML
+      let ssmlText: string;
+      let useSSML: boolean;
+
+      if (isSSML) {
+        // Text is already valid SSML, use it directly
+        ssmlText = text;
+        useSSML = true;
+        
+        logger.debug('Using provided SSML', {
+          component: 'AzureSpeechRepository',
+        });
+      } else {
+        // Build SSML if rate or pitch are specified
+        const needsSSML = !!config.rate || !!config.pitch;
+        ssmlText = needsSSML ? this.buildSSML(text, config) : text;
+        useSSML = needsSSML;
+      }
+
       // Perform synthesis
-      const result = await this.performSynthesis(synthesizer, text);
+      const result = await this.performSynthesis(synthesizer, ssmlText, useSSML);
 
       if (!result.success) {
         return result;
@@ -125,15 +149,21 @@ export class AzureSpeechRepository implements IAzureSpeechRepository {
    * Perform the actual synthesis operation
    * 
    * @param synthesizer - The speech synthesizer instance
-   * @param text - The text to synthesize
+   * @param text - The text or SSML to synthesize
+   * @param isSSML - Whether the text is SSML format
    * @returns Result containing audio data or error
    */
   private async performSynthesis(
     synthesizer: sdk.SpeechSynthesizer,
-    text: string
+    text: string,
+    isSSML: boolean = false
   ): Promise<Result<ArrayBuffer, SpeechError>> {
     return new Promise((resolve) => {
-      synthesizer.speakTextAsync(
+      const synthesisMethod = isSSML 
+        ? synthesizer.speakSsmlAsync.bind(synthesizer)
+        : synthesizer.speakTextAsync.bind(synthesizer);
+
+      synthesisMethod(
         text,
         (result) => {
           if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
@@ -214,6 +244,54 @@ export class AzureSpeechRepository implements IAzureSpeechRepository {
         // Default to 24khz MP3
         return sdk.SpeechSynthesisOutputFormat.Audio24Khz48KBitRateMonoMp3;
     }
+  }
+
+  /**
+   * Build SSML markup with rate and pitch adjustments
+   * 
+   * @param text - The text to synthesize
+   * @param config - Speech configuration with rate and pitch
+   * @returns SSML string or plain text if no adjustments needed
+   */
+  private buildSSML(text: string, config: SpeechConfig): string {
+    // If no rate or pitch specified, return plain text
+    if (!config.rate && !config.pitch) {
+      return text;
+    }
+
+    // Convert rate (0.5-2.0) to percentage string
+    // 1.0 = 100%, 0.5 = 50%, 2.0 = 200%
+    const ratePercent = config.rate ? `${Math.round(config.rate * 100)}%` : '100%';
+
+    // Pitch is already in the correct format (-50 to +50)
+    // Convert to string with sign: +10, -10, +0
+    const pitchValue = config.pitch ?? 0;
+    const pitchStr = pitchValue >= 0 ? `+${pitchValue}%` : `${pitchValue}%`;
+
+    // Escape XML special characters in text
+    const escapedText = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+
+    // Build SSML
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${config.language}">
+  <voice name="${config.voice}">
+    <prosody rate="${ratePercent}" pitch="${pitchStr}">
+      ${escapedText}
+    </prosody>
+  </voice>
+</speak>`;
+
+    logger.debug('Built SSML', {
+      component: 'AzureSpeechRepository',
+      rate: ratePercent,
+      pitch: pitchStr,
+    });
+
+    return ssml;
   }
 
   /**

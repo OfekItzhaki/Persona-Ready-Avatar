@@ -549,6 +549,8 @@ describe('NotificationService', () => {
         message: 'Test warning',
         timestamp: expect.any(Date),
         duration: 5000,
+        action: undefined,
+        dismissible: true,
       });
     });
   });

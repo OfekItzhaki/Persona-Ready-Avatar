@@ -1,8 +1,12 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NotificationToast } from '@/components/NotificationToast';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import { OfflineNotification } from '@/components/OfflineNotification';
+import HelpDialog from '@/components/HelpDialog';
+import { initializeBrowserFallbacks } from '@/lib/utils/browserFallbacks';
 
 /**
  * Providers Component
@@ -13,6 +17,9 @@ import { NotificationToast } from '@/components/NotificationToast';
  * - React Query for server state management with caching
  * - Configured with default options for queries and mutations
  * - Global NotificationToast component for user feedback
+ * - Global HelpDialog accessible via Ctrl+Shift+H (Cmd+Shift+H on Mac)
+ * - Theme provider for light/dark mode support
+ * - Offline notification for connectivity status
  *
  * Configuration:
  * - staleTime: 5 minutes (Requirement 11.2)
@@ -38,10 +45,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
       })
   );
 
+  // Initialize browser fallbacks on mount
+  useEffect(() => {
+    initializeBrowserFallbacks();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
-      <NotificationToast />
+      <ThemeProvider>
+        <OfflineNotification />
+        <HelpDialog />
+        {children}
+        <NotificationToast />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

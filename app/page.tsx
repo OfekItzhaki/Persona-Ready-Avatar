@@ -6,6 +6,7 @@ import { ChatInterface } from '@/components/ChatInterface';
 import { PersonaSwitcher } from '@/components/PersonaSwitcher';
 import { TranscriptDisplay } from '@/components/TranscriptDisplay';
 import { NotificationToast } from '@/components/NotificationToast';
+import { SkipLinks } from '@/components/SkipLinks';
 import {
   ErrorBoundary,
   AvatarCanvasErrorBoundary,
@@ -20,6 +21,7 @@ import { AudioManager } from '@/lib/services/AudioManager';
 import { VisemeCoordinator } from '@/lib/services/VisemeCoordinator';
 import { LanguageVoiceMapper } from '@/lib/services/LanguageVoiceMapper';
 import { preloadAvatarModel } from '@/components/AvatarCanvas';
+import { initializeFocusIndicators } from '@/lib/utils/focusIndicators';
 import { logger } from '@/lib/logger';
 import type { Agent } from '@/types';
 
@@ -64,6 +66,13 @@ export default function Home() {
 
   const setCurrentViseme = useAppStore((state) => state.setCurrentViseme);
   const setPlaybackState = useAppStore((state) => state.setPlaybackState);
+
+  /**
+   * Initialize focus indicators for keyboard navigation (Requirement 35.2)
+   */
+  useEffect(() => {
+    initializeFocusIndicators();
+  }, []);
 
   /**
    * Initialize services with dependency injection
@@ -150,7 +159,10 @@ export default function Home() {
 
   return (
     <ErrorBoundary componentName="RootApp">
-      <main className="min-h-screen bg-gray-50">
+      {/* Skip Links for keyboard navigation (Requirement 35.8) */}
+      <SkipLinks />
+      
+      <main id="main-content" className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -163,7 +175,7 @@ export default function Home() {
               </div>
               
               {/* Agent Selector - Desktop */}
-              <div className="hidden lg:block">
+              <div id="agent-selector" className="hidden lg:block">
                 <PersonaSwitcherErrorBoundary>
                   <PersonaSwitcher />
                 </PersonaSwitcherErrorBoundary>
@@ -186,7 +198,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* 3D Avatar Viewport */}
             <div className="lg:col-span-7">
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden h-[400px] lg:h-[600px]">
+              <div id="avatar-canvas" className="bg-white rounded-lg shadow-lg overflow-hidden h-[400px] lg:h-[600px]">
                 <AvatarCanvasErrorBoundary>
                   <AvatarCanvas modelUrl={modelUrl} className="w-full h-full" />
                 </AvatarCanvasErrorBoundary>
@@ -214,7 +226,7 @@ export default function Home() {
               </div>
 
               {/* Chat Interface */}
-              <div className="bg-white rounded-lg shadow-lg h-[500px] lg:h-[330px]">
+              <div id="chat-interface" className="bg-white rounded-lg shadow-lg h-[500px] lg:h-[330px]">
                 <ChatInterfaceErrorBoundary>
                   <ChatInterface
                     ttsService={ttsService || undefined}

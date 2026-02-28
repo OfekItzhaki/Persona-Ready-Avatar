@@ -1,0 +1,984 @@
+/**
+ * Tablet Responsive Design Styles
+ * 
+ * Optimizes all components for tablet devices (768px - 1023px)
+ * 
+ * Features:
+ * - Two-column layout on tablets
+ * - SettingsPanel as side panel instead of modal
+ * - AvatarCustomizer alongside avatar
+ * - Tablet-optimized spacing and sizing
+ * - AudioController in expanded format
+ * - Portrait and landscape orientation support
+ * 
+ * Requirements: 54
+ */
+
+/* ============================================
+   Tablet Breakpoints
+   ============================================ */
+
+/* Tablet devices: 768px - 1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  
+  /* ============================================
+     Main Layout - Two-Column Design
+     ============================================ */
+  
+  /**
+   * Implement two-column layout on tablets
+   * Requirement: 54.1
+   */
+  
+  /* Two-column grid layout for tablet */
+  .max-w-7xl > .grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  
+  /* Left column: Avatar + Customizer */
+  .lg\:col-span-7 {
+    grid-column: span 1;
+  }
+  
+  /* Right column: Chat + Transcript */
+  .lg\:col-span-5 {
+    grid-column: span 1;
+  }
+  
+  /* Adjust avatar viewport height for tablet */
+  #avatar-canvas {
+    height: 500px;
+  }
+  
+  /* Adjust chat interface height for tablet */
+  #chat-interface {
+    height: 400px;
+  }
+  
+  /* Show transcript on tablet (desktop layout) */
+  .lg\:block {
+    display: block !important;
+  }
+  
+  .lg\:hidden {
+    display: none !important;
+  }
+  
+  /* ============================================
+     SettingsPanel - Side Panel Layout
+     ============================================ */
+  
+  /**
+   * Display SettingsPanel as side panel instead of modal
+   * Requirement: 54.2
+   */
+  
+  /* Side panel overlay - partial on tablet */
+  .settings-panel-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Side panel from right */
+  .settings-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 400px;
+    max-width: 50vw;
+    height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    border-left: 1px solid var(--border-secondary);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15);
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+  }
+  
+  /* Slide-in animation */
+  .settings-panel.entering {
+    transform: translateX(100%);
+  }
+  
+  .settings-panel.entered {
+    transform: translateX(0);
+  }
+  
+  .settings-panel.exiting {
+    transform: translateX(100%);
+  }
+  
+  /* Side panel header */
+  .settings-panel-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--background-primary);
+    border-bottom: 1px solid var(--border-secondary);
+    padding: 20px 24px;
+  }
+  
+  /* Close button positioned for side panel */
+  .settings-panel-close {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 10px;
+  }
+  
+  /* Tabs in side panel */
+  .settings-panel-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-secondary);
+  }
+  
+  .settings-panel-tab {
+    min-height: 44px;
+    padding: 12px 16px;
+    text-align: left;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+  }
+  
+  .settings-panel-tab:hover {
+    background-color: var(--background-secondary);
+  }
+  
+  .settings-panel-tab[aria-selected="true"] {
+    background-color: var(--interactive-primary);
+    color: var(--text-on-primary);
+  }
+  
+  /* Settings content in side panel */
+  .settings-panel-content {
+    padding: 24px;
+  }
+  
+  /* Form controls optimized for side panel */
+  .settings-panel input[type="range"] {
+    width: 100%;
+  }
+  
+  .settings-panel select,
+  .settings-panel button {
+    width: 100%;
+    min-height: 44px;
+    padding: 12px 16px;
+  }
+  
+  /* Section spacing in side panel */
+  .settings-panel section {
+    margin-bottom: 32px;
+  }
+  
+  .settings-panel section:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* ============================================
+     AvatarCustomizer - Alongside Avatar
+     ============================================ */
+  
+  /**
+   * Display AvatarCustomizer alongside avatar
+   * Requirement: 54.3
+   */
+  
+  /* Container for avatar and customizer */
+  .avatar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  /* Avatar customizer below avatar on tablet */
+  .avatar-customizer {
+    background: var(--background-primary);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Horizontal layout for customizer sections */
+  .avatar-customizer .customizer-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+  
+  /* Section headers */
+  .avatar-customizer h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+  }
+  
+  /* Color swatches - optimized size for tablet */
+  .avatar-customizer .color-swatch {
+    width: 44px;
+    height: 44px;
+    border-width: 2px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .avatar-customizer .color-swatch:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .avatar-customizer .color-swatch:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  
+  .avatar-customizer .color-swatch.selected {
+    border-color: var(--interactive-primary);
+    border-width: 3px;
+    box-shadow: 0 0 0 2px var(--background-primary), 0 0 0 4px var(--interactive-primary);
+  }
+  
+  /* Swatch grid layout */
+  .avatar-customizer .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+    gap: 12px;
+  }
+  
+  /* Expression buttons - optimized for tablet */
+  .avatar-customizer .expression-button {
+    width: 60px;
+    height: 60px;
+    padding: 10px;
+    font-size: 28px;
+    border-radius: 12px;
+    background: var(--background-secondary);
+    border: 2px solid var(--border-secondary);
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .avatar-customizer .expression-button:hover {
+    transform: scale(1.05);
+    background: var(--background-tertiary);
+  }
+  
+  .avatar-customizer .expression-button:active {
+    transform: scale(0.95);
+  }
+  
+  .avatar-customizer .expression-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* Expression button grid */
+  .avatar-customizer .expression-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+  
+  /* ============================================
+     Tablet-Optimized Spacing and Sizing
+     ============================================ */
+  
+  /**
+   * Use tablet-optimized spacing and sizing
+   * Requirement: 54.4
+   */
+  
+  /* Container padding */
+  .max-w-7xl {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  
+  /* Section spacing */
+  .space-y-6 > * + * {
+    margin-top: 20px;
+  }
+  
+  /* Card padding */
+  .bg-white.rounded-lg {
+    padding: 20px;
+  }
+  
+  /* Header padding */
+  header .max-w-7xl {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+  
+  /* Typography sizing */
+  h1 {
+    font-size: 28px;
+  }
+  
+  h2 {
+    font-size: 20px;
+  }
+  
+  h3 {
+    font-size: 18px;
+  }
+  
+  body {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  
+  /* Button sizing */
+  button {
+    min-height: 40px;
+    padding: 10px 16px;
+    font-size: 15px;
+  }
+  
+  /* Input sizing */
+  input,
+  textarea,
+  select {
+    min-height: 40px;
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+  
+  /* Border radius */
+  .rounded-lg {
+    border-radius: 12px;
+  }
+  
+  /* Shadow depth */
+  .shadow-lg {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* ============================================
+     AudioController - Expanded Format
+     ============================================ */
+  
+  /**
+   * Display AudioController in expanded format
+   * Requirement: 54.5
+   */
+  
+  /* Expanded audio controller layout */
+  .audio-controller {
+    background: var(--background-primary);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Grid layout for controls */
+  .audio-controller .controls-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  
+  /* Volume control - full width */
+  .audio-controller .volume-control {
+    grid-column: span 2;
+  }
+  
+  /* Volume slider */
+  .audio-controller input[type="range"] {
+    width: 100%;
+    height: 40px;
+    padding: 10px 0;
+  }
+  
+  .audio-controller input[type="range"]::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .audio-controller input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Volume display */
+  .audio-controller .volume-display {
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 8px;
+  }
+  
+  /* Control buttons - larger for tablet */
+  .audio-controller button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px 16px;
+    font-size: 15px;
+    border-radius: 8px;
+  }
+  
+  /* Button grid */
+  .audio-controller .button-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  
+  /* Playback speed selector */
+  .audio-controller select {
+    width: 100%;
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 15px;
+    border-radius: 8px;
+  }
+  
+  /* Audio level indicator - larger on tablet */
+  .audio-controller canvas {
+    width: 100%;
+    height: 100px;
+    border-radius: 8px;
+    background: var(--background-secondary);
+  }
+  
+  /* Control labels */
+  .audio-controller label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+  }
+  
+  /* Control group spacing */
+  .audio-controller .control-group {
+    margin-bottom: 16px;
+  }
+  
+  .audio-controller .control-group:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* ============================================
+     MessageList - Tablet Optimizations
+     ============================================ */
+  
+  /* Message list spacing */
+  .message-list .message-item {
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  
+  /* Message actions - visible on hover */
+  .message-list .message-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  
+  .message-list .message-item:hover .message-actions,
+  .message-list .message-item:focus-within .message-actions {
+    opacity: 1;
+  }
+  
+  /* Message action buttons */
+  .message-list .message-action-button {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 8px;
+  }
+  
+  /* Search and filter controls */
+  .message-list .search-filter-container {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .message-list .search-input {
+    min-height: 40px;
+    padding: 10px 14px;
+  }
+  
+  .message-list .filter-select {
+    min-height: 40px;
+    min-width: 150px;
+    padding: 10px 14px;
+  }
+  
+  /* ============================================
+     InputArea - Tablet Optimizations
+     ============================================ */
+  
+  /* Input area layout */
+  .input-area {
+    padding: 16px;
+  }
+  
+  .input-area .input-container {
+    display: flex;
+    gap: 12px;
+  }
+  
+  /* Textarea sizing */
+  .input-area textarea {
+    flex: 1;
+    min-height: 44px;
+    max-height: 150px;
+    padding: 12px 16px;
+    font-size: 15px;
+    line-height: 1.5;
+    border-radius: 8px;
+  }
+  
+  /* Send button */
+  .input-area .send-button {
+    min-width: 80px;
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 15px;
+    border-radius: 8px;
+  }
+  
+  /* Character counter */
+  .input-area .char-counter {
+    font-size: 13px;
+    margin-top: 6px;
+  }
+  
+  /* ============================================
+     PerformanceMonitor - Tablet Positioning
+     ============================================ */
+  
+  /**
+   * Position PerformanceMonitor appropriately for tablet
+   * Requirement: 54.6
+   */
+  
+  /* Performance monitor positioning */
+  .performance-monitor {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    padding: 12px 16px;
+    font-size: 13px;
+    border-radius: 8px;
+    background: var(--background-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 300px;
+    z-index: 1000;
+  }
+  
+  /* FPS display */
+  .performance-monitor .fps-display {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+  
+  /* Expanded metrics */
+  .performance-monitor.expanded {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .performance-monitor .metric-row {
+    font-size: 12px;
+    padding: 6px 0;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  /* Toggle button */
+  .performance-monitor .toggle-button {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 8px;
+    margin-top: 8px;
+  }
+  
+  /* ============================================
+     Transcript Display - Tablet Sizing
+     ============================================ */
+  
+  /* Transcript container */
+  .transcript-display {
+    height: 220px;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  
+  /* Transcript text */
+  .transcript-display p {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  
+  /* ============================================
+     PersonaSwitcher - Tablet Layout
+     ============================================ */
+  
+  /* Persona switcher */
+  .persona-switcher {
+    min-width: 250px;
+  }
+  
+  .persona-switcher select {
+    min-height: 40px;
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+  
+  /* ============================================
+     Modals and Dialogs - Tablet Sizing
+     ============================================ */
+  
+  /* Modal overlays */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+  }
+  
+  /* Modal content */
+  .modal-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    background: var(--background-primary);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    z-index: 9999;
+  }
+  
+  /* Dialog buttons */
+  .dialog-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+  
+  .dialog-button {
+    min-width: 100px;
+    min-height: 40px;
+    padding: 10px 20px;
+  }
+  
+  /* ============================================
+     Notification Toast - Tablet Positioning
+     ============================================ */
+  
+  /* Toast notifications */
+  .notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 320px;
+    max-width: 400px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+  }
+  
+  /* ============================================
+     Offline Notification - Tablet Styling
+     ============================================ */
+  
+  /* Offline banner */
+  .offline-notification {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 24px;
+    background: var(--warning-background);
+    color: var(--warning-text);
+    text-align: center;
+    font-size: 14px;
+    z-index: 10001;
+  }
+  
+  /* ============================================
+     Focus Indicators - Tablet Sizing
+     ============================================ */
+  
+  /* Enhanced focus indicators for tablet */
+  *:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  
+  /* Button focus */
+  button:focus-visible {
+    outline-width: 3px;
+    outline-offset: 2px;
+  }
+  
+  /* Input focus */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-width: 2px;
+    outline-offset: 1px;
+  }
+}
+
+/* ============================================
+   Portrait Orientation Adjustments
+   ============================================ */
+
+/**
+ * Support portrait orientation on tablets
+ * Requirement: 54.7
+ */
+
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
+  /* Stack layout vertically in portrait */
+  .max-w-7xl > .grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  /* Full width columns in portrait */
+  .lg\:col-span-7,
+  .lg\:col-span-5 {
+    grid-column: span 1;
+  }
+  
+  /* Adjust heights for portrait */
+  #avatar-canvas {
+    height: 450px;
+  }
+  
+  #chat-interface {
+    height: 400px;
+  }
+  
+  /* Avatar customizer - horizontal scroll in portrait */
+  .avatar-customizer .customizer-sections {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 20px;
+    padding-bottom: 8px;
+  }
+  
+  .avatar-customizer .customizer-sections > * {
+    flex: 0 0 auto;
+    min-width: 200px;
+  }
+  
+  /* Settings panel - wider in portrait */
+  .settings-panel {
+    width: 480px;
+    max-width: 60vw;
+  }
+}
+
+/* ============================================
+   Landscape Orientation Adjustments
+   ============================================ */
+
+/**
+ * Support landscape orientation on tablets
+ * Requirement: 54.7
+ */
+
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: landscape) {
+  /* Optimize for landscape aspect ratio */
+  #avatar-canvas {
+    height: 400px;
+  }
+  
+  #chat-interface {
+    height: 350px;
+  }
+  
+  /* Compact header in landscape */
+  header .max-w-7xl {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  
+  header h1 {
+    font-size: 24px;
+  }
+  
+  header p {
+    font-size: 13px;
+  }
+  
+  /* Compact performance monitor in landscape */
+  .performance-monitor {
+    bottom: 12px;
+    right: 12px;
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+  
+  .performance-monitor .fps-display {
+    font-size: 18px;
+  }
+  
+  /* Compact audio controller in landscape */
+  .audio-controller {
+    padding: 16px;
+  }
+  
+  .audio-controller canvas {
+    height: 80px;
+  }
+  
+  /* Settings panel - narrower in landscape */
+  .settings-panel {
+    width: 360px;
+    max-width: 45vw;
+  }
+}
+
+/* ============================================
+   Tablet-Specific Utilities
+   ============================================ */
+
+/* Hide desktop-only elements on tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .desktop-only {
+    display: none !important;
+  }
+  
+  /* Show tablet-specific elements */
+  .tablet-only {
+    display: block !important;
+  }
+  
+  /* Tablet-specific flex */
+  .tablet-flex {
+    display: flex !important;
+  }
+  
+  /* Tablet-specific grid */
+  .tablet-grid {
+    display: grid !important;
+  }
+}
+
+/* ============================================
+   Touch Interactions for Tablet
+   ============================================ */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Smooth scrolling */
+  .scrollable {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Prevent text selection during interactions */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Touch-friendly hover states */
+  @media (hover: hover) {
+    button:hover,
+    .interactive:hover {
+      background-color: var(--background-hover);
+    }
+  }
+  
+  /* Active states for touch */
+  button:active,
+  .interactive:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* ============================================
+   Accessibility Enhancements for Tablet
+   ============================================ */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    * {
+      border-width: 2px !important;
+    }
+    
+    button,
+    input,
+    select,
+    textarea {
+      border-width: 3px !important;
+    }
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  
+  /* Focus visible enhancements */
+  .focus-visible-only:focus:not(:focus-visible) {
+    outline: none;
+  }
+  
+  .focus-visible-only:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* ============================================
+   Performance Optimizations for Tablet
+   ============================================ */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* GPU acceleration for animations */
+  .animated {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+  
+  /* Optimize repaints */
+  .static-content {
+    contain: layout style paint;
+  }
+  
+  /* Optimize scrolling */
+  .scroll-container {
+    contain: layout;
+    overflow: auto;
+  }
+}

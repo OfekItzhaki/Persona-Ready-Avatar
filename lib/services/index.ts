@@ -1,5 +1,10 @@
 export { AudioManager } from './AudioManager';
+export { ExportImportService, type ExportFormat, type ExportedConversation, type ImportResult } from './ExportImportService';
 export { LanguageVoiceMapper, languageVoiceMapper } from './LanguageVoiceMapper';
 export { NotificationService, type INotificationStore } from './NotificationService';
+export { OfflineQueueService, type IOfflineQueueStore, type SendMessageCallback } from './OfflineQueueService';
+export { PerformanceMonitorService } from './PerformanceMonitorService';
+export { PreferencesService, type IPreferencesStore } from './PreferencesService';
+export { ThemeManager, type Theme } from './ThemeManager';
 export { TTSService } from './TTSService';
 export { VisemeCoordinator } from './VisemeCoordinator';

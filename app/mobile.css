@@ -1,0 +1,782 @@
+/**
+ * Mobile Responsive Design Styles
+ * 
+ * Optimizes all components for mobile devices (375px - 767px)
+ * 
+ * Features:
+ * - Touch-friendly controls with larger tap targets (min 44x44px)
+ * - Full-screen modals on mobile
+ * - Optimized layouts for small screens
+ * - Touch gesture support
+ * - Mobile keyboard compatibility
+ * - Collapsible components to save screen space
+ * 
+ * Requirements: 53
+ */
+
+/* ============================================
+   Mobile Breakpoints
+   ============================================ */
+
+/* Mobile devices: 375px - 767px */
+@media (max-width: 767px) {
+  
+  /* ============================================
+     AudioController Mobile Optimizations
+     ============================================ */
+  
+  /**
+   * Make AudioController touch-friendly with larger controls
+   * Requirement: 53.1
+   */
+  
+  /* Increase button sizes for touch targets (min 44x44px) */
+  .audio-controller button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px 16px;
+    font-size: 16px; /* Prevent iOS zoom on focus */
+  }
+  
+  /* Larger volume slider for easier touch control */
+  .audio-controller input[type="range"] {
+    height: 44px;
+    padding: 12px 0;
+  }
+  
+  /* Increase slider thumb size */
+  .audio-controller input[type="range"]::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .audio-controller input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+  
+  /* Larger select dropdown for touch */
+  .audio-controller select {
+    min-height: 44px;
+    font-size: 16px; /* Prevent iOS zoom */
+    padding: 12px 16px;
+  }
+  
+  /* Stack controls vertically on mobile */
+  .audio-controller .control-group {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  /* Full-width buttons on mobile */
+  .audio-controller .button-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .audio-controller .button-group button {
+    width: 100%;
+  }
+  
+  /* Larger audio level indicator */
+  .audio-controller canvas {
+    min-height: 80px;
+  }
+  
+  /* ============================================
+     SettingsPanel Mobile Optimizations
+     ============================================ */
+  
+  /**
+   * Display SettingsPanel in full-screen mode on mobile
+   * Requirement: 53.2
+   */
+  
+  /* Full-screen modal on mobile */
+  .settings-panel-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+  }
+  
+  .settings-panel {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0;
+    border-radius: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+  
+  /* Sticky header on mobile */
+  .settings-panel-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--background-primary);
+    border-bottom: 1px solid var(--border-secondary);
+    padding: 16px;
+  }
+  
+  /* Larger close button for touch */
+  .settings-panel-close {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 12px;
+  }
+  
+  /* Touch-friendly tabs */
+  .settings-panel-tabs {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-secondary);
+  }
+  
+  .settings-panel-tab {
+    min-height: 44px;
+    padding: 12px 20px;
+    white-space: nowrap;
+    font-size: 16px;
+  }
+  
+  /* Larger form controls */
+  .settings-panel input[type="range"] {
+    min-height: 44px;
+    padding: 12px 0;
+  }
+  
+  .settings-panel input[type="range"]::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .settings-panel input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .settings-panel select,
+  .settings-panel button {
+    min-height: 44px;
+    font-size: 16px;
+    padding: 12px 16px;
+  }
+  
+  /* Touch-friendly toggle switches */
+  .settings-panel .toggle-switch {
+    min-width: 52px;
+    min-height: 32px;
+  }
+  
+  .settings-panel .toggle-switch-thumb {
+    width: 28px;
+    height: 28px;
+  }
+  
+  /* Larger radio buttons and checkboxes */
+  .settings-panel input[type="radio"],
+  .settings-panel input[type="checkbox"] {
+    min-width: 24px;
+    min-height: 24px;
+  }
+  
+  /* Touch-friendly quality preset buttons */
+  .settings-panel .quality-preset-button {
+    min-height: 60px;
+    padding: 16px;
+    font-size: 16px;
+  }
+  
+  /* ============================================
+     AvatarCustomizer Mobile Optimizations
+     ============================================ */
+  
+  /**
+   * Optimize AvatarCustomizer for mobile with touch controls
+   * Requirement: 53.3
+   */
+  
+  /* Larger color swatches for touch */
+  .avatar-customizer .color-swatch {
+    min-width: 48px;
+    min-height: 48px;
+    border-width: 3px;
+  }
+  
+  /* Increase spacing between swatches */
+  .avatar-customizer .swatch-grid {
+    gap: 12px;
+  }
+  
+  /* Larger expression buttons */
+  .avatar-customizer .expression-button {
+    min-width: 64px;
+    min-height: 64px;
+    padding: 12px;
+    font-size: 32px; /* Larger emoji */
+  }
+  
+  /* Stack sections vertically on mobile */
+  .avatar-customizer {
+    padding: 16px;
+  }
+  
+  .avatar-customizer section {
+    margin-bottom: 24px;
+  }
+  
+  /* Touch-friendly section headers */
+  .avatar-customizer h3 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  
+  /* ============================================
+     MessageList Mobile Optimizations
+     ============================================ */
+  
+  /**
+   * Ensure MessageList supports touch gestures
+   * Requirement: 53.4
+   */
+  
+  /* Touch-friendly message actions */
+  .message-list .message-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .message-list .message-action-button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 12px;
+  }
+  
+  /* Show action buttons on mobile without hover */
+  .message-list .message-item {
+    position: relative;
+  }
+  
+  .message-list .message-actions {
+    opacity: 1; /* Always visible on mobile */
+  }
+  
+  /* Larger reaction buttons */
+  .message-list .reaction-button {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 20px;
+  }
+  
+  /* Touch-friendly search input */
+  .message-list .search-input {
+    min-height: 44px;
+    font-size: 16px;
+    padding: 12px 16px;
+  }
+  
+  /* Larger clear button */
+  .message-list .search-clear-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  /* Touch-friendly filter dropdown */
+  .message-list .filter-select {
+    min-height: 44px;
+    font-size: 16px;
+    padding: 12px 16px;
+  }
+  
+  /* Larger edit textarea */
+  .message-list .edit-textarea {
+    min-height: 80px;
+    font-size: 16px;
+    padding: 12px;
+  }
+  
+  /* Touch-friendly edit buttons */
+  .message-list .edit-button {
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 16px;
+  }
+  
+  /* Delete confirmation dialog - full width on mobile */
+  .message-list .delete-dialog {
+    width: calc(100% - 32px);
+    max-width: 100%;
+    margin: 16px;
+  }
+  
+  .message-list .delete-dialog-button {
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 16px;
+  }
+  
+  /* Smooth scrolling for touch */
+  .message-list-container {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Pull-to-refresh indicator space */
+  .message-list-container {
+    padding-top: 8px;
+  }
+  
+  /* ============================================
+     InputArea Mobile Optimizations
+     ============================================ */
+  
+  /**
+   * Verify InputArea works with mobile keyboards
+   * Requirement: 53.5
+   */
+  
+  /* Prevent zoom on input focus (iOS) */
+  .input-area textarea,
+  .input-area input {
+    font-size: 16px; /* Minimum to prevent iOS zoom */
+  }
+  
+  /* Larger send button for touch */
+  .input-area .send-button {
+    min-width: 64px;
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 16px;
+  }
+  
+  /* Adjust textarea for mobile keyboard */
+  .input-area textarea {
+    min-height: 44px;
+    max-height: 120px; /* Limit height to leave room for keyboard */
+    padding: 12px 16px;
+    line-height: 1.5;
+  }
+  
+  /* Full-width input container */
+  .input-area {
+    padding: 12px;
+  }
+  
+  .input-area .input-container {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .input-area textarea {
+    flex: 1;
+  }
+  
+  /* Character counter - larger text */
+  .input-area .char-counter {
+    font-size: 14px;
+    padding: 4px 0;
+  }
+  
+  /* Validation error - larger text */
+  .input-area .validation-error {
+    font-size: 14px;
+    padding: 8px 0;
+  }
+  
+  /* ============================================
+     PerformanceMonitor Mobile Optimizations
+     ============================================ */
+  
+  /**
+   * Make PerformanceMonitor collapsible on mobile
+   * Requirement: 53.6
+   */
+  
+  /* Smaller, collapsible monitor on mobile */
+  .performance-monitor {
+    bottom: 8px;
+    right: 8px;
+    padding: 8px;
+    font-size: 12px;
+    max-width: calc(100vw - 16px);
+  }
+  
+  /* Collapsed state - show only FPS */
+  .performance-monitor.collapsed {
+    padding: 6px 10px;
+  }
+  
+  .performance-monitor.collapsed .expanded-metrics {
+    display: none;
+  }
+  
+  /* Touch-friendly expand/collapse button */
+  .performance-monitor .toggle-button {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 6px;
+    font-size: 14px;
+  }
+  
+  /* Compact FPS display */
+  .performance-monitor .fps-display {
+    font-size: 16px;
+    font-weight: bold;
+  }
+  
+  /* Compact metrics when expanded */
+  .performance-monitor.expanded {
+    max-height: 50vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .performance-monitor .metric-row {
+    font-size: 11px;
+    padding: 4px 0;
+  }
+  
+  /* ============================================
+     General Mobile Optimizations
+     ============================================ */
+  
+  /* Prevent text selection during touch interactions */
+  .touch-action-none {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Smooth scrolling for all scrollable containers */
+  .scrollable {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Larger tap targets for all interactive elements */
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent double-tap zoom */
+  * {
+    touch-action: manipulation;
+  }
+  
+  /* Larger focus indicators for touch */
+  *:focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+  
+  /* Modal overlays - full screen on mobile */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+  }
+  
+  .modal-content {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0;
+    border-radius: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Safe area insets for notched devices */
+  @supports (padding: env(safe-area-inset-top)) {
+    .safe-area-top {
+      padding-top: env(safe-area-inset-top);
+    }
+    
+    .safe-area-bottom {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    .safe-area-left {
+      padding-left: env(safe-area-inset-left);
+    }
+    
+    .safe-area-right {
+      padding-right: env(safe-area-inset-right);
+    }
+  }
+  
+  /* Reduce animations on mobile for performance */
+  @media (prefers-reduced-motion: no-preference) {
+    * {
+      animation-duration: 0.2s !important;
+      transition-duration: 0.2s !important;
+    }
+  }
+  
+  /* Hide desktop-only elements */
+  .desktop-only {
+    display: none !important;
+  }
+  
+  /* Show mobile-only elements */
+  .mobile-only {
+    display: block !important;
+  }
+  
+  /* Compact spacing on mobile */
+  .container {
+    padding: 12px;
+  }
+  
+  .section {
+    margin-bottom: 16px;
+  }
+  
+  /* Larger text for readability */
+  body {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  h1 {
+    font-size: 24px;
+  }
+  
+  h2 {
+    font-size: 20px;
+  }
+  
+  h3 {
+    font-size: 18px;
+  }
+  
+  /* Touch-friendly links */
+  a {
+    padding: 8px 4px;
+    margin: -8px -4px;
+  }
+  
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Full-width images */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Stack flex containers on mobile */
+  .flex-row-desktop {
+    flex-direction: column;
+  }
+  
+  /* Full-width cards on mobile */
+  .card {
+    width: 100%;
+    margin: 0 0 16px 0;
+  }
+}
+
+/* ============================================
+   Landscape Orientation Adjustments
+   ============================================ */
+
+@media (max-width: 767px) and (orientation: landscape) {
+  /* Reduce vertical padding in landscape */
+  .settings-panel,
+  .modal-content {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  
+  /* Compact performance monitor in landscape */
+  .performance-monitor {
+    font-size: 10px;
+    padding: 6px;
+  }
+  
+  /* Reduce textarea height in landscape */
+  .input-area textarea {
+    max-height: 80px;
+  }
+}
+
+/* ============================================
+   Small Mobile Devices (375px - 413px)
+   ============================================ */
+
+@media (max-width: 413px) {
+  /* Extra compact spacing for small devices */
+  .container {
+    padding: 8px;
+  }
+  
+  /* Smaller buttons on very small screens */
+  button {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  
+  /* Compact audio controller */
+  .audio-controller {
+    padding: 12px;
+  }
+  
+  /* Smaller color swatches */
+  .avatar-customizer .color-swatch {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  
+  /* Smaller expression buttons */
+  .avatar-customizer .expression-button {
+    min-width: 56px;
+    min-height: 56px;
+    font-size: 28px;
+  }
+}
+
+/* ============================================
+   Touch Gesture Support
+   ============================================ */
+
+/* Swipe indicators */
+.swipeable {
+  position: relative;
+  touch-action: pan-y;
+}
+
+.swipeable::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 40px;
+  background: var(--border-secondary);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+/* Pull-to-refresh indicator */
+.pull-to-refresh {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: top 0.2s ease;
+}
+
+.pull-to-refresh.active {
+  top: 8px;
+}
+
+/* Long-press feedback */
+.long-pressable {
+  position: relative;
+}
+
+.long-pressable::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--interactive-primary);
+  opacity: 0;
+  border-radius: inherit;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.long-pressable.pressing::before {
+  opacity: 0.1;
+}
+
+/* ============================================
+   Mobile Keyboard Adjustments
+   ============================================ */
+
+/* Adjust layout when keyboard is visible */
+@media (max-height: 500px) {
+  /* Reduce header size when keyboard is visible */
+  .settings-panel-header {
+    padding: 8px 16px;
+  }
+  
+  /* Hide non-essential elements when keyboard is visible */
+  .performance-monitor {
+    display: none;
+  }
+  
+  /* Compact message list */
+  .message-list .message-item {
+    padding: 8px;
+  }
+}
+
+/* ============================================
+   iOS-Specific Adjustments
+   ============================================ */
+
+/* Fix iOS input zoom */
+@supports (-webkit-touch-callout: none) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+  
+  /* Fix iOS safe area */
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Fix iOS bounce scroll */
+  .modal-content,
+  .settings-panel {
+    overscroll-behavior: none;
+  }
+}
+
+/* ============================================
+   Android-Specific Adjustments
+   ============================================ */
+
+/* Fix Android tap highlight */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom tap highlight */
+button:active,
+a:active,
+.interactive:active {
+  background-color: var(--interactive-primary);
+  opacity: 0.8;
+}

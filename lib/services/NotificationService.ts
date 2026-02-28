@@ -1,4 +1,4 @@
-import { Notification } from '@/types';
+import { Notification, NotificationAction } from '@/types';
 
 /**
  * Store interface for notification management
@@ -92,9 +92,10 @@ export class NotificationService {
    * Display an error notification
    * @param message - The notification message
    * @param duration - Auto-dismiss duration in milliseconds (optional, defaults to 7000ms)
+   * @param action - Optional action button with label and callback
    */
-  error(message: string, duration: number = 7000): string {
-    return this.notify('error', message, duration);
+  error(message: string, duration: number = 7000, action?: { label: string; onClick: () => void }): string {
+    return this.notify('error', message, duration, action);
   }
 
   /**
@@ -128,7 +129,8 @@ export class NotificationService {
   private notify(
     type: 'info' | 'success' | 'warning' | 'error',
     message: string,
-    duration?: number
+    duration?: number,
+    action?: { label: string; onClick: () => void }
   ): string {
     const id = this.generateId();
     const notification: Notification = {
@@ -137,6 +139,8 @@ export class NotificationService {
       message,
       timestamp: new Date(),
       duration,
+      action,
+      dismissible: true,
     };
 
     // Add notification to store

@@ -23,10 +23,21 @@ class Logger {
     'key',
     'AZURE_SPEECH_KEY',
     'BRAIN_API_KEY',
+    'message',
+    'content',
+    'text',
+    'conversation',
+    'userMessage',
+    'agentMessage',
   ];
 
   constructor() {
     this.logLevel = (process.env.NEXT_PUBLIC_LOG_LEVEL as LogLevel) || 'info';
+    
+    // In production, set log level to 'warn' to reduce logging of sensitive data (Requirement 44.5)
+    if (process.env.NODE_ENV === 'production') {
+      this.logLevel = 'warn';
+    }
   }
 
   private shouldLog(level: LogLevel): boolean {
@@ -38,7 +49,7 @@ class Logger {
 
   /**
    * Sanitize context to remove sensitive data
-   * Requirement 14.6: Ensure no sensitive data in logs
+   * Requirement 44.5: Ensure no sensitive data in logs, especially in production
    */
   private sanitizeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
     if (!context) return undefined;
@@ -52,7 +63,8 @@ class Logger {
       );
 
       if (isSensitive) {
-        sanitized[key] = '[REDACTED]';
+        // In production, completely redact sensitive data (Requirement 44.5)
+        sanitized[key] = process.env.NODE_ENV === 'production' ? '[REDACTED]' : '[REDACTED]';
       } else if (typeof value === 'object' && value !== null) {
         // Recursively sanitize nested objects
         sanitized[key] = this.sanitizeContext(value as Record<string, unknown>);

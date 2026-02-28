@@ -13,6 +13,10 @@ export interface ChatMessage {
   role: 'user' | 'agent';
   content: string;
   timestamp: Date;
+  edited?: boolean;
+  editedAt?: Date;
+  reaction?: 'thumbs_up' | 'thumbs_down';
+  queueStatus?: 'pending' | 'sending' | 'sent' | 'failed';
 }
 
 export interface VisemeData {
@@ -33,12 +37,19 @@ export interface BlendshapeMapping {
   targetValue: number;
 }
 
+export interface NotificationAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface Notification {
   id: string;
   type: 'info' | 'success' | 'warning' | 'error';
   message: string;
   timestamp: Date;
   duration?: number;
+  action?: NotificationAction;
+  dismissible?: boolean;
 }
 
 // API Models
@@ -64,6 +75,8 @@ export interface SpeechConfig {
   voice: string;
   language: string;
   outputFormat: AudioFormat;
+  rate?: number; // 0.5-2.0, default 1.0
+  pitch?: number; // -50 to +50, default 0
 }
 
 export interface SynthesisResult {
@@ -111,6 +124,55 @@ export type DomainError = ApiError | TTSError | SpeechError | ValidationError;
 
 export type PlaybackState = 'idle' | 'playing' | 'paused' | 'stopped';
 
+// Enhanced State Types for Requirements 3-9, 22-23, 32-34
+
+export interface AudioPreferences {
+  volume: number; // 0-100
+  isMuted: boolean;
+  playbackSpeed: number; // 0.5-2.0
+  speechRate: number; // 0.5-2.0
+  speechPitch: number; // -50 to +50
+  audioQuality: 'low' | 'medium' | 'high';
+}
+
+export interface AvatarCustomization {
+  skinTone: string; // hex color
+  eyeColor: string; // hex color
+  hairColor: string; // hex color
+  currentExpression: 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | null;
+}
+
+export interface UIPreferences {
+  theme: 'light' | 'dark' | 'system';
+  graphicsQuality: 'low' | 'medium' | 'high' | 'ultra';
+  performanceMonitorVisible: boolean;
+  performanceMonitorExpanded: boolean;
+  highContrastMode: boolean;
+  settingsPanelActiveSection?: 'audio' | 'graphics' | 'appearance' | 'accessibility' | 'privacy';
+  screenReaderOptimizations: boolean;
+  enhancedFocusIndicators: boolean;
+}
+
+export interface OfflineQueueItem {
+  id: string;
+  agentId: string;
+  message: string;
+  timestamp: Date;
+  status: 'pending' | 'sending' | 'sent' | 'failed';
+  retryCount: number;
+}
+
+export interface PerformanceMetrics {
+  fps: number;
+  averageFps: number;
+  frameTime: number;
+  memoryUsage: number | null;
+  drawCalls: number;
+  triangles: number;
+  brainApiLatency: number[];
+  ttsLatency: number[];
+}
+
 // Service Interfaces
 
 export interface ITTSService {
@@ -137,8 +199,20 @@ export interface IAudioManager {
   pause(): void;
   resume(): void;
   stop(): void;
+  skip(): void;
   getCurrentTime(): number;
   getDuration(): number;
+  setVolume(volume: number): void;
+  getVolume(): number;
+  mute(): void;
+  unmute(): void;
+  isMuted(): boolean;
+  setPlaybackSpeed(speed: number): void;
+  getPlaybackSpeed(): number;
+  enqueue(buffer: AudioBuffer): void;
+  clearQueue(): void;
+  getQueueLength(): number;
+  getAudioLevelData(): Uint8Array | null;
   subscribeToPlaybackState(callback: (state: PlaybackState) => void): () => void;
 }
 
@@ -148,7 +222,7 @@ export interface IBrainApiRepository {
 }
 
 export interface IAzureSpeechRepository {
-  synthesize(text: string, config: SpeechConfig): Promise<Result<SynthesisResult, SpeechError>>;
+  synthesize(text: string, config: SpeechConfig, isSSML?: boolean): Promise<Result<SynthesisResult, SpeechError>>;
 }
 
 export interface INotificationService {

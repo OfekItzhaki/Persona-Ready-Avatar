@@ -4,8 +4,10 @@
  * Provides functions to sanitize user input before sending to API
  * to prevent injection attacks and ensure data integrity.
  *
- * Requirements: 14.5
+ * Requirements: 43
  */
+
+import { logger } from '../logger';
 
 /**
  * Sanitize user message input
@@ -79,6 +81,12 @@ export function validateNoSqlInjection(input: string): boolean {
 
   for (const pattern of sqlPatterns) {
     if (pattern.test(input)) {
+      // Log validation failure - Requirement 43.8
+      logger.warn('SQL injection pattern detected in user input', {
+        component: 'sanitize',
+        operation: 'validateNoSqlInjection',
+        pattern: pattern.source,
+      });
       return false;
     }
   }
@@ -102,6 +110,12 @@ export function sanitizeAndValidate(input: string): {
   const sanitized = sanitizeMessage(input);
 
   if (!sanitized) {
+    // Log validation failure - Requirement 43.8
+    logger.warn('Input validation failed: empty after sanitization', {
+      component: 'sanitize',
+      operation: 'sanitizeAndValidate',
+    });
+
     return {
       sanitized: '',
       isValid: false,
@@ -110,6 +124,12 @@ export function sanitizeAndValidate(input: string): {
   }
 
   if (!validateNoSqlInjection(sanitized)) {
+    // Log validation failure - Requirement 43.8
+    logger.warn('Input validation failed: suspicious patterns detected', {
+      component: 'sanitize',
+      operation: 'sanitizeAndValidate',
+    });
+
     return {
       sanitized: '',
       isValid: false,

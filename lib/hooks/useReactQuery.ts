@@ -1,7 +1,10 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { BrainApiRepository } from '../repositories/BrainApiRepository';
 import { useAppStore } from '../store/useAppStore';
+import { NotificationService } from '../services/NotificationService';
 import { logger } from '../logger';
+import { stripSSML } from '../utils/ssml';
+import { formatErrorNotification } from '../utils/errorMessages';
 import type { Agent, ChatMessage, ChatResponse } from '@/types';
 
 /**
@@ -76,15 +79,14 @@ export function useAgents() {
           error: result.error,
         });
 
-        throw new Error(
-          result.error.type === 'NETWORK_ERROR'
-            ? result.error.message
-            : result.error.type === 'TIMEOUT'
-              ? `Request timeout after ${result.error.duration}ms`
-              : result.error.type === 'SERVER_ERROR'
-                ? result.error.details
-                : 'Failed to fetch agents'
-        );
+        // Create user-friendly error message (Requirement 38.1, 38.2)
+        const errorMessage = formatErrorNotification(result.error);
+        
+        // Create error object with detailed information for debugging (Requirement 38.8)
+        const error = new Error(errorMessage);
+        (error as any).apiError = result.error;
+        
+        throw error;
       }
 
       logger.info('Agents fetched successfully', {
@@ -160,15 +162,14 @@ export function useSendMessage() {
           error: result.error,
         });
 
-        throw new Error(
-          result.error.type === 'NETWORK_ERROR'
-            ? result.error.message
-            : result.error.type === 'TIMEOUT'
-              ? `Request timeout after ${result.error.duration}ms`
-              : result.error.type === 'SERVER_ERROR'
-                ? result.error.details
-                : 'Failed to send message'
-        );
+        // Create user-friendly error message (Requirement 38.1, 38.2)
+        const errorMessage = formatErrorNotification(result.error);
+        
+        // Create error object with detailed information for debugging (Requirement 38.8)
+        const error = new Error(errorMessage);
+        (error as any).apiError = result.error;
+        
+        throw error;
       }
 
       logger.info('Message sent successfully', {
@@ -209,18 +210,25 @@ export function useSendMessage() {
         responseLength: response.message.length,
       });
 
+      // Strip SSML tags from displayed transcript (Requirement 31.8)
+      const displayContent = stripSSML(response.message);
+
       // Add agent response to conversation history
       const agentMessage: ChatMessage = {
         id: `agent-${Date.now()}`,
         role: 'agent',
-        content: response.message,
+        content: displayContent,
         timestamp: new Date(response.timestamp),
       };
 
       addMessage(agentMessage);
 
-      // Trigger TTS synthesis if service and agent are provided
-      if (variables.ttsService && variables.selectedAgent) {
+      // Check if TTS is in text-only mode (Requirement 39.8)
+      const ttsTextOnlyMode = useAppStore.getState().ttsTextOnlyMode;
+
+      // Trigger TTS synthesis with original message (may contain SSML)
+      // Skip TTS if in text-only mode after 3+ consecutive failures
+      if (variables.ttsService && variables.selectedAgent && !ttsTextOnlyMode) {
         logger.info('Triggering TTS synthesis', {
           component: 'useSendMessage',
           voice: variables.selectedAgent.voice,
@@ -229,16 +237,103 @@ export function useSendMessage() {
 
         variables.ttsService
           .synthesizeSpeech(
-            response.message,
+            response.message, // Use original message with SSML for TTS
             variables.selectedAgent.voice,
             variables.selectedAgent.language
           )
+          .then(() => {
+            // TTS synthesis succeeded - reset failure counter (Requirement 39.6)
+            useAppStore.getState().resetTTSFailures();
+            
+            logger.info('TTS synthesis completed successfully', {
+              component: 'useSendMessage',
+            });
+          })
           .catch((error) => {
+            // TTS synthesis failed - increment failure counter (Requirement 39.5)
+            useAppStore.getState().incrementTTSFailures();
+            
+            const consecutiveFailures = useAppStore.getState().consecutiveTTSFailures;
+            const textOnlyMode = useAppStore.getState().ttsTextOnlyMode;
+
             logger.error('TTS synthesis failed', {
               component: 'useSendMessage',
               error: error instanceof Error ? error.message : 'Unknown error',
+              errorCode: (error as any)?.error?.type,
+              errorDetails: (error as any)?.error?.details || (error as any)?.error?.message,
+              consecutiveFailures,
+              textOnlyMode,
             });
+
+            // Display error notification (Requirement 39.1, 39.2, 39.3)
+            try {
+              const notificationService = NotificationService.getInstance();
+
+              if (textOnlyMode) {
+                // Entered text-only mode after 3+ failures (Requirement 39.8)
+                notificationService.warning(
+                  'TTS has been disabled after multiple failures. Text responses will continue to display normally. You can try enabling TTS again in settings.',
+                  10000 // 10 seconds
+                );
+              } else {
+                // Display error with retry button (Requirement 39.1, 39.2, 39.4)
+                notificationService.error(
+                  'Audio synthesis failed, but the text response is available above. Click retry to attempt audio synthesis again.',
+                  undefined, // No auto-dismiss for errors with retry
+                  {
+                    label: 'Retry TTS',
+                    onClick: () => {
+                      // Retry TTS synthesis (Requirement 39.4)
+                      if (variables.ttsService && variables.selectedAgent) {
+                        logger.info('Retrying TTS synthesis', {
+                          component: 'useSendMessage',
+                          voice: variables.selectedAgent.voice,
+                          language: variables.selectedAgent.language,
+                        });
+
+                        variables.ttsService
+                          .synthesizeSpeech(
+                            response.message,
+                            variables.selectedAgent.voice,
+                            variables.selectedAgent.language
+                          )
+                          .then(() => {
+                            // Retry succeeded - reset failure counter
+                            useAppStore.getState().resetTTSFailures();
+                            notificationService.success('Audio synthesis successful');
+                          })
+                          .catch((retryError) => {
+                            // Retry failed - increment failure counter again
+                            useAppStore.getState().incrementTTSFailures();
+                            
+                            logger.error('TTS retry failed', {
+                              component: 'useSendMessage',
+                              error: retryError instanceof Error ? retryError.message : 'Unknown error',
+                            });
+
+                            notificationService.error(
+                              'Audio synthesis retry failed. The text response remains available.'
+                            );
+                          });
+                      }
+                    },
+                  }
+                );
+              }
+            } catch (notificationError) {
+              // NotificationService not initialized (e.g., in tests) - just log
+              logger.warn('NotificationService not available for TTS error notification', {
+                component: 'useSendMessage',
+                error: notificationError instanceof Error ? notificationError.message : 'Unknown error',
+              });
+            }
           });
+      } else if (ttsTextOnlyMode) {
+        // Log that TTS is skipped due to text-only mode
+        logger.info('TTS synthesis skipped - text-only mode enabled', {
+          component: 'useSendMessage',
+          consecutiveFailures: useAppStore.getState().consecutiveTTSFailures,
+        });
       }
     },
 

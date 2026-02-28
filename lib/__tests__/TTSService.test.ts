@@ -10,7 +10,9 @@ import type {
   SpeechError,
   VisemeEvent,
   SpeechConfig,
+  AudioPreferences,
 } from '@/types';
+import type { IPreferencesStore } from '../services/PreferencesService';
 
 /**
  * Unit Tests for TTSService
@@ -21,14 +23,16 @@ import type {
  * - Error handling and notification emission
  * - Stop functionality
  * - Subscription management
+ * - Speech rate and pitch from preferences
  * 
- * Validates: Requirements 2.2-2.6, 3.2, 5.6
+ * Validates: Requirements 2.2-2.6, 3.2, 5.6, 17.1
  */
 describe('TTSService', () => {
   let mockAzureSpeechRepository: IAzureSpeechRepository;
   let mockAudioManager: IAudioManager;
   let mockVisemeCoordinator: IVisemeCoordinator;
   let mockLanguageVoiceMapper: LanguageVoiceMapper;
+  let mockPreferencesService: any;
   let ttsService: TTSService;
 
   // Mock data
@@ -48,6 +52,15 @@ describe('TTSService', () => {
   const mockSynthesisResult: SynthesisResult = {
     audioBuffer: mockAudioBuffer,
     visemes: mockVisemes,
+  };
+
+  const mockAudioPreferences: AudioPreferences = {
+    volume: 80,
+    isMuted: false,
+    playbackSpeed: 1.0,
+    speechRate: 1.0,
+    speechPitch: 0,
+    audioQuality: 'high',
   };
 
   beforeEach(() => {
@@ -76,12 +89,20 @@ describe('TTSService', () => {
     mockLanguageVoiceMapper = new LanguageVoiceMapper();
     vi.spyOn(mockLanguageVoiceMapper, 'getVoiceForLanguage');
 
+    // Create mock PreferencesService with store
+    mockPreferencesService = {
+      store: {
+        audioPreferences: { ...mockAudioPreferences },
+      },
+    };
+
     // Create TTSService instance
     ttsService = new TTSService(
       mockAzureSpeechRepository,
       mockAudioManager,
       mockVisemeCoordinator,
-      mockLanguageVoiceMapper
+      mockLanguageVoiceMapper,
+      mockPreferencesService
     );
   });
 
@@ -115,6 +136,8 @@ describe('TTSService', () => {
         voice,
         language,
         outputFormat: 'audio-24khz-48kbitrate-mono-mp3',
+        rate: 1.0,
+        pitch: 0,
       });
 
       // Verify viseme coordinator was started
@@ -779,6 +802,170 @@ describe('TTSService', () => {
       // Assert
       expect(result.success).toBe(true);
       expect(mockAzureSpeechRepository.synthesize).toHaveBeenCalledWith(text, expect.any(Object));
+    });
+  });
+
+  describe('speech rate and pitch', () => {
+    it('should pass speech rate and pitch from preferences to synthesis', async () => {
+      // Arrange
+      const text = 'Test text';
+      const voice = 'en-US-JennyNeural';
+      const language = 'en-US';
+
+      mockPreferencesService.store.audioPreferences.speechRate = 1.5;
+      mockPreferencesService.store.audioPreferences.speechPitch = 10;
+
+      vi.mocked(mockAzureSpeechRepository.synthesize).mockResolvedValue({
+        success: true,
+        data: mockSynthesisResult,
+      });
+
+      // Act
+      await ttsService.synthesizeSpeech(text, voice, language);
+
+      // Assert
+      expect(mockAzureSpeechRepository.synthesize).toHaveBeenCalledWith(
+        text,
+        expect.objectContaining({
+          rate: 1.5,
+          pitch: 10,
+        })
+      );
+    });
+
+    it('should handle minimum speech rate (0.5)', async () => {
+      // Arrange
+      const text = 'Test text';
+      const voice = 'en-US-JennyNeural';
+      const language = 'en-US';
+
+      mockPreferencesService.store.audioPreferences.speechRate = 0.5;
+      mockPreferencesService.store.audioPreferences.speechPitch = 0;
+
+      vi.mocked(mockAzureSpeechRepository.synthesize).mockResolvedValue({
+        success: true,
+        data: mockSynthesisResult,
+      });
+
+      // Act
+      await ttsService.synthesizeSpeech(text, voice, language);
+
+      // Assert
+      expect(mockAzureSpeechRepository.synthesize).toHaveBeenCalledWith(
+        text,
+        expect.objectContaining({
+          rate: 0.5,
+          pitch: 0,
+        })
+      );
+    });
+
+    it('should handle maximum speech rate (2.0)', async () => {
+      // Arrange
+      const text = 'Test text';
+      const voice = 'en-US-JennyNeural';
+      const language = 'en-US';
+
+      mockPreferencesService.store.audioPreferences.speechRate = 2.0;
+      mockPreferencesService.store.audioPreferences.speechPitch = 0;
+
+      vi.mocked(mockAzureSpeechRepository.synthesize).mockResolvedValue({
+        success: true,
+        data: mockSynthesisResult,
+      });
+
+      // Act
+      await ttsService.synthesizeSpeech(text, voice, language);
+
+      // Assert
+      expect(mockAzureSpeechRepository.synthesize).toHaveBeenCalledWith(
+        text,
+        expect.objectContaining({
+          rate: 2.0,
+          pitch: 0,
+        })
+      );
+    });
+
+    it('should handle minimum pitch (-50)', async () => {
+      // Arrange
+      const text = 'Test text';
+      const voice = 'en-US-JennyNeural';
+      const language = 'en-US';
+
+      mockPreferencesService.store.audioPreferences.speechRate = 1.0;
+      mockPreferencesService.store.audioPreferences.speechPitch = -50;
+
+      vi.mocked(mockAzureSpeechRepository.synthesize).mockResolvedValue({
+        success: true,
+        data: mockSynthesisResult,
+      });
+
+      // Act
+      await ttsService.synthesizeSpeech(text, voice, language);
+
+      // Assert
+      expect(mockAzureSpeechRepository.synthesize).toHaveBeenCalledWith(
+        text,
+        expect.objectContaining({
+          rate: 1.0,
+          pitch: -50,
+        })
+      );
+    });
+
+    it('should handle maximum pitch (+50)', async () => {
+      // Arrange
+      const text = 'Test text';
+      const voice = 'en-US-JennyNeural';
+      const language = 'en-US';
+
+      mockPreferencesService.store.audioPreferences.speechRate = 1.0;
+      mockPreferencesService.store.audioPreferences.speechPitch = 50;
+
+      vi.mocked(mockAzureSpeechRepository.synthesize).mockResolvedValue({
+        success: true,
+        data: mockSynthesisResult,
+      });
+
+      // Act
+      await ttsService.synthesizeSpeech(text, voice, language);
+
+      // Assert
+      expect(mockAzureSpeechRepository.synthesize).toHaveBeenCalledWith(
+        text,
+        expect.objectContaining({
+          rate: 1.0,
+          pitch: 50,
+        })
+      );
+    });
+
+    it('should handle default values (rate 1.0, pitch 0)', async () => {
+      // Arrange
+      const text = 'Test text';
+      const voice = 'en-US-JennyNeural';
+      const language = 'en-US';
+
+      mockPreferencesService.store.audioPreferences.speechRate = 1.0;
+      mockPreferencesService.store.audioPreferences.speechPitch = 0;
+
+      vi.mocked(mockAzureSpeechRepository.synthesize).mockResolvedValue({
+        success: true,
+        data: mockSynthesisResult,
+      });
+
+      // Act
+      await ttsService.synthesizeSpeech(text, voice, language);
+
+      // Assert
+      expect(mockAzureSpeechRepository.synthesize).toHaveBeenCalledWith(
+        text,
+        expect.objectContaining({
+          rate: 1.0,
+          pitch: 0,
+        })
+      );
     });
   });
 });

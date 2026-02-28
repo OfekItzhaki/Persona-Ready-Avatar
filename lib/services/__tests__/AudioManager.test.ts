@@ -37,11 +37,28 @@ describe('AudioManager', () => {
     // Mock AudioBufferSourceNode
     mockSourceNode = {
       buffer: null,
+      playbackRate: { value: 1.0 },
       connect: vi.fn(),
       disconnect: vi.fn(),
       start: vi.fn(),
       stop: vi.fn(),
       onended: null,
+    };
+
+    // Mock GainNode
+    const mockGainNode = {
+      gain: { value: 1.0 },
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+    };
+
+    // Mock AnalyserNode
+    const mockAnalyserNode = {
+      fftSize: 256,
+      frequencyBinCount: 128,
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      getByteFrequencyData: vi.fn(),
     };
 
     // Mock AudioContext
@@ -51,6 +68,8 @@ describe('AudioManager', () => {
       currentTime: 0,
       destination: {},
       createBufferSource: vi.fn(() => mockSourceNode),
+      createGain: vi.fn(() => mockGainNode),
+      createAnalyser: vi.fn(() => mockAnalyserNode),
       resume: vi.fn().mockResolvedValue(undefined),
       close: vi.fn().mockResolvedValue(undefined),
     };
@@ -111,6 +130,7 @@ describe('AudioManager', () => {
       // Arrange
       const buffer = createMockAudioBuffer(5.0);
       mockAudioContext.currentTime = 1.0;
+      const mockAnalyserNode = mockAudioContext.createAnalyser();
 
       // Act
       await audioManager.play(buffer);
@@ -118,7 +138,7 @@ describe('AudioManager', () => {
       // Assert
       expect(mockAudioContext.createBufferSource).toHaveBeenCalled();
       expect(mockSourceNode.buffer).toBe(buffer);
-      expect(mockSourceNode.connect).toHaveBeenCalledWith(mockAudioContext.destination);
+      expect(mockSourceNode.connect).toHaveBeenCalledWith(mockAnalyserNode);
       expect(mockSourceNode.start).toHaveBeenCalledWith(0);
     });
 
@@ -158,6 +178,7 @@ describe('AudioManager', () => {
       // Create new mock for second playback
       const secondSourceNode = {
         buffer: null,
+        playbackRate: { value: 1.0 },
         connect: vi.fn(),
         disconnect: vi.fn(),
         start: vi.fn(),
@@ -308,6 +329,7 @@ describe('AudioManager', () => {
       // Create new mock source for resume
       const resumeSourceNode = {
         buffer: null,
+        playbackRate: { value: 1.0 },
         connect: vi.fn(),
         disconnect: vi.fn(),
         start: vi.fn(),
@@ -316,6 +338,7 @@ describe('AudioManager', () => {
       };
       mockAudioContext.createBufferSource.mockReturnValue(resumeSourceNode);
       mockAudioContext.currentTime = 2.0;
+      const mockAnalyserNode = mockAudioContext.createAnalyser();
 
       // Act
       audioManager.resume();
@@ -323,7 +346,7 @@ describe('AudioManager', () => {
       // Assert
       expect(resumeSourceNode.start).toHaveBeenCalledWith(0, pauseTime);
       expect(resumeSourceNode.buffer).toBe(buffer);
-      expect(resumeSourceNode.connect).toHaveBeenCalledWith(mockAudioContext.destination);
+      expect(resumeSourceNode.connect).toHaveBeenCalledWith(mockAnalyserNode);
     });
 
     it('should emit playing state when resuming', async () => {
@@ -340,6 +363,7 @@ describe('AudioManager', () => {
       // Create new mock source for resume
       const resumeSourceNode = {
         buffer: null,
+        playbackRate: { value: 1.0 },
         connect: vi.fn(),
         disconnect: vi.fn(),
         start: vi.fn(),
@@ -377,6 +401,7 @@ describe('AudioManager', () => {
 
       const resumeSourceNode = {
         buffer: null,
+        playbackRate: { value: 1.0 },
         connect: vi.fn(),
         disconnect: vi.fn(),
         start: vi.fn().mockImplementation(() => {
@@ -512,6 +537,7 @@ describe('AudioManager', () => {
 
       const resumeSourceNode = {
         buffer: null,
+        playbackRate: { value: 1.0 },
         connect: vi.fn(),
         disconnect: vi.fn(),
         start: vi.fn(),
@@ -572,6 +598,7 @@ describe('AudioManager', () => {
       
       const resumeSourceNode = {
         buffer: null,
+        playbackRate: { value: 1.0 },
         connect: vi.fn(),
         disconnect: vi.fn(),
         start: vi.fn(),
@@ -687,6 +714,7 @@ describe('AudioManager', () => {
       // Resume
       const resumeSourceNode = {
         buffer: null,
+        playbackRate: { value: 1.0 },
         connect: vi.fn(),
         disconnect: vi.fn(),
         start: vi.fn(),
@@ -908,6 +936,7 @@ describe('AudioManager', () => {
 
       const resumeSourceNode = {
         buffer: null,
+        playbackRate: { value: 1.0 },
         connect: vi.fn(),
         disconnect: vi.fn(),
         start: vi.fn(),

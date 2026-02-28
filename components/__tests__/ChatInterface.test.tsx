@@ -976,3 +976,315 @@ describe('ChatInterface Component', () => {
     });
   });
 });
+
+/**
+ * Test: Export/Import Functionality
+ * Validates: Requirements 13, 14
+ */
+describe('Export/Import Functionality (Requirements 13, 14)', () => {
+  beforeEach(() => {
+    // Mock ExportImportService
+    vi.mock('@/lib/services/ExportImportService', () => ({
+      ExportImportService: {
+        downloadConversation: vi.fn(),
+        importFromFile: vi.fn(),
+      },
+    }));
+  });
+
+  describe('Export Button', () => {
+    it('should render export button', () => {
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const exportButton = screen.getByRole('button', { name: /export conversation/i });
+      expect(exportButton).toBeInTheDocument();
+    });
+
+    it('should disable export button when conversation is empty', () => {
+      useAppStore.setState({ messages: [] });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const exportButton = screen.getByRole('button', { name: /export conversation/i });
+      expect(exportButton).toBeDisabled();
+    });
+
+    it('should enable export button when messages exist', () => {
+      const messages: ChatMessage[] = [
+        {
+          id: '1',
+          role: 'user',
+          content: 'Test message',
+          timestamp: new Date(),
+        },
+      ];
+
+      useAppStore.setState({ messages });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const exportButton = screen.getByRole('button', { name: /export conversation/i });
+      expect(exportButton).not.toBeDisabled();
+    });
+
+    it('should show format selection menu when clicked', async () => {
+      const user = userEvent.setup();
+      const messages: ChatMessage[] = [
+        {
+          id: '1',
+          role: 'user',
+          content: 'Test message',
+          timestamp: new Date(),
+        },
+      ];
+
+      useAppStore.setState({ messages });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const exportButton = screen.getByRole('button', { name: /export conversation/i });
+      await user.click(exportButton);
+
+      expect(screen.getByRole('menuitem', { name: /json/i })).toBeInTheDocument();
+      expect(screen.getByRole('menuitem', { name: /plain text/i })).toBeInTheDocument();
+    });
+
+    it('should support keyboard activation', async () => {
+      const user = userEvent.setup();
+      const messages: ChatMessage[] = [
+        {
+          id: '1',
+          role: 'user',
+          content: 'Test message',
+          timestamp: new Date(),
+        },
+      ];
+
+      useAppStore.setState({ messages });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const exportButton = screen.getByRole('button', { name: /export conversation/i });
+      exportButton.focus();
+      await user.keyboard('{Enter}');
+
+      expect(screen.getByRole('menuitem', { name: /json/i })).toBeInTheDocument();
+    });
+  });
+
+  describe('Import Button', () => {
+    it('should render import button', () => {
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const importButton = screen.getByRole('button', { name: /import conversation/i });
+      expect(importButton).toBeInTheDocument();
+    });
+
+    it('should open file picker when clicked with no existing messages', async () => {
+      const user = userEvent.setup();
+      useAppStore.setState({ messages: [] });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const importButton = screen.getByRole('button', { name: /import conversation/i });
+      
+      // Mock file input click
+      const fileInput = screen.getByLabelText(/select conversation file to import/i);
+      const clickSpy = vi.spyOn(fileInput, 'click');
+
+      await user.click(importButton);
+
+      expect(clickSpy).toHaveBeenCalled();
+    });
+
+    it('should show replace/append dialog when clicked with existing messages', async () => {
+      const user = userEvent.setup();
+      const messages: ChatMessage[] = [
+        {
+          id: '1',
+          role: 'user',
+          content: 'Existing message',
+          timestamp: new Date(),
+        },
+      ];
+
+      useAppStore.setState({ messages });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const importButton = screen.getByRole('button', { name: /import conversation/i });
+      await user.click(importButton);
+
+      expect(screen.getByText(/import conversation/i)).toBeInTheDocument();
+      expect(screen.getByText(/append to current conversation/i)).toBeInTheDocument();
+      expect(screen.getByText(/replace current conversation/i)).toBeInTheDocument();
+    });
+
+    it('should support keyboard activation', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const importButton = screen.getByRole('button', { name: /import conversation/i });
+      importButton.focus();
+      await user.keyboard('{Enter}');
+
+      // Should trigger file picker or dialog
+      const fileInput = screen.getByLabelText(/select conversation file to import/i);
+      expect(fileInput).toBeInTheDocument();
+    });
+  });
+
+  describe('Import Mode Dialog', () => {
+    it('should allow user to select append mode', async () => {
+      const user = userEvent.setup();
+      const messages: ChatMessage[] = [
+        {
+          id: '1',
+          role: 'user',
+          content: 'Existing message',
+          timestamp: new Date(),
+        },
+      ];
+
+      useAppStore.setState({ messages });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const importButton = screen.getByRole('button', { name: /import conversation/i });
+      await user.click(importButton);
+
+      const appendButton = screen.getByText(/append to current conversation/i);
+      const fileInput = screen.getByLabelText(/select conversation file to import/i);
+      const clickSpy = vi.spyOn(fileInput, 'click');
+
+      await user.click(appendButton);
+
+      expect(clickSpy).toHaveBeenCalled();
+    });
+
+    it('should allow user to select replace mode', async () => {
+      const user = userEvent.setup();
+      const messages: ChatMessage[] = [
+        {
+          id: '1',
+          role: 'user',
+          content: 'Existing message',
+          timestamp: new Date(),
+        },
+      ];
+
+      useAppStore.setState({ messages });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const importButton = screen.getByRole('button', { name: /import conversation/i });
+      await user.click(importButton);
+
+      const replaceButton = screen.getByText(/replace current conversation/i);
+      const fileInput = screen.getByLabelText(/select conversation file to import/i);
+      const clickSpy = vi.spyOn(fileInput, 'click');
+
+      await user.click(replaceButton);
+
+      expect(clickSpy).toHaveBeenCalled();
+    });
+
+    it('should allow user to cancel import', async () => {
+      const user = userEvent.setup();
+      const messages: ChatMessage[] = [
+        {
+          id: '1',
+          role: 'user',
+          content: 'Existing message',
+          timestamp: new Date(),
+        },
+      ];
+
+      useAppStore.setState({ messages });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const importButton = screen.getByRole('button', { name: /import conversation/i });
+      await user.click(importButton);
+
+      const cancelButton = screen.getByText(/cancel/i);
+      await user.click(cancelButton);
+
+      // Dialog should be closed
+      expect(screen.queryByText(/import conversation/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('File Input', () => {
+    it('should accept JSON and text files', () => {
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const fileInput = screen.getByLabelText(/select conversation file to import/i) as HTMLInputElement;
+      expect(fileInput).toHaveAttribute('accept', '.json,.txt');
+    });
+
+    it('should be hidden from view', () => {
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ChatInterface selectedAgent={mockAgent} />
+        </QueryClientProvider>
+      );
+
+      const fileInput = screen.getByLabelText(/select conversation file to import/i);
+      expect(fileInput).toHaveClass('hidden');
+    });
+  });
+});

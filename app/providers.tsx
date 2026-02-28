@@ -6,6 +6,7 @@ import { NotificationToast } from '@/components/NotificationToast';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { OfflineNotification } from '@/components/OfflineNotification';
 import HelpDialog from '@/components/HelpDialog';
+import KeyboardShortcutsDialog from '@/components/KeyboardShortcutsDialog';
 import { initializeBrowserFallbacks } from '@/lib/utils/browserFallbacks';
 
 /**
@@ -18,6 +19,7 @@ import { initializeBrowserFallbacks } from '@/lib/utils/browserFallbacks';
  * - Configured with default options for queries and mutations
  * - Global NotificationToast component for user feedback
  * - Global HelpDialog accessible via Ctrl+Shift+H (Cmd+Shift+H on Mac)
+ * - Global KeyboardShortcutsDialog accessible via Ctrl+Shift+? (Cmd+Shift+? on Mac)
  * - Theme provider for light/dark mode support
  * - Offline notification for connectivity status
  *
@@ -55,6 +57,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider>
         <OfflineNotification />
         <HelpDialog />
+        <KeyboardShortcutsDialog />
         {children}
         <NotificationToast />
       </ThemeProvider>

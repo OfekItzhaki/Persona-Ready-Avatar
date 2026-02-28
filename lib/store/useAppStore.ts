@@ -203,6 +203,9 @@ export const useAppStore = create<AppState>((set) => ({
     speechRate: 1.0,
     speechPitch: 0,
     audioQuality: 'high',
+    voiceInputMode: 'text',
+    defaultRecognitionMode: 'push-to-talk',
+    showInterimResults: true,
   },
   updateAudioPreferences: (updates: Partial<AudioPreferences>) =>
     set((state) => ({

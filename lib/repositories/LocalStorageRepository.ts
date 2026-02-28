@@ -67,6 +67,10 @@ export class LocalStorageRepository {
       speechRate: 1.0,
       speechPitch: 0,
       audioQuality: 'high',
+      // Voice input defaults (Requirements 7.4)
+      voiceInputMode: 'text',
+      defaultRecognitionMode: 'push-to-talk',
+      showInterimResults: true,
     },
     avatarCustomization: {
       skinTone: '#f5d5c5',
@@ -280,6 +284,13 @@ export class LocalStorageRepository {
       }
       if (!['low', 'medium', 'high'].includes(audio.audioQuality)) {
         return 'Audio quality must be low, medium, or high';
+      }
+      // Validate voice input preferences (Requirements 7.4)
+      if (audio.voiceInputMode && !['voice', 'text'].includes(audio.voiceInputMode)) {
+        return 'Voice input mode must be voice or text';
+      }
+      if (audio.defaultRecognitionMode && !['push-to-talk', 'continuous'].includes(audio.defaultRecognitionMode)) {
+        return 'Default recognition mode must be push-to-talk or continuous';
       }
 
       // Validate avatar customization

@@ -466,6 +466,13 @@ export class PreferencesService {
     if (!['low', 'medium', 'high'].includes(audio.audioQuality)) {
       return 'Audio quality must be low, medium, or high';
     }
+    // Validate voice input preferences (Requirements 7.4)
+    if (audio.voiceInputMode && !['voice', 'text'].includes(audio.voiceInputMode)) {
+      return 'Voice input mode must be voice or text';
+    }
+    if (audio.defaultRecognitionMode && !['push-to-talk', 'continuous'].includes(audio.defaultRecognitionMode)) {
+      return 'Default recognition mode must be push-to-talk or continuous';
+    }
     return null;
   }
 

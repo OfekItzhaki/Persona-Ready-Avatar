@@ -78,6 +78,7 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
   const [recognitionMode, setRecognitionMode] = useState<RecognitionMode>('push-to-talk');
   const [isBrowserCompatible, setIsBrowserCompatible] = useState(true);
   const [compatibilityMessage, setCompatibilityMessage] = useState('');
+  const [voiceInputState, setVoiceInputState] = useState<'idle' | 'recording' | 'processing' | 'error'>('idle');
 
   // Voice input service refs
   const voiceInputServiceRef = useRef<VoiceInputService | null>(null);
@@ -168,11 +169,19 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       const unsubscribeResults = voiceService.subscribeToResults((result) => {
         if (result.type === 'interim') {
           setInterimText(result.text);
+          setVoiceInputState('recording');
         } else if (result.type === 'final') {
-          // Clear interim text
+          // Set processing state while finalizing (Requirement 15.3)
+          setVoiceInputState('processing');
           setInterimText('');
+          
           // Submit recognized text to chat
           handleSubmit(result.text);
+          
+          // Reset to idle after a brief delay
+          setTimeout(() => {
+            setVoiceInputState('idle');
+          }, 500);
         }
       });
 
@@ -182,6 +191,11 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
         if (!recognizing) {
           setInterimText('');
           setAudioLevel(0);
+          // Reset to idle when not recognizing (unless in error state)
+          setVoiceInputState((current) => (current === 'error' ? 'error' : 'idle'));
+        } else {
+          // Set to recording when recognition starts
+          setVoiceInputState('recording');
         }
 
         // Announce session start/stop to screen readers (Requirement 10.2, 10.3)
@@ -199,6 +213,14 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
 
       // Subscribe to recognition errors (Requirement 6.1, 6.2, 6.3, 6.4, 6.5, 13.5)
       const unsubscribeErrors = voiceService.subscribeToErrors((error) => {
+        // Set error state for visual feedback (Requirement 15.4)
+        setVoiceInputState('error');
+        
+        // Reset error state after 3 seconds
+        setTimeout(() => {
+          setVoiceInputState('idle');
+        }, 3000);
+        
         // Announce error to screen readers (Requirement 10.5)
         let announcement = '';
 
@@ -294,10 +316,10 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
             break;
 
           default:
-            // Generic error with fallback option
-            announcement = `Error: ${error.message || 'An error occurred with voice input'}`;
+            // Generic error with fallback option (should never reach here due to exhaustive switch)
+            announcement = `Error: ${(error as { message?: string }).message || 'An error occurred with voice input'}`;
             NotificationService.getInstance().error(
-              error.message || 'An error occurred with voice input',
+              (error as { message?: string }).message || 'An error occurred with voice input',
               undefined,
               {
                 label: 'Switch to Text',
@@ -934,18 +956,20 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       {/* Voice Input Controls - Shown when voice mode is active (Requirement 7.2) */}
       {inputMode === 'voice' && isBrowserCompatible && (
         <div className="border-t border-gray-200 dark:border-gray-700 p-4 space-y-3">
-          {/* Interim Results Display (Requirement 5.1) */}
+          {/* Interim Results Display (Requirement 5.1, 15.3) */}
           <InterimResultDisplay
             text={interimText}
-            visible={isRecognizing && interimText.length > 0}
+            visible={isRecognizing || voiceInputState === 'processing'}
+            isProcessing={voiceInputState === 'processing'}
           />
 
           {/* Voice Input Controls Row */}
           <div className="flex items-center gap-4">
-            {/* Voice Input Button (Requirement 3.1, 4.1) */}
+            {/* Voice Input Button (Requirement 3.1, 4.1, 15.1, 15.2, 15.3, 15.4) */}
             <VoiceInputButton
               mode={recognitionMode}
               isRecognizing={isRecognizing}
+              state={voiceInputState}
               onPress={handleVoicePress}
               onRelease={handleVoiceRelease}
               disabled={isPending || !selectedAgent}

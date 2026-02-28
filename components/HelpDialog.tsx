@@ -332,6 +332,12 @@ export default function HelpDialog() {
                     </tr>
                     <tr>
                       <td className="px-4 py-2 border-b border-gray-300 dark:border-gray-700">
+                        <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-xs">Ctrl+Shift+?</kbd> / <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-xs">Cmd+Shift+?</kbd>
+                      </td>
+                      <td className="px-4 py-2 border-b border-gray-300 dark:border-gray-700">Open voice input keyboard shortcuts</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2 border-b border-gray-300 dark:border-gray-700">
                         <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-xs">Escape</kbd>
                       </td>
                       <td className="px-4 py-2 border-b border-gray-300 dark:border-gray-700">Close modals and dialogs</td>

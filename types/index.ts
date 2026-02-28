@@ -135,6 +135,10 @@ export interface AudioPreferences {
   speechRate: number; // 0.5-2.0
   speechPitch: number; // -50 to +50
   audioQuality: 'low' | 'medium' | 'high';
+  // Voice input preferences (Requirements 7.4, 12.4, 12.5)
+  voiceInputMode: InputMode;
+  defaultRecognitionMode: RecognitionMode;
+  showInterimResults: boolean;
 }
 
 export interface AvatarCustomization {
@@ -507,9 +511,12 @@ export interface VoiceInputPreferences {
 
 // Voice Input UI Component Props
 
+export type VoiceInputState = 'idle' | 'recording' | 'processing' | 'error';
+
 export interface VoiceInputButtonProps {
   mode: RecognitionMode;
   isRecognizing: boolean;
+  state?: VoiceInputState; // Visual state for enhanced feedback (Requirement 15.1-15.6)
   onPress: () => void;
   onRelease: () => void;
   disabled: boolean;
@@ -518,6 +525,7 @@ export interface VoiceInputButtonProps {
 export interface InterimResultDisplayProps {
   text: string;
   visible: boolean;
+  isProcessing?: boolean; // Show processing indicator (Requirement 15.3)
 }
 
 export interface AudioLevelIndicatorProps {

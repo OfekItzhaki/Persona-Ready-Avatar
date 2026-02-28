@@ -30,6 +30,9 @@ export class SpeechRecognizer implements ISpeechRecognizer {
   private sessionStartedCallback: (() => void) | null = null;
   private sessionStoppedCallback: (() => void) | null = null;
 
+  // MediaRecorder reference for cleanup
+  private mediaRecorder: MediaRecorder | null = null;
+
   /**
    * Configure the speech recognizer with Azure credentials
    *
@@ -144,7 +147,7 @@ export class SpeechRecognizer implements ISpeechRecognizer {
   /**
    * Stop continuous recognition
    *
-   * Requirements: 2.4
+   * Requirements: 2.4, 13.2, 12.2
    */
   async stopContinuousRecognition(): Promise<void> {
     if (!this.recognizer || !this.isRecognizingFlag) {
@@ -178,11 +181,9 @@ export class SpeechRecognizer implements ISpeechRecognizer {
         );
       });
 
-      // Dispose recognizer
-      if (this.recognizer) {
-        this.recognizer.close();
-        this.recognizer = null;
-      }
+      // Dispose of resources
+      // Requirements: 13.2 - Proper disposal of SpeechRecognizer instances
+      this.dispose();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -193,6 +194,59 @@ export class SpeechRecognizer implements ISpeechRecognizer {
       });
 
       throw error;
+    }
+  }
+
+  /**
+   * Dispose of SpeechRecognizer instance and clean up resources
+   *
+   * Requirements: 13.2 - Implement proper disposal to prevent memory leaks
+   */
+  private dispose(): void {
+    try {
+      logger.info('Disposing SpeechRecognizer resources', {
+        component: 'SpeechRecognizer',
+        operation: 'dispose',
+      });
+
+      // Stop MediaRecorder if active
+      // Requirements: 12.2 - Release MediaStream tracks immediately
+      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+        this.mediaRecorder.stop();
+        this.mediaRecorder = null;
+      }
+
+      // Unsubscribe from all event handlers to prevent memory leaks
+      // Requirements: 13.2
+      if (this.recognizer) {
+        this.recognizer.recognizing = undefined as any;
+        this.recognizer.recognized = undefined as any;
+        this.recognizer.canceled = undefined as any;
+        this.recognizer.sessionStarted = undefined as any;
+        this.recognizer.sessionStopped = undefined as any;
+
+        // Close and dispose recognizer
+        this.recognizer.close();
+        this.recognizer = null;
+      }
+
+      // Clear callback references
+      this.recognizingCallback = null;
+      this.recognizedCallback = null;
+      this.errorCallback = null;
+      this.sessionStartedCallback = null;
+      this.sessionStoppedCallback = null;
+
+      logger.info('SpeechRecognizer resources disposed', {
+        component: 'SpeechRecognizer',
+        operation: 'dispose',
+      });
+    } catch (error) {
+      logger.error('Error disposing SpeechRecognizer resources', {
+        component: 'SpeechRecognizer',
+        operation: 'dispose',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
@@ -255,7 +309,7 @@ export class SpeechRecognizer implements ISpeechRecognizer {
     }
 
     // Recognizing event (interim results)
-    this.recognizer.recognizing = (sender, event) => {
+    this.recognizer.recognizing = (_sender, event) => {
       if (event.result.reason === SpeechSDK.ResultReason.RecognizingSpeech) {
         const interimResult: InterimResult = {
           text: event.result.text,
@@ -275,7 +329,7 @@ export class SpeechRecognizer implements ISpeechRecognizer {
     };
 
     // Recognized event (final results)
-    this.recognizer.recognized = (sender, event) => {
+    this.recognizer.recognized = (_sender, event) => {
       if (event.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
         const finalResult: FinalResult = {
           text: event.result.text,
@@ -302,7 +356,7 @@ export class SpeechRecognizer implements ISpeechRecognizer {
     };
 
     // Canceled event (errors)
-    this.recognizer.canceled = (sender, event) => {
+    this.recognizer.canceled = (_sender, event) => {
       logger.error('Recognition canceled', {
         component: 'SpeechRecognizer',
         operation: 'canceled',
@@ -322,7 +376,7 @@ export class SpeechRecognizer implements ISpeechRecognizer {
     };
 
     // Session started event
-    this.recognizer.sessionStarted = (sender, event) => {
+    this.recognizer.sessionStarted = (_sender, event) => {
       logger.info('Recognition session started', {
         component: 'SpeechRecognizer',
         operation: 'sessionStarted',
@@ -335,7 +389,7 @@ export class SpeechRecognizer implements ISpeechRecognizer {
     };
 
     // Session stopped event
-    this.recognizer.sessionStopped = (sender, event) => {
+    this.recognizer.sessionStopped = (_sender, event) => {
       logger.info('Recognition session stopped', {
         component: 'SpeechRecognizer',
         operation: 'sessionStopped',
@@ -365,24 +419,21 @@ export class SpeechRecognizer implements ISpeechRecognizer {
     }
 
     // Create MediaRecorder to capture audio data
-    const mediaRecorder = new MediaRecorder(mediaStream, {
+    this.mediaRecorder = new MediaRecorder(mediaStream, {
       mimeType: 'audio/webm',
     });
 
-    mediaRecorder.ondataavailable = (event) => {
+    this.mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
         // Convert Blob to ArrayBuffer and push to stream
         event.data.arrayBuffer().then((buffer) => {
-          pushStream.write(new Uint8Array(buffer));
+          pushStream.write(buffer);
         });
       }
     };
 
     // Start recording with 100ms chunks
-    mediaRecorder.start(100);
-
-    // Store reference for cleanup
-    (pushStream as any)._mediaRecorder = mediaRecorder;
+    this.mediaRecorder.start(100);
 
     return pushStream;
   }

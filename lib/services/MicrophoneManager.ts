@@ -16,6 +16,10 @@ export class MicrophoneManager implements IMicrophoneManager {
   private audioLevelCallbacks: Set<(level: number) => void> = new Set();
   private animationFrameId: number | null = null;
 
+  // Cache for permission state to avoid repeated checks
+  private permissionCache: { state: PermissionState; timestamp: number } | null = null;
+  private readonly PERMISSION_CACHE_TTL = 5000; // 5 seconds
+
   /**
    * Request microphone permission from the browser
    *
@@ -59,10 +63,23 @@ export class MicrophoneManager implements IMicrophoneManager {
   /**
    * Check current microphone permission status
    *
-   * Requirements: 1.1
+   * Requirements: 1.1, 14.1 - Optimized with caching to reduce latency
    */
   async checkPermission(): Promise<PermissionState> {
     try {
+      // Return cached result if still valid
+      if (
+        this.permissionCache &&
+        Date.now() - this.permissionCache.timestamp < this.PERMISSION_CACHE_TTL
+      ) {
+        logger.debug('Using cached permission state', {
+          component: 'MicrophoneManager',
+          operation: 'checkPermission',
+          state: this.permissionCache.state,
+        });
+        return this.permissionCache.state;
+      }
+
       // Check if Permissions API is available
       if (!navigator.permissions || !navigator.permissions.query) {
         logger.warn('Permissions API not available', {
@@ -73,6 +90,12 @@ export class MicrophoneManager implements IMicrophoneManager {
       }
 
       const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+
+      // Cache the result
+      this.permissionCache = {
+        state: result.state as PermissionState,
+        timestamp: Date.now(),
+      };
 
       logger.info('Microphone permission status checked', {
         component: 'MicrophoneManager',
@@ -153,7 +176,7 @@ export class MicrophoneManager implements IMicrophoneManager {
   /**
    * Stop audio capture and release microphone
    *
-   * Requirements: 12.2 - Release microphone access immediately
+   * Requirements: 12.2 - Release MediaStream tracks immediately on session end
    */
   stopCapture(): void {
     if (!this.mediaStream) {
@@ -165,27 +188,37 @@ export class MicrophoneManager implements IMicrophoneManager {
       operation: 'stopCapture',
     });
 
-    // Stop all tracks
+    // Stop animation frame immediately
+    // Requirements: 13.2 - Prevent memory leaks
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+
+    // Stop all tracks immediately
+    // Requirements: 12.2 - Release MediaStream tracks immediately
     this.mediaStream.getTracks().forEach((track) => {
       track.stop();
       logger.debug('Stopped audio track', {
         component: 'MicrophoneManager',
         operation: 'stopCapture',
         trackId: track.id,
+        trackState: track.readyState,
       });
     });
 
     this.mediaStream = null;
 
-    // Stop audio level monitoring
-    if (this.animationFrameId !== null) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
-    }
-
     // Close audio context
+    // Requirements: 13.2 - Proper resource cleanup
     if (this.audioContext) {
-      this.audioContext.close();
+      this.audioContext.close().catch((error) => {
+        logger.warn('Error closing audio context', {
+          component: 'MicrophoneManager',
+          operation: 'stopCapture',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      });
       this.audioContext = null;
       this.analyserNode = null;
     }
@@ -293,7 +326,7 @@ export class MicrophoneManager implements IMicrophoneManager {
    * Start audio level monitoring loop
    * Updates at 30 FPS to reduce CPU load
    *
-   * Requirements: 5.5
+   * Requirements: 5.5, 14.2 - Throttle visualization updates to 30 FPS
    */
   private startAudioLevelMonitoring(): void {
     const updateInterval = 1000 / 30; // 30 FPS
@@ -305,11 +338,12 @@ export class MicrophoneManager implements IMicrophoneManager {
       }
 
       // Throttle updates to 30 FPS
+      // Requirements: 5.5 - Use requestAnimationFrame for smooth rendering
       if (timestamp - lastUpdateTime >= updateInterval) {
         const level = this.getAudioLevel();
 
-        // Notify all subscribers
-        this.audioLevelCallbacks.forEach((callback) => {
+        // Notify all subscribers using for-of for better performance
+        for (const callback of this.audioLevelCallbacks) {
           try {
             callback(level);
           } catch (error) {
@@ -319,7 +353,7 @@ export class MicrophoneManager implements IMicrophoneManager {
               error: error instanceof Error ? error.message : 'Unknown error',
             });
           }
-        });
+        }
 
         lastUpdateTime = timestamp;
       }

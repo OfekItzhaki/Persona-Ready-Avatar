@@ -5,6 +5,7 @@ import type {
   AvatarCustomization,
   UIPreferences,
   OfflineQueueItem,
+  AvatarPreferences,
 } from '@/types';
 
 /**
@@ -517,5 +518,154 @@ export class PreferencesService {
    */
   private isValidHexColor(color: string): boolean {
     return /^#[0-9A-Fa-f]{6}$/.test(color);
+  }
+
+  /**
+   * Save avatar preference to localStorage
+   * 
+   * @param avatarId - The ID of the selected avatar
+   */
+  saveAvatarPreference(avatarId: string): void {
+    try {
+      const preferences = this.loadAvatarPreferencesFromStorage();
+      preferences.selectedAvatarId = avatarId;
+      preferences.lastUpdated = new Date();
+
+      localStorage.setItem('avatar-preferences', JSON.stringify(preferences));
+
+      logger.info('Avatar preference saved', {
+        component: 'PreferencesService',
+        operation: 'saveAvatarPreference',
+        avatarId,
+      });
+    } catch (error) {
+      logger.error('Failed to save avatar preference', {
+        component: 'PreferencesService',
+        operation: 'saveAvatarPreference',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
+   * Load avatar preference from localStorage
+   * 
+   * @returns The selected avatar ID, or null if not found
+   */
+  loadAvatarPreference(): string | null {
+    try {
+      const preferences = this.loadAvatarPreferencesFromStorage();
+      return preferences.selectedAvatarId;
+    } catch (error) {
+      logger.error('Failed to load avatar preference', {
+        component: 'PreferencesService',
+        operation: 'loadAvatarPreference',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Get avatar load history
+   * 
+   * @returns Array of avatar load history entries
+   */
+  getAvatarLoadHistory(): AvatarPreferences['loadHistory'] {
+    try {
+      const preferences = this.loadAvatarPreferencesFromStorage();
+      return preferences.loadHistory;
+    } catch (error) {
+      logger.error('Failed to get avatar load history', {
+        component: 'PreferencesService',
+        operation: 'getAvatarLoadHistory',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Record an avatar load attempt in history
+   * 
+   * @param avatarId - The ID of the avatar that was loaded
+   * @param success - Whether the load was successful
+   * @param loadTimeMs - Optional load time in milliseconds
+   */
+  recordAvatarLoad(avatarId: string, success: boolean, loadTimeMs?: number): void {
+    try {
+      const preferences = this.loadAvatarPreferencesFromStorage();
+
+      // Add new history entry
+      preferences.loadHistory.push({
+        avatarId,
+        timestamp: new Date(),
+        success,
+        loadTimeMs,
+      });
+
+      // Keep only last 50 entries
+      if (preferences.loadHistory.length > 50) {
+        preferences.loadHistory = preferences.loadHistory.slice(-50);
+      }
+
+      localStorage.setItem('avatar-preferences', JSON.stringify(preferences));
+
+      logger.info('Avatar load recorded in history', {
+        component: 'PreferencesService',
+        operation: 'recordAvatarLoad',
+        avatarId,
+        success,
+        loadTimeMs,
+      });
+    } catch (error) {
+      logger.error('Failed to record avatar load', {
+        component: 'PreferencesService',
+        operation: 'recordAvatarLoad',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
+   * Load avatar preferences from localStorage
+   * 
+   * @returns Avatar preferences with defaults if not found
+   */
+  private loadAvatarPreferencesFromStorage(): AvatarPreferences {
+    try {
+      const stored = localStorage.getItem('avatar-preferences');
+      if (!stored) {
+        return {
+          selectedAvatarId: 'default-1',
+          lastUpdated: new Date(),
+          loadHistory: [],
+        };
+      }
+
+      const parsed = JSON.parse(stored);
+      
+      // Convert date strings back to Date objects
+      return {
+        selectedAvatarId: parsed.selectedAvatarId || 'default-1',
+        lastUpdated: new Date(parsed.lastUpdated),
+        loadHistory: (parsed.loadHistory || []).map((entry: any) => ({
+          ...entry,
+          timestamp: new Date(entry.timestamp),
+        })),
+      };
+    } catch (error) {
+      logger.error('Failed to parse avatar preferences from localStorage', {
+        component: 'PreferencesService',
+        operation: 'loadAvatarPreferencesFromStorage',
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      return {
+        selectedAvatarId: 'default-1',
+        lastUpdated: new Date(),
+        loadHistory: [],
+      };
+    }
   }
 }

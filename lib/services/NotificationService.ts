@@ -1,4 +1,4 @@
-import { Notification, NotificationAction } from '@/types';
+import { Notification } from '@/types';
 
 /**
  * Store interface for notification management

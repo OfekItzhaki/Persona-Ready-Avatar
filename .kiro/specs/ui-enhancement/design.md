@@ -1040,53 +1040,157 @@ function LoadingSkeleton() {
 
 ## Correctness Properties
 
+*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+
 ### Property 1: Theme Consistency
-**Universal Quantification**: ∀ component ∈ Application, theme(component) = currentTheme
-- All components must use the current theme's design tokens
-- No hardcoded colors that bypass the theme system
-- Theme changes must propagate to all components immediately
 
-### Property 2: Animation Performance
-**Universal Quantification**: ∀ animation ∈ Animations, frameRate(animation) ≥ 60fps
-- All animations must maintain 60fps or higher
-- Animations must use GPU-accelerated properties (transform, opacity)
-- No layout thrashing during animations
+*For all* components in the application, when a theme is applied, the component must use the current theme's design tokens and reflect theme changes immediately.
 
+**Validates: Requirements 1.8, 2.2, 2.3, 2.4, 2.7**
 
-### Property 3: Accessibility Compliance
-**Universal Quantification**: ∀ element ∈ InteractiveElements, contrastRatio(element) ≥ 4.5
-- All text must meet WCAG AA contrast requirements (4.5:1 for normal text)
-- All interactive elements must have visible focus indicators
-- All animations must respect prefers-reduced-motion
-- All components must be keyboard navigable
+### Property 2: Theme Persistence Round-Trip
 
-### Property 4: Responsive Behavior
-**Universal Quantification**: ∀ viewport ∈ [375px, ∞), layout(viewport) is functional
-- Layout must work on all viewport sizes from 375px and up
-- Touch targets must be at least 44x44px on mobile
-- Text must remain readable at all viewport sizes
-- No horizontal scrolling on any viewport size
+*For any* theme selection, persisting the theme to localStorage and then loading it should restore the same theme.
 
-### Property 5: State Consistency
-**Universal Quantification**: ∀ component ∈ StatefulComponents, visualState(component) = logicalState(component)
-- Visual state must always match logical state
-- Loading states must be visually distinct
-- Disabled states must be clearly indicated
-- Error states must be immediately visible
+**Validates: Requirements 2.5, 2.6**
 
-### Property 6: Transition Smoothness
-**Universal Quantification**: ∀ transition ∈ StateTransitions, duration(transition) ∈ [100ms, 500ms]
-- All state transitions must be smooth and not jarring
-- Transition durations must be between 100ms and 500ms
-- Easing functions must feel natural (no linear easing)
-- Multiple simultaneous transitions must be coordinated
+### Property 3: Theme Validation and Fallback
 
-### Property 7: Visual Hierarchy
-**Universal Quantification**: ∀ page ∈ Application, ∃ clearFocalPoint(page)
-- Every page must have a clear visual hierarchy
-- Primary actions must be more prominent than secondary actions
-- Important information must be visually emphasized
-- Related elements must be visually grouped
+*For any* theme configuration, if it is invalid, the system must fall back to the default light theme without crashing.
+
+**Validates: Requirements 2.8, 2.9, 13.1**
+
+### Property 4: Animation GPU Acceleration
+
+*For all* animations in the system, only GPU-accelerated properties (transform, opacity) should be animated, and layout-triggering properties (width, height, top, left) should never be animated.
+
+**Validates: Requirements 5.2, 5.3**
+
+### Property 5: Animation Configuration Validation
+
+*For any* animation configuration, the system must validate it before applying, and throw an error for invalid configurations.
+
+**Validates: Requirements 5.6, 5.7**
+
+### Property 6: Animation Conflict Resolution
+
+*For any* two animations targeting the same property on the same element, the later animation must cancel the earlier one.
+
+**Validates: Requirements 5.8**
+
+### Property 7: Component Lifecycle Cleanup
+
+*For any* component that unmounts, all active animations, event listeners, timeouts, and intervals must be cancelled and cleaned up.
+
+**Validates: Requirements 5.9, 19.1, 19.2, 19.3, 19.4**
+
+### Property 8: Reduced Motion Respect
+
+*For any* animation, when the user has prefers-reduced-motion enabled, the animation must be disabled or significantly reduced.
+
+**Validates: Requirements 5.10, 9.6, 10.6**
+
+### Property 9: Glassmorphism Configuration
+
+*For any* GlassCard component with valid blur level (sm, md, lg) and opacity (0-1), the component must apply the correct backdrop-filter blur and background opacity.
+
+**Validates: Requirements 3.1, 3.2, 3.4, 3.5**
+
+### Property 10: Button State Visual Feedback
+
+*For any* button in loading or disabled state, the button must display appropriate visual feedback and be non-interactive.
+
+**Validates: Requirements 4.3, 4.4**
+
+### Property 11: Button Accessibility
+
+*For any* button variant and state combination, the contrast ratio must meet WCAG AA standards (≥4.5:1 for normal text).
+
+**Validates: Requirements 4.10, 10.1, 10.2**
+
+### Property 12: Message Animation Sequence
+
+*For any* new message added to the chat, the message must slide in from the appropriate direction, fade in from 0 to 1 opacity, and scale from 0.95 to 1.0, completing in 300ms with spring easing.
+
+**Validates: Requirements 6.1, 6.2, 6.3, 6.4**
+
+### Property 13: Animation Cleanup After Completion
+
+*For any* message animation that completes, inline styles must be cleaned up to avoid style pollution.
+
+**Validates: Requirements 6.5**
+
+### Property 14: Input Focus Visual Feedback
+
+*For any* input field that receives focus, it must display a glowing border effect, scale to 1.01, and show a focus ring.
+
+**Validates: Requirements 8.1, 8.2, 8.3, 8.4**
+
+### Property 15: Loading Skeleton Accessibility
+
+*For any* loading skeleton, it must include aria-busy="true" and a descriptive aria-label.
+
+**Validates: Requirements 9.4, 9.5**
+
+### Property 16: Contrast Auto-Adjustment
+
+*For any* color combination with contrast ratio below WCAG AA threshold (4.5:1), the system must automatically adjust colors to meet the minimum contrast.
+
+**Validates: Requirements 10.3, 13.5**
+
+### Property 17: Keyboard Navigation
+
+*For all* interactive elements, keyboard navigation must be fully supported with logical tab order and visible focus indicators.
+
+**Validates: Requirements 10.4, 10.5, 10.8**
+
+### Property 18: Touch Target Minimum Size
+
+*For all* interactive elements on mobile viewports, touch targets must be at least 44x44px.
+
+**Validates: Requirements 10.10, 11.2**
+
+### Property 19: Responsive Layout Functionality
+
+*For any* viewport width from 375px to infinity, the layout must be functional with no horizontal scrolling and readable text.
+
+**Validates: Requirements 11.1, 11.3, 11.4**
+
+### Property 20: State Consistency
+
+*For any* stateful component, the visual state must always match the logical state (loading, disabled, error states must be visually distinct).
+
+**Validates: Requirements 15.1, 15.2, 15.3, 15.4, 15.5**
+
+### Property 21: Transition Duration Bounds
+
+*For all* state transitions, the duration must be between 100ms and 500ms with natural easing (no linear easing).
+
+**Validates: Requirements 16.1, 16.2, 16.3**
+
+### Property 22: Gradient Generation Validity
+
+*For any* gradient configuration with at least 2 valid colors, the gradient system must return a valid CSS gradient string.
+
+**Validates: Requirements 17.2, 17.4, 17.5**
+
+### Property 23: Micro-Interaction Timing
+
+*For any* micro-interaction (hover, click, focus), the interaction must provide immediate visual feedback with duration between 100ms and 300ms.
+
+**Validates: Requirements 18.1, 18.2, 18.3, 18.4**
+
+### Property 24: Security Input Validation
+
+*For any* user input used in styling or theme configuration, the input must be validated and sanitized to prevent CSS injection.
+
+**Validates: Requirements 20.1, 20.2, 20.3, 20.4, 20.5, 20.6, 20.7**
+
+### Property 25: Error Handling Graceful Degradation
+
+*For any* error condition (theme loading failure, animation performance degradation, unsupported features), the application must remain functional with degraded features and log detailed error information.
+
+**Validates: Requirements 13.1, 13.2, 13.3, 13.4, 13.6, 13.7, 13.8**
 
 
 ## Error Handling

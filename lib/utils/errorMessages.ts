@@ -1,4 +1,4 @@
-import type { ApiError } from '@/types';
+import type { ApiError, AvatarLoadError } from '@/types';
 
 /**
  * Error message configuration for user-friendly error notifications
@@ -6,6 +6,7 @@ import type { ApiError } from '@/types';
  * Requirements:
  * - 38.1: Display user-friendly error notifications
  * - 38.2: Include error type and suggested actions
+ * - 4.6, 12.1: Avatar error notifications
  */
 
 export interface ErrorMessageConfig {
@@ -84,5 +85,67 @@ export function getErrorMessage(error: ApiError): ErrorMessageConfig {
  */
 export function formatErrorNotification(error: ApiError): string {
   const config = getErrorMessage(error);
+  return `${config.message} ${config.suggestedAction}`;
+}
+
+/**
+ * Get user-friendly error message for avatar loading errors
+ * 
+ * Requirements: 4.6, 12.1
+ * 
+ * @param error - The avatar load error object
+ * @returns Error message configuration with message and suggested action
+ */
+export function getAvatarErrorMessage(error: AvatarLoadError): ErrorMessageConfig {
+  switch (error.type) {
+    case 'NETWORK_ERROR':
+      return {
+        message: 'Unable to download avatar model. Check your internet connection.',
+        suggestedAction: 'Verify your network connection and try again, or use the fallback avatar.',
+      };
+
+    case 'TIMEOUT':
+      return {
+        message: 'Avatar loading timed out. The model may be too large or your connection is slow.',
+        suggestedAction: 'Try again with a better connection, or use the fallback avatar.',
+      };
+
+    case 'INVALID_FORMAT':
+      return {
+        message: `Avatar model file is corrupted or in an unsupported format. ${error.details || ''}`,
+        suggestedAction: 'Contact support or use the fallback avatar.',
+      };
+
+    case 'NOT_FOUND':
+      return {
+        message: `Avatar model not found at ${error.url}. The URL may be incorrect or the file was removed.`,
+        suggestedAction: 'Check the avatar URL configuration or use the fallback avatar.',
+      };
+
+    case 'WEBGL_ERROR':
+      return {
+        message: 'WebGL rendering error. Your browser or GPU may not support 3D graphics.',
+        suggestedAction: 'Update your browser, enable hardware acceleration, or use the fallback avatar.',
+      };
+
+    default:
+      return {
+        message: 'An unexpected error occurred while loading the avatar.',
+        suggestedAction: 'Try again or use the fallback avatar.',
+      };
+  }
+}
+
+/**
+ * Format avatar error message for display in notification
+ * Combines the main message with suggested action
+ * 
+ * Requirements: 4.6, 12.1
+ * 
+ * @param error - The avatar load error object
+ * @returns Formatted error message string
+ */
+export function formatAvatarErrorNotification(error: AvatarLoadError): string {
+  const config = getAvatarErrorMessage(error);
   return `${config.message} ${config.suggestedAction}`;
 }

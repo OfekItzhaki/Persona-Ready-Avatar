@@ -9,6 +9,8 @@ import { VISEME_BLENDSHAPE_MAP, WebGLContextState } from '@/types';
 import * as THREE from 'three';
 import FallbackAvatar from './FallbackAvatar';
 import { avatarValidatorService } from '@/lib/services/AvatarValidatorService';
+import { GlassCard } from './ui/GlassCard';
+import { AvatarLoadingSkeleton } from './ui/LoadingSkeleton';
 
 /**
  * Simple Error Boundary for catching errors in child components
@@ -388,8 +390,10 @@ function ErrorFallback({ error, onRetry, onUseFallback }: { error: Error; onRetr
  * - Fallback avatar for error scenarios
  * - Responsive canvas sizing
  * - Graceful degradation
+ * - Glassmorphism container with gradient border
+ * - Elegant loading skeleton animation
  * 
- * Requirements: 1.1-1.5, 3.3, 3.4, 3.6, 3.7, 9.1-9.5, 12.4, 40
+ * Requirements: 1.1-1.5, 3.3, 3.4, 3.6, 3.7, 3.8, 9.1-9.5, 9.7, 12.4, 40
  */
 export default function AvatarCanvas({ modelUrl, className = '' }: AvatarCanvasProps) {
   const [error, setError] = useState<Error | null>(null);
@@ -476,111 +480,145 @@ export default function AvatarCanvas({ modelUrl, className = '' }: AvatarCanvasP
     const fallbackColor = process.env.NEXT_PUBLIC_AVATAR_FALLBACK_COLOR || '#4A90E2';
 
     return (
-      <div className={`w-full h-full ${className}`}>
-        <Canvas
-          camera={{ position: [0, 0, 5], fov: 50 }}
-          className="w-full h-full"
-          style={{ background: '#f0f0f0' }}
-        >
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[10, 10, 5]} intensity={1} />
-          <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
-          <FallbackAvatar type={fallbackType} animated={true} color={fallbackColor} errorReason={error.message} />
-        </Canvas>
+      <GlassCard
+        blur="lg"
+        opacity={0.85}
+        border={true}
+        shadow="xl"
+        padding="md"
+        className={`relative overflow-hidden ${className}`}
+      >
+        {/* Gradient border effect for visual depth */}
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 -z-10 pointer-events-none" />
         
-        {/* Fallback explanation overlay */}
-        <div className="absolute bottom-4 left-4 right-4 bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            <strong>Using fallback avatar:</strong> {error.message}
-          </p>
-          <button
-            onClick={handleRetry}
-            className="mt-2 text-xs px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
+        <div className="w-full h-full">
+          <Canvas
+            camera={{ position: [0, 0, 5], fov: 50 }}
+            className="w-full h-full"
+            style={{ background: 'transparent' }}
           >
-            Try Again
-          </button>
+            <ambientLight intensity={0.5} />
+            <directionalLight position={[10, 10, 5]} intensity={1} />
+            <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
+            <FallbackAvatar type={fallbackType} animated={true} color={fallbackColor} errorReason={error.message} />
+          </Canvas>
+          
+          {/* Fallback explanation overlay */}
+          <div className="absolute bottom-4 left-4 right-4 bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              <strong>Using fallback avatar:</strong> {error.message}
+            </p>
+            <button
+              onClick={handleRetry}
+              className="mt-2 text-xs px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
-      </div>
+      </GlassCard>
     );
   }
 
   if (error) {
     return (
-      <div className={`w-full h-full ${className}`}>
-        <ErrorFallback 
-          error={error} 
-          onRetry={handleRetry}
-          onUseFallback={() => setUseFallback(true)}
-        />
-      </div>
+      <GlassCard
+        blur="lg"
+        opacity={0.85}
+        border={true}
+        shadow="xl"
+        padding="md"
+        className={`relative overflow-hidden ${className}`}
+      >
+        {/* Gradient border effect */}
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 -z-10 pointer-events-none" />
+        
+        <div className="w-full h-full">
+          <ErrorFallback 
+            error={error} 
+            onRetry={handleRetry}
+            onUseFallback={() => setUseFallback(true)}
+          />
+        </div>
+      </GlassCard>
     );
   }
 
   return (
-    <div 
-      className={`w-full h-full ${className}`} 
-      key={retryKey}
-      role="img"
-      aria-label="3D avatar display showing animated character with lip synchronization"
+    <GlassCard
+      blur="lg"
+      opacity={0.85}
+      border={true}
+      shadow="xl"
+      padding="md"
+      className={`relative overflow-hidden ${className}`}
     >
-      <Canvas
-        camera={{ position: [0, 0, 5], fov: 50 }}
-        className="w-full h-full"
-        onCreated={({ gl }) => {
-          // Handle WebGL context loss and restoration (Requirements 9.1, 9.2, 9.3, 9.4)
-          gl.domElement.addEventListener('webglcontextlost', handleWebGLContextLost);
-          gl.domElement.addEventListener('webglcontextrestored', handleWebGLContextRestored);
-        }}
-        style={{ background: '#f0f0f0' }}
-        onError={(error) => {
-          console.error('Canvas error:', error);
-          setError(error instanceof Error ? error : new Error(String(error)));
-          setAvatarError({
-            type: 'WEBGL_ERROR',
-            message: error instanceof Error ? error.message : String(error),
-            retryable: false,
-          });
-        }}
+      {/* Gradient border effect for visual depth */}
+      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 -z-10 pointer-events-none" />
+      
+      <div 
+        className="w-full h-full relative transition-opacity duration-500 ease-in-out"
+        style={{ opacity: avatarLoadingState === 'loaded' ? 1 : 0 }}
+        key={retryKey}
+        role="img"
+        aria-label="3D avatar display showing animated character with lip synchronization"
       >
-        {/* Lighting */}
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
-        <directionalLight position={[-10, -10, -5]} intensity={0.3} />
-
-        {/* Camera Controls */}
-        <OrbitControls
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          minDistance={2}
-          maxDistance={10}
-        />
-
-        {/* Avatar Model with Suspense for loading state */}
-        <Suspense fallback={null}>
-          <ErrorBoundary onError={(error) => {
-            setError(error);
+        <Canvas
+          camera={{ position: [0, 0, 5], fov: 50 }}
+          className="w-full h-full"
+          onCreated={({ gl }) => {
+            // Handle WebGL context loss and restoration (Requirements 9.1, 9.2, 9.3, 9.4)
+            gl.domElement.addEventListener('webglcontextlost', handleWebGLContextLost);
+            gl.domElement.addEventListener('webglcontextrestored', handleWebGLContextRestored);
+          }}
+          style={{ background: 'transparent' }}
+          onError={(error) => {
+            console.error('Canvas error:', error);
+            setError(error instanceof Error ? error : new Error(String(error)));
             setAvatarError({
-              type: 'INVALID_FORMAT',
-              details: error.message,
+              type: 'WEBGL_ERROR',
+              message: error instanceof Error ? error.message : String(error),
               retryable: false,
             });
-          }}>
-            <AvatarModel modelUrl={modelUrl} />
-          </ErrorBoundary>
-        </Suspense>
-      </Canvas>
+          }}
+        >
+          {/* Lighting */}
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[10, 10, 5]} intensity={1} />
+          <directionalLight position={[-10, -10, -5]} intensity={0.3} />
 
-      {/* Loading overlay */}
-      {avatarLoadingState === 'loading' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 dark:bg-gray-900/80">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading avatar model...</p>
-          </div>
+          {/* Camera Controls */}
+          <OrbitControls
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
+            minDistance={2}
+            maxDistance={10}
+          />
+
+          {/* Avatar Model with Suspense for loading state */}
+          <Suspense fallback={null}>
+            <ErrorBoundary onError={(error) => {
+              setError(error);
+              setAvatarError({
+                type: 'INVALID_FORMAT',
+                details: error.message,
+                retryable: false,
+              });
+            }}>
+              <AvatarModel modelUrl={modelUrl} />
+            </ErrorBoundary>
+          </Suspense>
+        </Canvas>
+      </div>
+
+      {/* Loading state with elegant skeleton animation */}
+      {(avatarLoadingState === 'loading' || avatarLoadingState === 'idle') && (
+        <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out">
+          <AvatarLoadingSkeleton className="w-full h-full" />
         </div>
       )}
-    </div>
+    </GlassCard>
   );
 }
 

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useMemo, memo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ChatMessage } from '@/types';
+import { MessageBubble } from './ui/MessageBubble';
+import { TypingIndicator } from './ui/TypingIndicator';
 
 /**
  * MessageList Component
@@ -484,165 +486,68 @@ export const MessageList = memo(function MessageList({
     const canEdit = isUserMessage && canEditMessage(message.id) && !isPending;
 
     return (
-      <div
+      <MessageBubble
         key={message.id}
-        className={`flex ${isUserMessage ? 'justify-end' : 'justify-start'}`}
+        message={message}
+        isUser={isUserMessage}
         onMouseEnter={() => setHoveredMessageId(message.id)}
         onMouseLeave={() => setHoveredMessageId(null)}
       >
-        <div
-          className={`max-w-[80%] rounded-lg px-4 py-2 ${
-            isUserMessage
-              ? 'bg-blue-600 text-white' // User message styling (Requirement 1.2)
-              : 'bg-gray-200 text-gray-900' // Agent message styling (Requirement 1.2)
-          }`}
-          role="article"
-          aria-label={`${isUserMessage ? 'Your' : 'Agent'} message`}
-        >
-          {isEditing ? (
-            // Edit mode (Requirement 11.2)
-            <div className="space-y-2">
-              <textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                onKeyDown={(e) => handleEditKeyDown(e, message.id)}
-                className="w-full min-h-[60px] px-2 py-1 text-sm text-gray-900 bg-white border border-gray-300 rounded resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
-                maxLength={MAX_MESSAGE_LENGTH}
-                aria-label="Edit message"
-                autoFocus
-              />
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-blue-200">
-                  {editContent.length}/{MAX_MESSAGE_LENGTH}
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleCancelEdit}
-                    className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                    aria-label="Cancel editing"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleSaveEdit(message.id)}
-                    disabled={!editContent.trim() || editContent.length > MAX_MESSAGE_LENGTH}
-                    className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500"
-                    aria-label="Save edited message"
-                  >
-                    Save
-                  </button>
-                </div>
+        {isEditing ? (
+          // Edit mode (Requirement 11.2)
+          <div className="space-y-2">
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              onKeyDown={(e) => handleEditKeyDown(e, message.id)}
+              className="w-full min-h-[60px] px-2 py-1 text-sm text-gray-900 bg-white border border-gray-300 rounded resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+              maxLength={MAX_MESSAGE_LENGTH}
+              aria-label="Edit message"
+              autoFocus
+            />
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-blue-200">
+                {editContent.length}/{MAX_MESSAGE_LENGTH}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  aria-label="Cancel editing"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleSaveEdit(message.id)}
+                  disabled={!editContent.trim() || editContent.length > MAX_MESSAGE_LENGTH}
+                  className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500"
+                  aria-label="Save edited message"
+                >
+                  Save
+                </button>
               </div>
             </div>
-          ) : (
-            // Display mode
-            <>
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm whitespace-pre-wrap break-words flex-1">
-                  {highlightText(message.content, debouncedSearchQuery)}
-                </p>
-                {/* Action buttons (Requirement 11.1, 12.1, 18.1) - shown on hover/focus */}
-                {isHovered && !isPending && (
-                  <div className="flex gap-1 flex-shrink-0">
-                    {/* Edit button for user messages */}
-                    {canEdit && (
-                      <button
-                        onClick={() => handleStartEdit(message)}
-                        className="p-1 text-blue-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
-                        aria-label="Edit message"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                      </button>
-                    )}
-                    {/* Reaction buttons for agent messages (Requirement 18.1) */}
-                    {!isUserMessage && onReactToMessage && (
-                      <>
-                        <button
-                          onClick={() => handleReaction(message.id, 'thumbs_up')}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              handleReaction(message.id, 'thumbs_up');
-                            }
-                          }}
-                          className={`p-1 ${
-                            message.reaction === 'thumbs_up'
-                              ? 'text-green-600'
-                              : 'text-gray-500 hover:text-green-600'
-                          } focus:outline-none focus:ring-2 focus:ring-green-400 rounded`}
-                          aria-label="Thumbs up"
-                          aria-pressed={message.reaction === 'thumbs_up'}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill={message.reaction === 'thumbs_up' ? 'currentColor' : 'none'}
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleReaction(message.id, 'thumbs_down')}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              handleReaction(message.id, 'thumbs_down');
-                            }
-                          }}
-                          className={`p-1 ${
-                            message.reaction === 'thumbs_down'
-                              ? 'text-red-600'
-                              : 'text-gray-500 hover:text-red-600'
-                          } focus:outline-none focus:ring-2 focus:ring-red-400 rounded`}
-                          aria-label="Thumbs down"
-                          aria-pressed={message.reaction === 'thumbs_down'}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill={message.reaction === 'thumbs_down' ? 'currentColor' : 'none'}
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
-                            />
-                          </svg>
-                        </button>
-                      </>
-                    )}
-                    {/* Delete button for all messages (Requirement 12.1, 12.4) */}
+          </div>
+        ) : (
+          // Display mode
+          <>
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-sm whitespace-pre-wrap break-words flex-1">
+                {highlightText(message.content, debouncedSearchQuery)}
+              </p>
+              {/* Action buttons (Requirement 11.1, 12.1, 18.1) - shown on hover/focus */}
+              {isHovered && !isPending && (
+                <div className="flex gap-1 flex-shrink-0">
+                  {/* Edit button for user messages */}
+                  {canEdit && (
                     <button
-                      onClick={() => handleStartDelete(message.id)}
+                      onClick={() => handleStartEdit(message)}
                       className={`p-1 ${
                         isUserMessage
                           ? 'text-blue-200 hover:text-white focus:ring-blue-300'
                           : 'text-gray-500 hover:text-gray-700 focus:ring-gray-400'
                       } focus:outline-none focus:ring-2 rounded`}
-                      aria-label="Delete message"
+                      aria-label="Edit message"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -655,87 +560,179 @@ export const MessageList = memo(function MessageList({
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                         />
                       </svg>
                     </button>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <p
-                  className={`text-xs ${
-                    isUserMessage ? 'text-blue-200' : 'text-gray-600'
+                  )}
+                  {/* Reaction buttons for agent messages (Requirement 18.1) */}
+                  {!isUserMessage && onReactToMessage && (
+                    <>
+                      <button
+                        onClick={() => handleReaction(message.id, 'thumbs_up')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleReaction(message.id, 'thumbs_up');
+                          }
+                        }}
+                        className={`p-1 ${
+                          message.reaction === 'thumbs_up'
+                            ? 'text-green-600'
+                            : 'text-gray-500 hover:text-green-600'
+                        } focus:outline-none focus:ring-2 focus:ring-green-400 rounded`}
+                        aria-label="Thumbs up"
+                        aria-pressed={message.reaction === 'thumbs_up'}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill={message.reaction === 'thumbs_up' ? 'currentColor' : 'none'}
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleReaction(message.id, 'thumbs_down')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleReaction(message.id, 'thumbs_down');
+                          }
+                        }}
+                        className={`p-1 ${
+                          message.reaction === 'thumbs_down'
+                            ? 'text-red-600'
+                            : 'text-gray-500 hover:text-red-600'
+                        } focus:outline-none focus:ring-2 focus:ring-red-400 rounded`}
+                        aria-label="Thumbs down"
+                        aria-pressed={message.reaction === 'thumbs_down'}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill={message.reaction === 'thumbs_down' ? 'currentColor' : 'none'}
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
+                          />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                  {/* Delete button for all messages (Requirement 12.1, 12.4) */}
+                  <button
+                    onClick={() => handleStartDelete(message.id)}
+                    className={`p-1 ${
+                      isUserMessage
+                        ? 'text-blue-200 hover:text-white focus:ring-blue-300'
+                        : 'text-gray-500 hover:text-gray-700 focus:ring-gray-400'
+                    } focus:outline-none focus:ring-2 rounded`}
+                    aria-label="Delete message"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <p
+                className={`text-xs ${
+                  isUserMessage ? 'text-blue-200' : 'text-gray-600 dark:text-gray-400'
+                }`}
+                title={getFullTimestamp(message.timestamp)}
+                aria-label={`Sent ${getFullTimestamp(message.timestamp)}`}
+              >
+                {formatTimestamp(message.timestamp)}
+              </p>
+              {/* Edited indicator (Requirement 11.4) */}
+              {message.edited && message.editedAt && (
+                <span
+                  className={`text-xs italic ${
+                    isUserMessage ? 'text-blue-200' : 'text-gray-500 dark:text-gray-400'
                   }`}
-                  title={getFullTimestamp(message.timestamp)}
-                  aria-label={`Sent ${getFullTimestamp(message.timestamp)}`}
+                  title={`Edited ${getFullTimestamp(message.editedAt)}`}
+                  aria-label={`Edited ${getFullTimestamp(message.editedAt)}`}
                 >
-                  {formatTimestamp(message.timestamp)}
-                </p>
-                {/* Edited indicator (Requirement 11.4) */}
-                {message.edited && message.editedAt && (
-                  <span
-                    className={`text-xs italic ${
-                      isUserMessage ? 'text-blue-200' : 'text-gray-500'
-                    }`}
-                    title={`Edited ${getFullTimestamp(message.editedAt)}`}
-                    aria-label={`Edited ${getFullTimestamp(message.editedAt)}`}
-                  >
-                    (edited)
-                  </span>
-                )}
-                {/* Queue status indicator (Requirement 33.2) */}
-                {message.queueStatus && (
-                  <span
-                    className={`text-xs italic flex items-center gap-1 ${
-                      isUserMessage ? 'text-blue-200' : 'text-gray-500'
-                    }`}
-                    aria-label={`Message status: ${message.queueStatus}`}
-                  >
-                    {message.queueStatus === 'pending' && (
-                      <>
-                        <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>(pending)</span>
-                      </>
-                    )}
-                    {message.queueStatus === 'sending' && (
-                      <>
-                        <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>(sending)</span>
-                      </>
-                    )}
-                    {message.queueStatus === 'failed' && (
-                      <>
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>(failed)</span>
-                      </>
-                    )}
-                  </span>
-                )}
-                {/* Reaction display (Requirement 18.3) */}
-                {message.reaction && (
-                  <span
-                    className={`text-xs ${
-                      message.reaction === 'thumbs_up' ? 'text-green-600' : 'text-red-600'
-                    }`}
-                    aria-label={`Reacted with ${message.reaction === 'thumbs_up' ? 'thumbs up' : 'thumbs down'}`}
-                  >
-                    {message.reaction === 'thumbs_up' ? '👍' : '👎'}
-                  </span>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+                  (edited)
+                </span>
+              )}
+              {/* Queue status indicator (Requirement 33.2) */}
+              {message.queueStatus && (
+                <span
+                  className={`text-xs italic flex items-center gap-1 ${
+                    isUserMessage ? 'text-blue-200' : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                  aria-label={`Message status: ${message.queueStatus}`}
+                >
+                  {message.queueStatus === 'pending' && (
+                    <>
+                      <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>(pending)</span>
+                    </>
+                  )}
+                  {message.queueStatus === 'sending' && (
+                    <>
+                      <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>(sending)</span>
+                    </>
+                  )}
+                  {message.queueStatus === 'failed' && (
+                    <>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>(failed)</span>
+                    </>
+                  )}
+                </span>
+              )}
+              {/* Reaction display (Requirement 18.3) */}
+              {message.reaction && (
+                <span
+                  className={`text-xs ${
+                    message.reaction === 'thumbs_up' ? 'text-green-600' : 'text-red-600'
+                  }`}
+                  aria-label={`Reacted with ${message.reaction === 'thumbs_up' ? 'thumbs up' : 'thumbs down'}`}
+                >
+                  {message.reaction === 'thumbs_up' ? '👍' : '👎'}
+                </span>
+              )}
+            </div>
+          </>
+        )}
+      </MessageBubble>
     );
   };
 
@@ -748,25 +745,7 @@ export const MessageList = memo(function MessageList({
    * - Smooth and not distracting animation (Requirement 16.6)
    */
   const renderTypingIndicator = () => {
-    return (
-      <div className="flex justify-start">
-        <div
-          className="max-w-[80%] rounded-lg px-4 py-2 bg-gray-200 text-gray-900"
-          role="status"
-          aria-label="Agent is typing"
-          aria-live="polite"
-        >
-          <div className="flex items-center gap-1">
-            <span className="text-sm">Agent is typing</span>
-            <div className="flex gap-1 ml-1">
-              <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-              <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <TypingIndicator />;
   };
 
   // Screen reader announcement for new messages (Requirement 36.3)

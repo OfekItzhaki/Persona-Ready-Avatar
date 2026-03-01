@@ -3,12 +3,13 @@
 import { useState, useRef, useEffect, FormEvent, KeyboardEvent, ChangeEvent } from 'react';
 import { sanitizeAndValidate } from '@/lib/utils/sanitize';
 import { useOnlineStatus } from '@/lib/hooks';
+import { Button } from '@/components/ui/Button';
 
 /**
  * InputArea Component
  *
- * A controlled message input component with validation, sanitization, and accessibility features.
- * Handles user message input with real-time validation and provides visual feedback for character limits.
+ * A controlled message input component with validation, sanitization, accessibility features,
+ * and enhanced visual effects including focus glow, scale transitions, and smooth animations.
  *
  * @component
  * @example
@@ -39,14 +40,16 @@ import { useOnlineStatus } from '@/lib/hooks';
  * ```
  *
  * @features
- * - **Auto-resizing Textarea**: Automatically adjusts height based on content
+ * - **Auto-resizing Textarea**: Automatically adjusts height based on content with smooth transitions
  * - **Keyboard Shortcuts**: Enter to submit, Shift+Enter for newline
  * - **Input Validation**: Non-empty validation and max length enforcement
- * - **Character Counter**: Shows at 80% of max length with color coding
+ * - **Character Counter**: Shows at 80% of max length with smooth fade-in animation
  * - **Input Sanitization**: Removes HTML/script tags to prevent XSS attacks
  * - **Offline Support**: Changes button text to "Queue" when offline
  * - **Visual Feedback**: Disabled state during pending requests
  * - **Error Messages**: Clear validation error messages
+ * - **Focus Effects**: Glowing border gradient, scale transition, and focus ring
+ * - **Enhanced Button**: Uses modern Button component with loading state
  *
  * @accessibility
  * - Semantic HTML with proper form structure
@@ -55,6 +58,7 @@ import { useOnlineStatus } from '@/lib/hooks';
  * - aria-invalid and aria-errormessage for validation errors
  * - Live regions announce validation errors
  * - Keyboard navigation fully supported
+ * - Visible focus indicators with 4px focus ring
  *
  * @validation
  * - Minimum: 1 character (after trim)
@@ -62,7 +66,7 @@ import { useOnlineStatus } from '@/lib/hooks';
  * - Sanitization: Removes HTML tags and prevents XSS
  * - Real-time validation feedback
  *
- * @requirements 2, 32, 43
+ * @requirements 2, 8, 32, 43
  */
 
 /**
@@ -109,6 +113,7 @@ export function InputArea({
 }: InputAreaProps) {
   const [inputValue, setInputValue] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isOnline = useOnlineStatus();
 
@@ -200,55 +205,117 @@ export function InputArea({
   const isOverLimit = charCount > maxLength;
 
   // Determine if submit should be disabled (Requirement 2.5, 32)
-  // Disable when: explicitly disabled, empty input, or over limit
-  // Allow submission when offline (messages will be queued - Requirement 33.1)
-  const isSubmitDisabled = disabled || !inputValue.trim() || isOverLimit;
+  // Disable when: explicitly disabled, empty input, over limit, or offline
+  const isSubmitDisabled = disabled || !inputValue.trim() || isOverLimit || !isOnline;
+
+  // Determine button text based on state
+  const getButtonText = () => {
+    if (!isOnline) return 'Offline';
+    return 'Send';
+  };
+
+  // Determine button title based on state
+  const getButtonTitle = () => {
+    if (disabled) return 'Sending...';
+    if (!isOnline) return 'Cannot send while offline';
+    return 'Send message';
+  };
 
   return (
-    <form onSubmit={handleSubmit} className={`input-area border-t border-gray-300 p-4 ${className}`}>
+    <form onSubmit={handleSubmit} className={`input-area border-t border-gray-200 dark:border-gray-700 p-4 ${className}`}>
       <div className="flex flex-col gap-2">
-        {/* Textarea Input (Requirement 2.1) */}
-        <div className="input-container flex gap-2">
-          <textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            disabled={disabled}
-            placeholder={!isOnline ? 'You are offline. Messages will be queued.' : placeholder}
-            rows={1}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed resize-none overflow-hidden min-h-[42px] max-h-[200px]"
-            aria-label="Message input"
-            aria-describedby={`message-input-help${showCharCounter ? ' message-char-count' : ''}`}
-            aria-invalid={!!validationError}
-            aria-errormessage={validationError ? 'input-error' : undefined}
-          />
-          {/* Send Button (Requirement 2.2, 32) */}
-          <button
-            type="submit"
-            disabled={isSubmitDisabled}
-            className="send-button px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors self-end"
-            aria-label="Send message"
-            title={disabled ? 'Sending...' : 'Send message'}
+        {/* Textarea Input with Focus Effects (Requirements 8.1, 8.2, 8.3, 8.4) */}
+        <div className="input-container flex gap-3">
+          <div 
+            className={`
+              flex-1 relative
+              transition-all duration-300 ease-in-out
+              ${isFocused ? 'scale-[1.01]' : 'scale-100'}
+            `}
           >
-            {disabled ? 'Sending...' : !isOnline ? 'Queue' : 'Send'}
-          </button>
+            {/* Glowing border effect on focus (Requirement 8.1) */}
+            {isFocused && (
+              <div 
+                className="
+                  absolute -inset-1 
+                  bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 
+                  rounded-lg blur-sm opacity-30
+                  animate-pulse
+                  pointer-events-none
+                " 
+                aria-hidden="true"
+              />
+            )}
+            
+            <textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              disabled={disabled || !isOnline}
+              placeholder={!isOnline ? 'You are offline. Messages will be queued.' : placeholder}
+              rows={1}
+              className="
+                relative w-full px-4 py-3
+                bg-white dark:bg-gray-800
+                border-2 border-gray-300 dark:border-gray-600
+                rounded-lg
+                focus:border-blue-500 dark:focus:border-blue-400
+                focus:ring-4 focus:ring-blue-500/20
+                transition-all duration-200 ease-in-out
+                resize-none overflow-hidden
+                min-h-[42px] max-h-[200px]
+                placeholder:text-gray-400 dark:placeholder:text-gray-500
+                disabled:bg-gray-100 dark:disabled:bg-gray-900
+                disabled:cursor-not-allowed
+                disabled:opacity-60
+              "
+              style={{
+                transition: 'height 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out'
+              }}
+              aria-label="Message input"
+              aria-describedby={`message-input-help${showCharCounter ? ' message-char-count' : ''}`}
+              aria-invalid={!!validationError}
+              aria-errormessage={validationError ? 'input-error' : undefined}
+            />
+          </div>
+          
+          {/* Enhanced Send Button with loading state (Requirements 8.6, 8.7) */}
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            disabled={isSubmitDisabled}
+            loading={disabled}
+            className="self-end"
+            aria-label="Send message"
+            title={getButtonTitle()}
+          >
+            {disabled ? 'Sending...' : getButtonText()}
+          </Button>
         </div>
 
         {/* Help Text and Character Counter */}
         <div className="flex justify-between items-center text-xs">
           {/* Help Text (Requirement 2.9, 36.6) */}
-          <p id="message-input-help" className="text-gray-500">
+          <p id="message-input-help" className="text-gray-500 dark:text-gray-400">
             Press Enter to send, Shift+Enter for new line
           </p>
 
-          {/* Character Counter (Requirement 2.7) */}
+          {/* Character Counter with smooth fade-in (Requirement 8.8) */}
           {showCharCounter && (
             <p
               id="message-char-count"
-              className={`char-counter font-medium ${
-                isOverLimit ? 'text-red-600' : 'text-gray-600'
-              }`}
+              className={`
+                char-counter font-medium
+                transition-opacity duration-300 ease-in-out
+                ${isOverLimit ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}
+              `}
+              style={{
+                animation: 'fadeIn 0.3s ease-in-out'
+              }}
               aria-live="polite"
               aria-atomic="true"
             >
@@ -261,7 +328,7 @@ export function InputArea({
         {validationError && (
           <p
             id="input-error"
-            className="validation-error text-xs text-red-600"
+            className="validation-error text-xs text-red-600 dark:text-red-400"
             role="alert"
             aria-live="assertive"
           >
@@ -269,6 +336,20 @@ export function InputArea({
           </p>
         )}
       </div>
+
+      {/* Keyframe animation for character counter fade-in */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </form>
   );
 }

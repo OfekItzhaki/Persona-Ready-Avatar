@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { ChatInterface } from '@/components/ChatInterface';
-import { PersonaSwitcher } from '@/components/PersonaSwitcher';
+import { Header } from '@/components/Header';
 import { TranscriptDisplay } from '@/components/TranscriptDisplay';
 import { NotificationToast } from '@/components/NotificationToast';
 import { SkipLinks } from '@/components/SkipLinks';
@@ -11,7 +11,6 @@ import {
   ErrorBoundary,
   AvatarCanvasErrorBoundary,
   ChatInterfaceErrorBoundary,
-  PersonaSwitcherErrorBoundary,
 } from '@/components/ErrorBoundary';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { useAgents } from '@/lib/hooks/useReactQuery';
@@ -176,33 +175,8 @@ export default function Home() {
       <SkipLinks />
       
       <main id="main-content" className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Avatar Client</h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  3D animated avatar interface for conversational AI
-                </p>
-              </div>
-              
-              {/* Agent Selector - Desktop */}
-              <div id="agent-selector" className="hidden lg:block">
-                <PersonaSwitcherErrorBoundary>
-                  <PersonaSwitcher />
-                </PersonaSwitcherErrorBoundary>
-              </div>
-            </div>
-
-            {/* Agent Selector - Mobile */}
-            <div className="lg:hidden mt-4">
-              <PersonaSwitcherErrorBoundary>
-                <PersonaSwitcher />
-              </PersonaSwitcherErrorBoundary>
-            </div>
-          </div>
-        </header>
+        {/* Enhanced Header */}
+        <Header showAgentSelector={true} />
 
         {/* Main Content - Responsive Layout */}
         {/* Desktop (≥1024px): 3-column grid layout */}

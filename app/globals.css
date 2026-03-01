@@ -22,6 +22,48 @@
  */
 
 /* ============================================
+   Design Token CSS Custom Properties
+   ============================================ */
+
+:root {
+  /* Design token colors - will be overridden by theme */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #e8e8e8;
+  --bg-glass: rgba(255, 255, 255, 0.8);
+  
+  --fg-primary: #1a1a1a;
+  --fg-secondary: #4a4a4a;
+  --fg-tertiary: #6b6b6b;
+  
+  --border-primary: #d4d4d4;
+  --border-secondary: #e8e8e8;
+  --border-focus: #2563eb;
+  
+  --interactive-primary: #2563eb;
+  --interactive-primary-hover: #1d4ed8;
+  --interactive-primary-active: #1e40af;
+  --interactive-secondary: #6b7280;
+  --interactive-secondary-hover: #4b5563;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-secondary: linear-gradient(to right, #f5f5f5, #ffffff, #f5f5f5);
+  --gradient-mesh: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(168, 85, 247, 0.05) 50%, rgba(236, 72, 153, 0.05) 100%);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+  
+  /* Typography */
+  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: "Fira Code", "Cascadia Code", "Courier New", Courier, monospace;
+  --font-family-display: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ============================================
    Base Theme Variables
    ============================================ */
 

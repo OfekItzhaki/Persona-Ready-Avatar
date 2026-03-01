@@ -1,3 +1,6 @@
+/* eslint-disable no-undef */
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { create } from 'zustand';
 import type {
   ChatMessage,

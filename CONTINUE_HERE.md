@@ -3,6 +3,7 @@
 ## ✅ What Was Done
 
 ### Changes Committed:
+
 1. **Created ImageAvatar component** - Visual avatar with speaking animation
 2. **Added avatar configuration system** - `config/avatars.ts` for easy image setup
 3. **Simplified page layout** - 2-column design (avatar left, chat right)
@@ -12,6 +13,7 @@
 7. **Created avatar setup guide** - `AVATAR_IMAGES_GUIDE.md`
 
 ### Files Modified:
+
 - `app/page.tsx` - Simplified layout with inline styles
 - `components/Header.tsx` - Clean header with agent selector
 - `components/MessageList.tsx` - Simplified empty state
@@ -21,76 +23,69 @@
 
 ## 🐛 Known Issues to Fix
 
-### Issue 1: Agent Loading Error
-**Problem:** "Loading agents" error in dropdown - Brain API not connecting
+### ✅ Issue 1: Agent Loading Error - FIXED
 
-**To Fix:**
-1. Check if Brain API is running on port 3000:
-   ```bash
-   # In a separate terminal, navigate to your Brain API folder
-   cd path/to/brain-api
-   npm start  # or whatever command starts your Brain API
-   ```
+**Problem:** "Loading agents" error in dropdown - Brain API response format mismatch
 
-2. Verify the API is accessible:
-   ```bash
-   curl http://localhost:3000/api/agents
-   ```
+**Solution Applied:**
 
-3. If Brain API is on a different port, update `.env.local`:
-   ```
-   BRAIN_API_URL=http://localhost:YOUR_PORT/api
-   ```
+- Updated `/app/api/agents/route.ts` to wrap the agents array in an object
+- Brain API returns `[{...}]` but frontend expects `{agents: [{...}]}`
+- The proxy now correctly transforms the response
 
-### Issue 2: Microphone Button Not Visible
-**Problem:** Voice input controls not showing even in voice mode
+**To Verify:**
 
-**To Fix:**
-1. Check browser console (F12) for errors
-2. Verify Azure Speech credentials in `.env.local`:
-   ```
-   NEXT_PUBLIC_AZURE_SPEECH_KEY=your-key-here
-   NEXT_PUBLIC_AZURE_SPEECH_REGION=westeurope
-   ```
+1. Refresh the browser (Ctrl+R or F5)
+2. The agent dropdown should now show available agents
+3. Select an agent from the dropdown
 
-3. Check if `VoiceInputButton` component is rendering:
-   - Open `components/ChatInterface.tsx`
-   - Look for the voice input section (around line 960)
-   - Add console.log to debug:
-   ```typescript
-   console.log('Input mode:', inputMode);
-   console.log('Is recognizing:', isRecognizing);
-   ```
+### Issue 2: Voice Input Usage
 
-4. Verify browser compatibility:
-   - Voice input requires Chrome 90+, Edge 90+, or Safari 14+
-   - Check browser console for compatibility warnings
+**Problem:** Users don't know how to access voice input
+
+**How to Use Voice Input:**
+
+1. **Select an agent** from the dropdown in the header
+2. **Switch to Voice mode** - Look at the bottom of the chat interface for "Input Mode: [Text] [Voice]"
+3. **Click the Voice toggle** to switch from Text to Voice mode
+4. **Microphone button appears** - You'll see a blue microphone button
+5. **Hold to speak** - Press and hold the microphone button while speaking
+6. **Release to send** - Release the button to stop recording and send your message
+
+**Voice Input Requirements:**
+
+- Supported browsers: Chrome 90+, Edge 90+, Safari 14+
+- Microphone permissions must be granted
+- Azure Speech credentials configured in `.env.local`
 
 ## 🎨 How to Add Avatar Images
 
 ### Quick Start:
+
 1. **Get avatar images** (512x512px recommended):
    - Use AI generators: https://thispersondoesnotexist.com/
    - Or use Midjourney, DALL-E, Stable Diffusion
    - Or use your own photos
 
 2. **Add images to project**:
+
    ```
    public/avatars/agent1.png
    public/avatars/agent2.jpg
    ```
 
 3. **Configure in `config/avatars.ts`**:
+
    ```typescript
    export const avatarConfig: AvatarConfig = {
      'agent-id-here': {
        imageUrl: '/avatars/agent1.png',
-       name: 'Sarah'
+       name: 'Sarah',
      },
      'another-agent-id': {
        imageUrl: '/avatars/agent2.jpg',
-       name: 'Alex'
-     }
+       name: 'Alex',
+     },
    };
    ```
 
@@ -103,6 +98,7 @@
 ## 🚀 Next Steps
 
 ### Priority 1: Fix Brain API Connection
+
 ```bash
 # Terminal 1: Start Brain API
 cd path/to/brain-api
@@ -113,12 +109,14 @@ npm run dev
 ```
 
 ### Priority 2: Debug Voice Input
+
 1. Open browser console (F12)
 2. Toggle to Voice mode
 3. Check for errors
 4. Verify microphone permissions
 
 ### Priority 3: Add Avatar Images
+
 1. Get/generate avatar images
 2. Add to `public/avatars/`
 3. Configure in `config/avatars.ts`
@@ -143,6 +141,7 @@ npm test
 ## 🔍 Debugging Tips
 
 ### Check if services are running:
+
 ```bash
 # Check Next.js
 curl http://localhost:3001
@@ -152,11 +151,13 @@ curl http://localhost:3000/api/agents
 ```
 
 ### View logs:
+
 - Browser console (F12) for client-side errors
 - Terminal for server-side errors
 - Network tab for API call failures
 
 ### Common fixes:
+
 - Clear `.next` cache: `rm -rf .next`
 - Restart dev server: Ctrl+C then `npm run dev`
 - Clear browser cache: Ctrl+Shift+Delete
@@ -181,6 +182,7 @@ curl http://localhost:3000/api/agents
 ## 📞 Contact
 
 If you need help, check:
+
 - Browser console errors
 - Terminal errors
 - Network tab in DevTools

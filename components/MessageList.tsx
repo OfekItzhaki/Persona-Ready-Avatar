@@ -15,26 +15,26 @@ import type { ChatMessage } from '@/types';
  * @example
  * ```tsx
  * import { MessageList } from '@/components/MessageList';
- * 
+ *
  * function ChatInterface() {
  *   const messages = useAppStore((state) => state.messages);
  *   const [isPending, setIsPending] = useState(false);
- * 
+ *
  *   const handleEditMessage = (messageId: string, newContent: string) => {
  *     // Update message in store
  *     updateMessage(messageId, { content: newContent, edited: true, editedAt: new Date() });
  *   };
- * 
+ *
  *   const handleDeleteMessage = (messageId: string) => {
  *     // Remove message from store
  *     removeMessage(messageId);
  *   };
- * 
+ *
  *   const handleReaction = (messageId: string, reaction: 'thumbs_up' | 'thumbs_down' | null) => {
  *     // Update message reaction in store
  *     updateMessage(messageId, { reaction });
  *   };
- * 
+ *
  *   return (
  *     <MessageList
  *       messages={messages}
@@ -83,25 +83,25 @@ import type { ChatMessage } from '@/types';
 interface MessageListProps {
   /** Array of chat messages to display in chronological order */
   messages: ChatMessage[];
-  
+
   /** Callback fired when a message is edited. Receives messageId and new content. */
   onEditMessage?: (messageId: string, newContent: string) => void;
-  
+
   /** Callback fired when a message is deleted. Receives messageId. */
   onDeleteMessage?: (messageId: string) => void;
-  
+
   /** Callback fired when a message reaction is added/changed/removed. Receives messageId and reaction (or null to remove). */
   onReactToMessage?: (messageId: string, reaction: 'thumbs_up' | 'thumbs_down' | null) => void;
-  
+
   /** Whether the component is in a loading state */
   isLoading?: boolean;
-  
+
   /** Whether a request is pending (disables edit/delete actions) */
   isPending?: boolean;
-  
+
   /** Additional CSS classes to apply to the container */
   className?: string;
-  
+
   /** Whether to show the typing indicator (typically when agent is processing) */
   showTypingIndicator?: boolean;
 }
@@ -122,30 +122,31 @@ const SEARCH_DEBOUNCE_MS = 300;
 type RoleFilter = 'all' | 'user' | 'agent';
 
 // Wrap with React.memo to prevent unnecessary re-renders (Requirement 41.2)
-export const MessageList = memo(function MessageList({ 
-  messages, 
+export const MessageList = memo(function MessageList({
+  messages,
   onEditMessage,
   onDeleteMessage,
   onReactToMessage,
-  isLoading = false, 
+  isLoading = false,
   isPending = false,
   showTypingIndicator = false, // Requirement 16.1
-  className = '' 
+  className = '',
 }: MessageListProps) {
-  const parentRef = useRef<HTMLDivElement | null>(null);
-  
+  // eslint-disable-next-line no-undef
+  const parentRef = useRef<React.RefObject<HTMLDivElement>['current']>(null);
+
   // State for message editing (Requirement 11.2)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
-  
+
   // State for message deletion (Requirement 12.2)
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
 
   // State for search functionality (Requirement 15.1, 15.2)
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  
+
   // State for role filter (Requirement 15.6)
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
 
@@ -182,9 +183,7 @@ export const MessageList = memo(function MessageList({
     // Apply search filter (Requirement 15.2, 15.4)
     if (debouncedSearchQuery.trim()) {
       const query = debouncedSearchQuery.toLowerCase();
-      filtered = filtered.filter((msg) =>
-        msg.content.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter((msg) => msg.content.toLowerCase().includes(query));
     }
 
     return filtered;
@@ -193,7 +192,7 @@ export const MessageList = memo(function MessageList({
   const shouldUseVirtualization = filteredMessages.length > VIRTUAL_SCROLL_THRESHOLD;
 
   // Configure virtual scrolling with appropriate overscan (Requirement 2.3)
-  // eslint-disable-next-line react-hooks/incompatible-library
+
   const virtualizer = useVirtualizer({
     count: filteredMessages.length,
     getScrollElement: () => parentRef.current,
@@ -204,7 +203,7 @@ export const MessageList = memo(function MessageList({
 
   // Auto-scroll to latest message when new messages are added (Requirement 1.4)
   // Maintain auto-scroll behavior with virtualization (Requirement 2.3)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (filteredMessages.length === 0) return;
 
@@ -288,10 +287,10 @@ export const MessageList = memo(function MessageList({
   const canEditMessage = (messageId: string): boolean => {
     // Find all user messages
     const userMessages = messages.filter((m) => m.role === 'user');
-    
+
     // Get the 5 most recent user messages
     const recentUserMessages = userMessages.slice(-MAX_EDITABLE_MESSAGES);
-    
+
     // Check if this message is in the recent list
     return recentUserMessages.some((m) => m.id === messageId);
   };
@@ -302,7 +301,7 @@ export const MessageList = memo(function MessageList({
   const handleStartEdit = (message: ChatMessage) => {
     if (isPending) return; // Disable during pending requests (Requirement 11.8)
     if (!canEditMessage(message.id)) return;
-    
+
     setEditingMessageId(message.id);
     setEditContent(message.content);
   };
@@ -431,17 +430,14 @@ export const MessageList = memo(function MessageList({
       if (index > lastIndex) {
         parts.push(text.substring(lastIndex, index));
       }
-      
+
       // Add highlighted match
       parts.push(
-        <mark
-          key={`${index}-${lastIndex}`}
-          className="bg-yellow-300 text-gray-900"
-        >
+        <mark key={`${index}-${lastIndex}`} className="bg-yellow-300 text-gray-900">
           {text.substring(index, index + query.length)}
         </mark>
       );
-      
+
       lastIndex = index + query.length;
       index = lowerText.indexOf(lowerQuery, lastIndex);
     }
@@ -666,9 +662,7 @@ export const MessageList = memo(function MessageList({
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <p
-                  className={`text-xs ${
-                    isUserMessage ? 'text-blue-200' : 'text-gray-600'
-                  }`}
+                  className={`text-xs ${isUserMessage ? 'text-blue-200' : 'text-gray-600'}`}
                   title={getFullTimestamp(message.timestamp)}
                   aria-label={`Sent ${getFullTimestamp(message.timestamp)}`}
                 >
@@ -697,8 +691,19 @@ export const MessageList = memo(function MessageList({
                     {message.queueStatus === 'pending' && (
                       <>
                         <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
                         </svg>
                         <span>(pending)</span>
                       </>
@@ -706,16 +711,37 @@ export const MessageList = memo(function MessageList({
                     {message.queueStatus === 'sending' && (
                       <>
                         <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
                         </svg>
                         <span>(sending)</span>
                       </>
                     )}
                     {message.queueStatus === 'failed' && (
                       <>
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
                         </svg>
                         <span>(failed)</span>
                       </>
@@ -761,9 +787,18 @@ export const MessageList = memo(function MessageList({
           <div className="flex items-center gap-1">
             <span className="text-sm">Agent is typing</span>
             <div className="flex gap-1 ml-1">
-              <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-              <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+              <span
+                className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"
+                style={{ animationDelay: '0ms' }}
+              ></span>
+              <span
+                className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"
+                style={{ animationDelay: '150ms' }}
+              ></span>
+              <span
+                className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"
+                style={{ animationDelay: '300ms' }}
+              ></span>
             </div>
           </div>
         </div>
@@ -780,7 +815,7 @@ export const MessageList = memo(function MessageList({
       const latestMessage = messages[messages.length - 1];
       const role = latestMessage.role === 'user' ? 'You' : 'Agent';
       setAnnouncement(`${role} said: ${latestMessage.content}`);
-      
+
       // Clear announcement after a short delay to allow for new announcements
       const timer = setTimeout(() => setAnnouncement(''), 100);
       return () => clearTimeout(timer);
@@ -790,12 +825,7 @@ export const MessageList = memo(function MessageList({
   return (
     <div className="flex flex-col h-full">
       {/* Screen reader announcement region (Requirement 36.3) */}
-      <div
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      >
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {announcement}
       </div>
 
@@ -877,67 +907,73 @@ export const MessageList = memo(function MessageList({
         aria-atomic="false"
         aria-label="Conversation history"
       >
-      {/* Empty state placeholder (Requirement 1.7) */}
-      {messages.length === 0 && !isLoading ? (
-        <div className="flex items-center justify-center h-full text-center px-4">
-          <div className="max-w-sm">
-            <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              No messages yet. Start a conversation!
-            </p>
-          </div>
-        </div>
-      ) : filteredMessages.length === 0 ? (
-        // No results message (Requirement 15.7)
-        <div className="text-center text-gray-500 mt-8">
-          <p>No messages match your search.</p>
-        </div>
-      ) : shouldUseVirtualization ? (
-        // Virtual scrolling for 100+ messages (Requirement 1.5, 41.1)
-        <div
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: '100%',
-            position: 'relative',
-          }}
-        >
-          {virtualizer.getVirtualItems().map((virtualItem) => {
-            const message = filteredMessages[virtualItem.index];
-            return (
-              <div
-                key={virtualItem.key}
-                data-index={virtualItem.index}
-                ref={virtualizer.measureElement}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${virtualItem.start}px)`,
-                }}
-                className="mb-4"
+        {/* Empty state placeholder (Requirement 1.7) */}
+        {messages.length === 0 && !isLoading ? (
+          <div className="flex items-center justify-center h-full text-center px-4">
+            <div className="max-w-sm">
+              <svg
+                className="w-16 h-16 mx-auto text-gray-400 mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {renderMessage(message)}
-              </div>
-            );
-          })}
-          {/* Typing indicator for virtualized list (Requirement 16) */}
-          {showTypingIndicator && (
-            <div className="mb-4">
-              {renderTypingIndicator()}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                No messages yet. Start a conversation!
+              </p>
             </div>
-          )}
-        </div>
-      ) : (
-        // Standard rendering for < 100 messages
-        <div className="space-y-4">
-          {filteredMessages.map((message) => renderMessage(message))}
-          {/* Typing indicator (Requirement 16.1, 16.3, 16.4) */}
-          {showTypingIndicator && renderTypingIndicator()}
-        </div>
-      )}
+          </div>
+        ) : filteredMessages.length === 0 ? (
+          // No results message (Requirement 15.7)
+          <div className="text-center text-gray-500 mt-8">
+            <p>No messages match your search.</p>
+          </div>
+        ) : shouldUseVirtualization ? (
+          // Virtual scrolling for 100+ messages (Requirement 1.5, 41.1)
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualItem) => {
+              const message = filteredMessages[virtualItem.index];
+              return (
+                <div
+                  key={virtualItem.key}
+                  data-index={virtualItem.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualItem.start}px)`,
+                  }}
+                  className="mb-4"
+                >
+                  {renderMessage(message)}
+                </div>
+              );
+            })}
+            {/* Typing indicator for virtualized list (Requirement 16) */}
+            {showTypingIndicator && <div className="mb-4">{renderTypingIndicator()}</div>}
+          </div>
+        ) : (
+          // Standard rendering for < 100 messages
+          <div className="space-y-4">
+            {filteredMessages.map((message) => renderMessage(message))}
+            {/* Typing indicator (Requirement 16.1, 16.3, 16.4) */}
+            {showTypingIndicator && renderTypingIndicator()}
+          </div>
+        )}
       </div>
 
       {/* Delete confirmation dialog (Requirement 12.2, 12.5, 12.6) */}
@@ -955,16 +991,10 @@ export const MessageList = memo(function MessageList({
             onClick={(e) => e.stopPropagation()}
             onKeyDown={handleDeleteDialogKeyDown}
           >
-            <h2
-              id="delete-dialog-title"
-              className="text-lg font-semibold text-gray-900 mb-2"
-            >
+            <h2 id="delete-dialog-title" className="text-lg font-semibold text-gray-900 mb-2">
               Delete Message
             </h2>
-            <p
-              id="delete-dialog-description"
-              className="text-sm text-gray-600 mb-6"
-            >
+            <p id="delete-dialog-description" className="text-sm text-gray-600 mb-6">
               Are you sure you want to delete this message? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-3">

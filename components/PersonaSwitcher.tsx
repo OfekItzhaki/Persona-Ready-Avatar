@@ -165,51 +165,38 @@ export function PersonaSwitcher() {
         aria-expanded={isOpen}
         aria-controls="agent-listbox"
         className={`
-          w-full px-5 py-4 text-left bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-xl
-          shadow-md hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 focus:outline-none focus:ring-2
+          w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-lg
+          shadow-sm hover:shadow-md hover:border-blue-400 focus:outline-none focus:ring-2
           focus:ring-blue-500 focus:border-transparent transition-all duration-200
           ${isLoading || error ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         `}
       >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {/* Agent Icon */}
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
               {selectedAgent ? selectedAgent.name.charAt(0).toUpperCase() : '?'}
             </div>
 
             {/* Agent Info */}
             <div className="flex-1 min-w-0">
               {isLoading ? (
-                <span className="text-gray-500 dark:text-gray-400 text-base">
-                  Loading agents...
-                </span>
+                <span className="text-gray-500 text-sm">Loading agents...</span>
               ) : error ? (
-                <span className="text-red-600 dark:text-red-400 text-base">
-                  Error loading agents. Retrying...
-                </span>
+                <span className="text-red-600 text-sm">Error loading agents. Retrying...</span>
               ) : selectedAgent ? (
                 <div>
-                  <div className="font-semibold text-gray-900 dark:text-gray-100 text-base">
-                    {selectedAgent.name}
-                  </div>
-                  {selectedAgent.description && (
-                    <div className="text-sm text-gray-600 dark:text-gray-400 truncate mt-0.5">
-                      {selectedAgent.description}
-                    </div>
-                  )}
+                  <div className="font-medium text-gray-900 text-sm">{selectedAgent.name}</div>
                 </div>
               ) : (
-                <span className="text-gray-500 dark:text-gray-400 text-base">
-                  Select an agent...
-                </span>
+                <span className="text-gray-500 text-sm">Select an agent...</span>
               )}
             </div>
           </div>
 
           {/* Dropdown Arrow */}
           <svg
-            className={`w-6 h-6 text-gray-400 dark:text-gray-500 transition-transform duration-200 flex-shrink-0 ${
+            className={`w-5 h-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
               isOpen ? 'transform rotate-180' : ''
             }`}
             fill="none"
@@ -217,12 +204,7 @@ export function PersonaSwitcher() {
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2.5}
-              d="M19 9l-7 7-7-7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </button>
@@ -233,7 +215,7 @@ export function PersonaSwitcher() {
           id="agent-listbox"
           role="listbox"
           aria-label="Available AI agents"
-          className="absolute z-20 w-full mt-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl max-h-96 overflow-auto"
+          className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-auto"
         >
           {agents.map((agent, index) => (
             <li
@@ -243,42 +225,32 @@ export function PersonaSwitcher() {
               onClick={() => handleSelectAgent(agent.id)}
               onMouseEnter={() => setFocusedIndex(index)}
               className={`
-                px-5 py-4 cursor-pointer transition-all duration-150 border-b border-gray-100 dark:border-gray-700 last:border-b-0
+                px-3 py-2 cursor-pointer transition-all duration-150 border-b border-gray-100 last:border-b-0
                 ${
                   agent.id === selectedAgentId
-                    ? 'bg-blue-50 dark:bg-blue-900/30 border-l-4 border-l-blue-500'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                    ? 'bg-blue-50 border-l-2 border-l-blue-500'
+                    : 'hover:bg-gray-50'
                 }
-                ${focusedIndex === index ? 'bg-gray-100 dark:bg-gray-700' : ''}
+                ${focusedIndex === index ? 'bg-gray-100' : ''}
               `}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-2">
                 {/* Agent Avatar */}
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
                   {agent.name.charAt(0).toUpperCase()}
                 </div>
 
                 {/* Agent Details */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-gray-900 dark:text-gray-100 text-base">
+                  <div className="font-medium text-gray-900 text-sm flex items-center gap-1">
                     {agent.name}
                     {agent.id === selectedAgentId && (
-                      <span className="ml-2 text-blue-600 dark:text-blue-400">✓</span>
+                      <span className="text-blue-600 text-xs">✓</span>
                     )}
                   </div>
                   {agent.description && (
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                      {agent.description}
-                    </div>
+                    <div className="text-xs text-gray-600 truncate">{agent.description}</div>
                   )}
-                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mt-2">
-                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md">
-                      {agent.language}
-                    </span>
-                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md">
-                      🎤 {agent.voice.split('-')[1] || 'Voice'}
-                    </span>
-                  </div>
                 </div>
               </div>
             </li>

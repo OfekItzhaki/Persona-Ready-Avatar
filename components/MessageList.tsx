@@ -132,7 +132,7 @@ export const MessageList = memo(function MessageList({
   showTypingIndicator = false, // Requirement 16.1
   className = '' 
 }: MessageListProps) {
-  const parentRef = useRef<HTMLDivElement>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
   
   // State for message editing (Requirement 11.2)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -193,6 +193,7 @@ export const MessageList = memo(function MessageList({
   const shouldUseVirtualization = filteredMessages.length > VIRTUAL_SCROLL_THRESHOLD;
 
   // Configure virtual scrolling with appropriate overscan (Requirement 2.3)
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: filteredMessages.length,
     getScrollElement: () => parentRef.current,
@@ -203,6 +204,7 @@ export const MessageList = memo(function MessageList({
 
   // Auto-scroll to latest message when new messages are added (Requirement 1.4)
   // Maintain auto-scroll behavior with virtualization (Requirement 2.3)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (filteredMessages.length === 0) return;
 
@@ -219,7 +221,7 @@ export const MessageList = memo(function MessageList({
         parentRef.current.scrollTop = parentRef.current.scrollHeight;
       }
     }
-  }, [messages.length, shouldUseVirtualization, virtualizer, filteredMessages.length]);
+  }, [messages, messages.length, shouldUseVirtualization, virtualizer, filteredMessages.length]);
 
   /**
    * Format timestamp for display
@@ -797,71 +799,73 @@ export const MessageList = memo(function MessageList({
         {announcement}
       </div>
 
-      {/* Search and Filter UI (Requirement 15.1, 15.6) */}
-      <div className="p-4 border-b border-gray-200 space-y-3">
-        {/* Search input (Requirement 15.1) */}
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            placeholder="Search messages..."
-            className="search-input w-full px-4 py-2 pr-20 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Search messages"
-          />
-          {/* Clear button (Requirement 15.8) */}
-          {searchQuery && (
-            <button
-              onClick={handleClearSearch}
-              className="search-clear-button absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-              aria-label="Clear search"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+      {/* Search and Filter UI - Only show when there are messages */}
+      {messages.length > 0 && (
+        <div className="p-4 border-b border-gray-200 space-y-3">
+          {/* Search input (Requirement 15.1) */}
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Search messages..."
+              className="search-input w-full px-4 py-2 pr-20 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Search messages"
+            />
+            {/* Clear button (Requirement 15.8) */}
+            {searchQuery && (
+              <button
+                onClick={handleClearSearch}
+                className="search-clear-button absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                aria-label="Clear search"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        {/* Role filter and message count (Requirement 15.5, 15.6) */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <label htmlFor="role-filter" className="text-sm text-gray-600">
-              Filter:
-            </label>
-            <select
-              id="role-filter"
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-              className="filter-select px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="Filter messages by role"
-            >
-              <option value="all">All messages</option>
-              <option value="user">User only</option>
-              <option value="agent">Agent only</option>
-            </select>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
           </div>
 
-          {/* Message count (Requirement 15.5) */}
-          {(debouncedSearchQuery || roleFilter !== 'all') && (
-            <span className="text-sm text-gray-600">
-              {filteredMessages.length} {filteredMessages.length === 1 ? 'message' : 'messages'}
-            </span>
-          )}
+          {/* Role filter and message count (Requirement 15.5, 15.6) */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <label htmlFor="role-filter" className="text-sm text-gray-600">
+                Filter:
+              </label>
+              <select
+                id="role-filter"
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
+                className="filter-select px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Filter messages by role"
+              >
+                <option value="all">All messages</option>
+                <option value="user">User only</option>
+                <option value="agent">Agent only</option>
+              </select>
+            </div>
+
+            {/* Message count (Requirement 15.5) */}
+            {(debouncedSearchQuery || roleFilter !== 'all') && (
+              <span className="text-sm text-gray-600">
+                {filteredMessages.length} {filteredMessages.length === 1 ? 'message' : 'messages'}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Message display area */}
       <div
@@ -875,29 +879,14 @@ export const MessageList = memo(function MessageList({
       >
       {/* Empty state placeholder (Requirement 1.7) */}
       {messages.length === 0 && !isLoading ? (
-        <div className="flex flex-col items-center justify-center h-full text-center px-4">
-          <div className="max-w-md">
-            <div className="mb-6">
-              <svg className="w-20 h-20 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-              Welcome to Avatar Client! 👋
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Start a conversation with your AI avatar. Select an agent from the dropdown above, then type your message below.
+        <div className="flex items-center justify-center h-full text-center px-4">
+          <div className="max-w-sm">
+            <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
+              No messages yet. Start a conversation!
             </p>
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-left">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-                💡 Quick Tips:
-              </p>
-              <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                <li>• Press <kbd className="px-2 py-0.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs">Enter</kbd> to send</li>
-                <li>• Press <kbd className="px-2 py-0.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs">Shift+Enter</kbd> for new line</li>
-                <li>• The avatar will speak your agent's responses</li>
-              </ul>
-            </div>
           </div>
         </div>
       ) : filteredMessages.length === 0 ? (

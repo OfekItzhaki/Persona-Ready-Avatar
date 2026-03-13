@@ -1,19 +1,18 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { ChatInterface } from '@/components/ChatInterface';
-import { Header } from '@/components/Header';
-import { TranscriptDisplay } from '@/components/TranscriptDisplay';
 import { NotificationToast } from '@/components/NotificationToast';
-import { SkipLinks } from '@/components/SkipLinks';
 import {
   ErrorBoundary,
-  AvatarCanvasErrorBoundary,
   ChatInterfaceErrorBoundary,
 } from '@/components/ErrorBoundary';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { useAgents } from '@/lib/hooks/useReactQuery';
+import { PersonaSwitcher } from '@/components/PersonaSwitcher';
+import { PersonaSwitcherErrorBoundary } from '@/components/ErrorBoundary';
+import { ImageAvatar } from '@/components/ImageAvatar';
+import { getAvatarConfig } from '@/config/avatars';
 import { TTSService } from '@/lib/services/TTSService';
 import { AzureSpeechRepository } from '@/lib/repositories/AzureSpeechRepository';
 import { AudioManager } from '@/lib/services/AudioManager';
@@ -21,39 +20,10 @@ import { LocalStorageRepository } from '@/lib/repositories/LocalStorageRepositor
 import { PreferencesService } from '@/lib/services/PreferencesService';
 import { VisemeCoordinator } from '@/lib/services/VisemeCoordinator';
 import { LanguageVoiceMapper } from '@/lib/services/LanguageVoiceMapper';
-import { preloadAvatarModel } from '@/components/AvatarCanvas';
 import { initializeFocusIndicators } from '@/lib/utils/focusIndicators';
 import { logger } from '@/lib/logger';
 import type { Agent } from '@/types';
 
-// Dynamically import AvatarCanvas to avoid SSR issues with Three.js
-const AvatarCanvas = dynamic(() => import('@/components/AvatarCanvas'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-full">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading 3D renderer...</p>
-      </div>
-    </div>
-  ),
-});
-
-/**
- * Home Page Component
- * 
- * Main application layout with responsive design.
- * Integrates all components and services with dependency injection.
- * 
- * Features:
- * - Responsive layout (desktop ≥1024px, mobile <1024px) (Requirement 12.1-12.3)
- * - Service initialization with dependency injection (Requirement 20)
- * - GLB model preloading (Requirement 11.5)
- * - Error boundaries for component isolation (Requirement 10.6)
- * - WCAG AA color contrast compliance (Requirement 13.5)
- * 
- * Requirements: 12.1-12.5, 13.5, 4.3, 5.6, 11.5
- */
 export default function Home() {
   const [ttsService, setTtsService] = useState<TTSService | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -61,58 +31,41 @@ export default function Home() {
   const selectedAgentId = useAppStore((state) => state.selectedAgentId);
   const { data: agents } = useAgents();
   const selectedAgent = agents?.find((agent: Agent) => agent.id === selectedAgentId);
-
-  // Model URL - use environment variable or empty string to trigger fallback
-  const modelUrl = process.env.NEXT_PUBLIC_AVATAR_MODEL_URL || '';
-
+  const playbackState = useAppStore((state) => state.playbackState);
   const setCurrentViseme = useAppStore((state) => state.setCurrentViseme);
   const setPlaybackState = useAppStore((state) => state.setPlaybackState);
 
-  /**
-   * Initialize focus indicators for keyboard navigation (Requirement 35.2)
-   */
+  // Get avatar config for selected agent
+  const avatarConfig = getAvatarConfig(selectedAgentId || undefined);
+  const isSpeaking = playbackState === 'playing';
+
   useEffect(() => {
     initializeFocusIndicators();
   }, []);
 
-  /**
-   * Initialize services with dependency injection
-   * Requirements: 4.3, 5.6, 11.5
-   */
   useEffect(() => {
-    logger.info('Initializing application services', {
-      component: 'Home',
-    });
+    logger.info('Initializing application services', { component: 'Home' });
 
     try {
-      // Initialize repositories
       const azureSpeechRepository = new AzureSpeechRepository();
-      
-      // Initialize services
       const audioManager = new AudioManager();
       const visemeCoordinator = new VisemeCoordinator();
       const languageVoiceMapper = new LanguageVoiceMapper();
-      
-      // Initialize PreferencesService with Zustand store
       const localStorageRepo = new LocalStorageRepository();
       const preferencesService = PreferencesService.initialize(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         useAppStore.getState() as any,
         localStorageRepo
       );
-      
-      // Connect VisemeCoordinator to Zustand store (Requirement 20)
-      // Subscribe to viseme changes and update store
+
       const unsubscribeViseme = visemeCoordinator.subscribeToVisemeChanges((viseme) => {
         setCurrentViseme(viseme);
       });
 
-      // Connect AudioManager to Zustand store
-      // Subscribe to playback state changes and update store
       const unsubscribePlayback = audioManager.subscribeToPlaybackState((state) => {
         setPlaybackState(state);
       });
-      
-      // Initialize TTS Service with dependency injection
+
       const tts = new TTSService(
         azureSpeechRepository,
         audioManager,
@@ -121,31 +74,16 @@ export default function Home() {
         preferencesService
       );
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTtsService(tts);
-
-      // Preload GLB model for better performance (Requirement 11.5)
-      // Only preload if modelUrl is provided
-      if (modelUrl && modelUrl.trim() !== '') {
-        preloadAvatarModel(modelUrl);
-      }
-
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsInitialized(true);
+      logger.info('Application services initialized successfully', { component: 'Home' });
 
-      logger.info('Application services initialized successfully', {
-        component: 'Home',
-      });
-
-      // Cleanup on unmount
       return () => {
-        logger.info('Cleaning up application services', {
-          component: 'Home',
-        });
-        
-        // Unsubscribe from events
+        logger.info('Cleaning up application services', { component: 'Home' });
         unsubscribeViseme();
         unsubscribePlayback();
-        
-        // Dispose services
         tts.dispose();
         audioManager.dispose();
         visemeCoordinator.dispose();
@@ -156,14 +94,14 @@ export default function Home() {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
-  }, [modelUrl, setCurrentViseme, setPlaybackState]);
+  }, [setCurrentViseme, setPlaybackState]);
 
   if (!isInitialized) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Initializing Avatar Client...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: '64px', height: '64px', border: '4px solid #e5e7eb', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }}></div>
+          <p style={{ color: '#6b7280', fontSize: '18px' }}>Loading...</p>
         </div>
       </div>
     );
@@ -171,49 +109,54 @@ export default function Home() {
 
   return (
     <ErrorBoundary componentName="RootApp">
-      {/* Skip Links for keyboard navigation (Requirement 35.8) */}
-      <SkipLinks />
-      
-      <main id="main-content" className="min-h-screen bg-gray-50">
-        {/* Enhanced Header */}
-        <Header showAgentSelector={true} />
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px' }}>
+          <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>Avatar Client</h1>
+              <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>AI Avatar Chat Interface</p>
+            </div>
+            <div>
+              <PersonaSwitcherErrorBoundary>
+                <PersonaSwitcher />
+              </PersonaSwitcherErrorBoundary>
+            </div>
+          </div>
+        </header>
 
-        {/* Main Content - Responsive Layout */}
-        {/* Desktop (≥1024px): 3-column grid layout */}
-        {/* Mobile (<1024px): Vertical stack */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* 3D Avatar Viewport */}
-            <div className="lg:col-span-7">
-              <div id="avatar-canvas" className="bg-white rounded-lg shadow-lg overflow-hidden h-[400px] lg:h-[600px]">
-                <AvatarCanvasErrorBoundary>
-                  <AvatarCanvas modelUrl={modelUrl} className="w-full h-full" />
-                </AvatarCanvasErrorBoundary>
-              </div>
+        {/* Main Content */}
+        <main style={{ flex: 1, padding: '24px' }}>
+          <div style={{ maxWidth: '1280px', margin: '0 auto', height: '100%' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px', height: '100%' }}>
+              
+              {/* Left Column - Avatar */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Avatar Display */}
+                <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', padding: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+                  <div style={{ width: '280px', height: '280px', position: 'relative' }}>
+                    <ImageAvatar
+                      imageUrl={avatarConfig.imageUrl}
+                      agentName={selectedAgent?.name || avatarConfig.name || 'AI Assistant'}
+                      isSpeaking={isSpeaking}
+                    />
+                  </div>
+                </div>
 
-              {/* Transcript Display - Below Avatar on Mobile, Hidden on Desktop */}
-              <div className="lg:hidden mt-6">
-                <div className="bg-white rounded-lg shadow-lg p-4 h-[200px]">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-3">Transcript</h2>
-                  <ErrorBoundary componentName="TranscriptDisplay">
-                    <TranscriptDisplay />
-                  </ErrorBoundary>
+                {/* Instructions */}
+                <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', padding: '16px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>Quick Start</h3>
+                  <ul style={{ fontSize: '13px', color: '#6b7280', margin: 0, paddingLeft: '20px', lineHeight: '1.6' }}>
+                    <li>Select an agent from the dropdown above</li>
+                    <li>Toggle to Voice mode at the bottom</li>
+                    <li>Hold the microphone button to speak</li>
+                    <li>Or type your message in Text mode</li>
+                  </ul>
                 </div>
               </div>
-            </div>
 
-            {/* Right Column - Chat and Transcript */}
-            <div className="lg:col-span-5 space-y-6">
-              {/* Transcript Display - Desktop Only */}
-              <div className="hidden lg:block bg-white rounded-lg shadow-lg p-4 h-[250px]">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Transcript</h2>
-                <ErrorBoundary componentName="TranscriptDisplay">
-                  <TranscriptDisplay />
-                </ErrorBoundary>
-              </div>
-
-              {/* Chat Interface */}
-              <div id="chat-interface" className="bg-white rounded-lg shadow-lg h-[500px] lg:h-[330px]">
+              {/* Right Column - Chat Interface */}
+              <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', height: '700px', overflow: 'hidden' }}>
                 <ChatInterfaceErrorBoundary>
                   <ChatInterface
                     ttsService={ttsService || undefined}
@@ -223,38 +166,16 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </main>
 
-          {/* Help Text */}
-          <div className="mt-6 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-lg p-6 border border-blue-200 dark:border-gray-700">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  About the Avatar
-                </h3>
-                <div className="text-sm text-gray-700 dark:text-gray-300 space-y-2">
-                  <p>
-                    <strong>Current Display:</strong> You're seeing a fallback avatar (blue sphere) because no 3D model is configured.
-                  </p>
-                  <p>
-                    <strong>To use a human-like avatar:</strong> You'll need to provide a GLB 3D model file. Set the <code className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">NEXT_PUBLIC_AVATAR_MODEL_URL</code> environment variable to point to your model.
-                  </p>
-                  <p>
-                    <strong>Interaction:</strong> Use your mouse to rotate, zoom, and pan the 3D view. The avatar will animate with lip-sync when speaking.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Notification Toast */}
         <NotificationToast />
-      </main>
+      </div>
+      
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </ErrorBoundary>
   );
 }

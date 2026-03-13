@@ -18,7 +18,7 @@ interface AvatarEnvConfig {
 }
 
 function validateEnv(): EnvConfig {
-  const requiredEnvVars = ['AZURE_SPEECH_KEY', 'AZURE_SPEECH_REGION'] as const;
+  const requiredEnvVars = ['NEXT_PUBLIC_AZURE_SPEECH_KEY', 'NEXT_PUBLIC_AZURE_SPEECH_REGION'] as const;
 
   const missingVars: string[] = [];
 
@@ -49,8 +49,8 @@ function validateEnv(): EnvConfig {
   }
 
   return {
-    azureSpeechKey: process.env.AZURE_SPEECH_KEY || '',
-    azureSpeechRegion: process.env.AZURE_SPEECH_REGION || '',
+    azureSpeechKey: process.env.NEXT_PUBLIC_AZURE_SPEECH_KEY || process.env.AZURE_SPEECH_KEY || '',
+    azureSpeechRegion: process.env.NEXT_PUBLIC_AZURE_SPEECH_REGION || process.env.AZURE_SPEECH_REGION || '',
     brainApiUrl: process.env.NEXT_PUBLIC_BRAIN_API_URL || '',
     avatarModelUrl: process.env.NEXT_PUBLIC_AVATAR_MODEL_URL || '/models/avatar.glb',
     logLevel: process.env.NEXT_PUBLIC_LOG_LEVEL || 'info',

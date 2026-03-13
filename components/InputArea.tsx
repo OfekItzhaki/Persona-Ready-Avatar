@@ -103,7 +103,7 @@ const CHAR_COUNTER_THRESHOLD = 0.8; // Show counter at 80% of max length
 export function InputArea({
   onSubmit,
   disabled = false,
-  placeholder = 'Type your message...',
+  placeholder = 'Type your message here... (Press Enter to send, Shift+Enter for new line)',
   maxLength = DEFAULT_MAX_LENGTH,
   className = '',
 }: InputAreaProps) {

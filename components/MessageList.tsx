@@ -875,8 +875,30 @@ export const MessageList = memo(function MessageList({
       >
       {/* Empty state placeholder (Requirement 1.7) */}
       {messages.length === 0 && !isLoading ? (
-        <div className="text-center text-gray-500 mt-8">
-          <p>No messages yet. Start a conversation!</p>
+        <div className="flex flex-col items-center justify-center h-full text-center px-4">
+          <div className="max-w-md">
+            <div className="mb-6">
+              <svg className="w-20 h-20 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+              Welcome to Avatar Client! 👋
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Start a conversation with your AI avatar. Select an agent from the dropdown above, then type your message below.
+            </p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-left">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                💡 Quick Tips:
+              </p>
+              <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                <li>• Press <kbd className="px-2 py-0.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs">Enter</kbd> to send</li>
+                <li>• Press <kbd className="px-2 py-0.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs">Shift+Enter</kbd> for new line</li>
+                <li>• The avatar will speak your agent's responses</li>
+              </ul>
+            </div>
+          </div>
         </div>
       ) : filteredMessages.length === 0 ? (
         // No results message (Requirement 15.7)

@@ -225,9 +225,30 @@ export default function Home() {
           </div>
 
           {/* Help Text */}
-          <div className="mt-6 text-center text-sm text-gray-500">
-            <p>Use mouse to rotate, zoom, and pan the 3D avatar</p>
-            <p className="mt-1">Select an agent and start chatting to see the avatar speak</p>
+          <div className="mt-6 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-lg p-6 border border-blue-200 dark:border-gray-700">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  About the Avatar
+                </h3>
+                <div className="text-sm text-gray-700 dark:text-gray-300 space-y-2">
+                  <p>
+                    <strong>Current Display:</strong> You're seeing a fallback avatar (blue sphere) because no 3D model is configured.
+                  </p>
+                  <p>
+                    <strong>To use a human-like avatar:</strong> You'll need to provide a GLB 3D model file. Set the <code className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">NEXT_PUBLIC_AVATAR_MODEL_URL</code> environment variable to point to your model.
+                  </p>
+                  <p>
+                    <strong>Interaction:</strong> Use your mouse to rotate, zoom, and pan the 3D view. The avatar will animate with lip-sync when speaking.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

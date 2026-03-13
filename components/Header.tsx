@@ -27,7 +27,7 @@ export interface HeaderProps {
 /**
  * Header Component
  * 
- * Simple header with title and agent selector.
+ * Modern header with gradient styling and clear instructions.
  */
 export function Header({
   title = 'Avatar Client',
@@ -39,24 +39,35 @@ export function Header({
     <header
       className={`
         relative
-        bg-white dark:bg-gray-900
+        bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50
+        dark:from-gray-900 dark:via-gray-800 dark:to-gray-900
         border-b border-gray-200 dark:border-gray-700
-        shadow-sm
+        shadow-md
         ${className}
       `}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               {title}
             </h1>
             
             {subtitle && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                 {subtitle}
               </p>
             )}
+            
+            {/* Quick start instructions */}
+            <div className="mt-3 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Quick Start: Select an agent → Type a message → Press Enter
+              </span>
+            </div>
           </div>
           
           {/* Agent Selector - Desktop only */}

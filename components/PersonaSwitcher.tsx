@@ -215,7 +215,7 @@ export function PersonaSwitcher() {
           id="agent-listbox"
           role="listbox"
           aria-label="Available AI agents"
-          className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-auto"
+          className="absolute z-20 w-full mt-2 bg-white border-2 border-gray-300 rounded-lg shadow-xl max-h-80 overflow-auto"
         >
           {agents.map((agent, index) => (
             <li
@@ -225,27 +225,23 @@ export function PersonaSwitcher() {
               onClick={() => handleSelectAgent(agent.id)}
               onMouseEnter={() => setFocusedIndex(index)}
               className={`
-                px-3 py-2 cursor-pointer transition-all duration-150 border-b border-gray-100 last:border-b-0
-                ${
-                  agent.id === selectedAgentId
-                    ? 'bg-blue-50 border-l-2 border-l-blue-500'
-                    : 'hover:bg-gray-50'
-                }
+                px-4 py-3 cursor-pointer transition-colors border-b-2 border-gray-200 last:border-b-0
+                ${agent.id === selectedAgentId ? 'bg-blue-100 font-semibold' : 'hover:bg-gray-50'}
                 ${focusedIndex === index ? 'bg-gray-100' : ''}
               `}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {/* Agent Avatar */}
-                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                   {agent.name.charAt(0).toUpperCase()}
                 </div>
 
                 {/* Agent Details */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 text-sm flex items-center gap-1">
+                  <div className="font-medium text-gray-900 text-sm flex items-center gap-2">
                     {agent.name}
                     {agent.id === selectedAgentId && (
-                      <span className="text-blue-600 text-xs">✓</span>
+                      <span className="text-blue-600 font-bold">✓</span>
                     )}
                   </div>
                   {agent.description && (

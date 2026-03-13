@@ -78,7 +78,9 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
   const [recognitionMode, setRecognitionMode] = useState<RecognitionMode>('push-to-talk');
   const [isBrowserCompatible, setIsBrowserCompatible] = useState(true);
   const [compatibilityMessage, setCompatibilityMessage] = useState('');
-  const [voiceInputState, setVoiceInputState] = useState<'idle' | 'recording' | 'processing' | 'error'>('idle');
+  const [voiceInputState, setVoiceInputState] = useState<
+    'idle' | 'recording' | 'processing' | 'error'
+  >('idle');
 
   // Voice input service refs
   const voiceInputServiceRef = useRef<VoiceInputService | null>(null);
@@ -174,10 +176,10 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
           // Set processing state while finalizing (Requirement 15.3)
           setVoiceInputState('processing');
           setInterimText('');
-          
+
           // Submit recognized text to chat
           handleSubmit(result.text);
-          
+
           // Reset to idle after a brief delay
           setTimeout(() => {
             setVoiceInputState('idle');
@@ -215,12 +217,12 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       const unsubscribeErrors = voiceService.subscribeToErrors((error) => {
         // Set error state for visual feedback (Requirement 15.4)
         setVoiceInputState('error');
-        
+
         // Reset error state after 3 seconds
         setTimeout(() => {
           setVoiceInputState('idle');
         }, 3000);
-        
+
         // Announce error to screen readers (Requirement 10.5)
         let announcement = '';
 
@@ -778,36 +780,36 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       )}
 
       {/* Export/Import Controls (Requirements 13, 14) */}
-      <div className="flex items-center gap-2 p-2 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         {/* Export Button with Format Selection */}
         <div className="relative">
           <button
             onClick={() => setShowExportMenu(!showExportMenu)}
             disabled={messages.length === 0}
-            className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             aria-label="Export conversation"
             aria-expanded={showExportMenu}
             aria-haspopup="menu"
           >
-            Export
+            📥 Export
           </button>
 
           {/* Export Format Menu */}
           {showExportMenu && (
-            <div className="absolute top-full left-0 mt-1 w-32 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg z-10">
+            <div className="absolute top-full left-0 mt-2 w-40 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 overflow-hidden">
               <button
                 onClick={() => handleExport('json')}
-                className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700"
+                className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-600 transition-colors"
                 role="menuitem"
               >
-                JSON
+                📄 JSON
               </button>
               <button
                 onClick={() => handleExport('text')}
-                className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700"
+                className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-600 transition-colors"
                 role="menuitem"
               >
-                Plain Text
+                📝 Plain Text
               </button>
             </div>
           )}
@@ -816,10 +818,10 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
         {/* Import Button */}
         <button
           onClick={handleImportClick}
-          className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
           aria-label="Import conversation"
         >
-          Import
+          📤 Import
         </button>
 
         {/* Hidden File Input */}
@@ -878,9 +880,9 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       />
 
       {/* Input Mode Toggle (Requirement 7.1) */}
-      <div className="border-t border-gray-200 dark:border-gray-700 p-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">Input Mode:</span>
+      <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Input Mode:</span>
           <InputModeToggle
             currentMode={inputMode}
             onModeChange={handleModeChange}
@@ -955,7 +957,7 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
 
       {/* Voice Input Controls - Shown when voice mode is active (Requirement 7.2) */}
       {inputMode === 'voice' && isBrowserCompatible && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4 space-y-3">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-6 space-y-4 bg-white dark:bg-gray-900">
           {/* Interim Results Display (Requirement 5.1, 15.3) */}
           <InterimResultDisplay
             text={interimText}
@@ -964,7 +966,7 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
           />
 
           {/* Voice Input Controls Row */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             {/* Voice Input Button (Requirement 3.1, 4.1, 15.1, 15.2, 15.3, 15.4) */}
             <VoiceInputButton
               mode={recognitionMode}
@@ -976,13 +978,15 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
             />
 
             {/* Audio Level Indicator (Requirement 5.5) */}
-            <AudioLevelIndicator level={audioLevel} isActive={isRecognizing} />
+            <div className="flex-1 min-w-[200px]">
+              <AudioLevelIndicator level={audioLevel} isActive={isRecognizing} />
+            </div>
 
             {/* Recognition Mode Toggle */}
-            <div className="ml-auto flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <label
                 htmlFor="recognition-mode"
-                className="text-sm text-gray-600 dark:text-gray-400"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
               >
                 Mode:
               </label>
@@ -991,20 +995,24 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
                 value={recognitionMode}
                 onChange={(e) => setRecognitionMode(e.target.value as RecognitionMode)}
                 disabled={isRecognizing}
-                className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50"
+                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="push-to-talk">Push-to-Talk</option>
-                <option value="continuous">Continuous</option>
+                <option value="push-to-talk">🎤 Push-to-Talk</option>
+                <option value="continuous">🔄 Continuous</option>
               </select>
             </div>
           </div>
 
           {/* Voice Input Instructions */}
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-sm text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
             {recognitionMode === 'push-to-talk' ? (
-              <p>Hold the button to speak, release to send your message.</p>
+              <p>
+                💡 <strong>Tip:</strong> Hold the button to speak, release to send your message.
+              </p>
             ) : (
-              <p>Click to start listening. Click again to stop.</p>
+              <p>
+                💡 <strong>Tip:</strong> Click to start listening. Click again to stop.
+              </p>
             )}
           </div>
         </div>

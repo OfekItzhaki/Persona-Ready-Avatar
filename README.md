@@ -114,6 +114,14 @@ npm run build
 npm start
 ```
 
+## Avatar Customization
+
+The app supports image-based avatars mapped per agent, with a 3D fallback shape when no image is available.
+
+- **Add images**: Place PNG/JPG files in `public/avatars/` and map them in `config/avatars.ts`
+- **3D avatars**: Set `NEXT_PUBLIC_AVATAR_DEFAULT_*` env vars to Ready Player Me GLB URLs
+- **Detailed guide**: See [`docs/READY_PLAYER_ME_INTEGRATION.md`](docs/READY_PLAYER_ME_INTEGRATION.md)
+
 ## Project Structure
 
 ```

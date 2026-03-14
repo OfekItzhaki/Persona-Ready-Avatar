@@ -10,6 +10,7 @@ import { PersonaSwitcher } from '@/components/PersonaSwitcher';
 import { PersonaSwitcherErrorBoundary } from '@/components/ErrorBoundary';
 import { ImageAvatar } from '@/components/ImageAvatar';
 import { getAvatarConfig } from '@/config/avatars';
+import { getAvatarConfig as getEnvAvatarConfig } from '@/lib/env';
 import { TTSService } from '@/lib/services/TTSService';
 import { AzureSpeechRepository } from '@/lib/repositories/AzureSpeechRepository';
 import { AudioManager } from '@/lib/services/AudioManager';
@@ -31,10 +32,13 @@ export default function Home() {
   const playbackState = useAppStore((state) => state.playbackState);
   const setCurrentViseme = useAppStore((state) => state.setCurrentViseme);
   const setPlaybackState = useAppStore((state) => state.setPlaybackState);
+  const setSelectedAvatar = useAppStore((state) => state.setSelectedAvatar);
 
   // Get avatar config for selected agent
   const avatarConfig = getAvatarConfig(selectedAgentId || undefined);
   const isSpeaking = playbackState === 'playing';
+
+  const selectedAvatarId = useAppStore((state) => state.selectedAvatarId);
 
   useEffect(() => {
     initializeFocusIndicators();
@@ -71,6 +75,20 @@ export default function Home() {
         preferencesService
       );
 
+      // Initialize avatar system: load available avatars and restore saved preference
+      const envAvatarConfig = getEnvAvatarConfig();
+      const store = useAppStore.getState();
+      // Only set available avatars if not already populated
+      if (store.availableAvatars.length === 0 && envAvatarConfig.defaultAvatars.length > 0) {
+        // Zustand store doesn't have a bulk setter, so set via setSelectedAvatar to trigger init
+        // The availableAvatars are initialized from env in the store itself
+      }
+      // Restore saved avatar preference
+      const savedAvatarId = preferencesService.loadAvatarPreference();
+      if (savedAvatarId) {
+        setSelectedAvatar(savedAvatarId);
+      }
+
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTtsService(tts);
 
@@ -91,7 +109,7 @@ export default function Home() {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
-  }, [setCurrentViseme, setPlaybackState]);
+  }, [setCurrentViseme, setPlaybackState, setSelectedAvatar]);
 
   if (!isInitialized) {
     return (

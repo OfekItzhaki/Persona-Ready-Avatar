@@ -67,15 +67,11 @@ export default function Home() {
         preferencesService
       );
 
-      // Initialize avatar system: load available avatars and restore saved preference
       const envAvatarConfig = getEnvAvatarConfig();
       const store = useAppStore.getState();
-      // Only set available avatars if not already populated
       if (store.availableAvatars.length === 0 && envAvatarConfig.defaultAvatars.length > 0) {
-        // Zustand store doesn't have a bulk setter, so set via setSelectedAvatar to trigger init
-        // The availableAvatars are initialized from env in the store itself
+        // avatars initialized from env in store
       }
-      // Restore saved avatar preference
       const savedAvatarId = preferencesService.loadAvatarPreference();
       if (savedAvatarId) {
         setSelectedAvatar(savedAvatarId);
@@ -83,7 +79,6 @@ export default function Home() {
 
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTtsService(tts);
-
       setIsInitialized(true);
       logger.info('Application services initialized successfully', { component: 'Home' });
 
@@ -105,67 +100,65 @@ export default function Home() {
 
   if (!isInitialized) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          backgroundColor: '#f9fafb',
-        }}
-      >
-        <div style={{ textAlign: 'center' }}>
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              border: '4px solid #e5e7eb',
-              borderTopColor: '#2563eb',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 16px',
-            }}
-          ></div>
-          <p style={{ color: '#6b7280', fontSize: '18px' }}>Loading...</p>
-        </div>
+      <div className="loading-screen">
+        <div className="loading-spinner" />
+        <p className="loading-text">Initializing...</p>
+        <style>{`
+          .loading-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: var(--bg-primary);
+            gap: 16px;
+          }
+          .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+          }
+          .loading-text {
+            color: var(--text-muted);
+            font-size: 14px;
+            letter-spacing: 0.05em;
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
     <ErrorBoundary componentName="RootApp">
-      <div
-        style={{
-          minHeight: '100vh',
-          backgroundColor: '#f9fafb',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+      <div className="app-shell">
         {/* Header */}
-        <header
-          style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px' }}
-        >
-          <div
-            style={{
-              maxWidth: '1280px',
-              margin: '0 auto',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '16px',
-            }}
-          >
-            <div>
-              <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>
-                Avatar Client
-              </h1>
-              <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>
-                AI Avatar Chat Interface
-              </p>
+        <header className="app-header">
+          <div className="header-inner">
+            <div className="brand">
+              <div className="brand-icon">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M6 20v-2a6 6 0 0 1 12 0v2" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="brand-name">Avatar Client</h1>
+                <p className="brand-sub">AI Avatar Interface</p>
+              </div>
             </div>
-            <div>
+            <div className="header-right">
               <PersonaSwitcherErrorBoundary>
                 <PersonaSwitcher />
               </PersonaSwitcherErrorBoundary>
@@ -173,94 +166,36 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Main Content */}
-        <main style={{ flex: 1, padding: '24px' }}>
-          <div style={{ maxWidth: '1400px', margin: '0 auto', height: '100%' }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '350px 1fr',
-                gap: '24px',
-                height: '100%',
-              }}
-            >
-              {/* Left Column - Avatar */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {/* Avatar Display */}
-                <div
-                  style={{
-                    backgroundColor: 'white',
-                    borderRadius: '12px',
-                    boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.1)',
-                    padding: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: '350px',
-                  }}
-                >
-                  <div style={{ width: '250px', height: '250px', position: 'relative' }}>
-                    <AvatarSystem />
-                  </div>
-                </div>
-
-                {/* Instructions */}
-                <div
-                  style={{
-                    backgroundColor: 'white',
-                    borderRadius: '12px',
-                    boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.1)',
-                    padding: '20px',
-                  }}
-                >
-                  <h3
-                    style={{
-                      fontSize: '15px',
-                      fontWeight: '600',
-                      color: '#111827',
-                      marginBottom: '12px',
-                    }}
-                  >
-                    Quick Start
-                  </h3>
-                  <ul
-                    style={{
-                      fontSize: '14px',
-                      color: '#6b7280',
-                      margin: 0,
-                      paddingLeft: '20px',
-                      lineHeight: '1.8',
-                    }}
-                  >
-                    <li>Select an agent from the dropdown above</li>
-                    <li>Toggle to Voice mode at the bottom</li>
-                    <li>Hold the microphone button to speak</li>
-                    <li>Or type your message in Text mode</li>
-                  </ul>
-                </div>
+        {/* Main */}
+        <main className="app-main">
+          <div className="app-grid">
+            {/* Left — Avatar panel */}
+            <aside className="avatar-panel">
+              <div className="avatar-card">
+                <div className="avatar-glow" />
+                <AvatarSystem className="avatar-system" />
               </div>
-
-              {/* Right Column - Chat Interface */}
-              <div
-                style={{
-                  backgroundColor: 'white',
-                  borderRadius: '12px',
-                  boxShadow: '0 2px 8px 0 rgba(0, 0, 0, 0.1)',
-                  height: '800px',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                <ChatInterfaceErrorBoundary>
-                  <ChatInterface
-                    ttsService={ttsService || undefined}
-                    selectedAgent={selectedAgent}
-                    className="flex-1"
-                  />
-                </ChatInterfaceErrorBoundary>
+              <div className="info-card">
+                <p className="info-title">Quick Start</p>
+                <ul className="info-list">
+                  <li>Select an agent from the dropdown above</li>
+                  <li>Toggle to Voice mode at the bottom</li>
+                  <li>Hold the microphone button to speak</li>
+                  <li>Or type your message in Text mode</li>
+                </ul>
               </div>
-            </div>
+            </aside>
+
+            {/* Right — Chat */}
+            <section className="chat-panel">
+              <ChatInterfaceErrorBoundary>
+                <ChatInterface
+                  ttsService={ttsService || undefined}
+                  selectedAgent={selectedAgent}
+                  className="chat-interface"
+                />
+              </ChatInterfaceErrorBoundary>
+            </section>
           </div>
         </main>
 
@@ -268,8 +203,188 @@ export default function Home() {
       </div>
 
       <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
+        .app-shell {
+          min-height: 100vh;
+          background: var(--bg-primary);
+          display: flex;
+          flex-direction: column;
+          background-image:
+            radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.08) 0%, transparent 60%);
+        }
+
+        /* ── Header ── */
+        .app-header {
+          position: sticky;
+          top: 0;
+          z-index: 50;
+          background: rgba(10, 10, 15, 0.85);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border-bottom: 1px solid var(--border);
+        }
+        .header-inner {
+          max-width: 1440px;
+          margin: 0 auto;
+          padding: 0 24px;
+          height: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .brand {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .brand-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: var(--accent-glow);
+          border: 1px solid var(--border-accent);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--accent-hover);
+          flex-shrink: 0;
+        }
+        .brand-name {
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--text-primary);
+          letter-spacing: -0.01em;
+        }
+        .brand-sub {
+          font-size: 11px;
+          color: var(--text-muted);
+          letter-spacing: 0.02em;
+          margin-top: 1px;
+        }
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        /* ── Main layout ── */
+        .app-main {
+          flex: 1;
+          padding: 24px;
+          overflow: hidden;
+        }
+        .app-grid {
+          max-width: 1440px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: 320px 1fr;
+          gap: 20px;
+          height: calc(100vh - 60px - 48px);
+        }
+
+        /* ── Avatar panel ── */
+        .avatar-panel {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          min-height: 0;
+        }
+        .avatar-card {
+          position: relative;
+          background: var(--bg-card);
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          overflow: hidden;
+          flex: 1;
+          min-height: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: border-color 0.2s;
+        }
+        .avatar-card:hover {
+          border-color: var(--border-accent);
+        }
+        .avatar-glow {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(ellipse 60% 60% at 50% 100%, rgba(99,102,241,0.08) 0%, transparent 70%);
+          pointer-events: none;
+        }
+        .avatar-system {
+          width: 100%;
+          height: 100%;
+          position: relative;
+          z-index: 1;
+        }
+        .info-card {
+          background: var(--bg-card);
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          padding: 18px 20px;
+          flex-shrink: 0;
+        }
+        .info-title {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-bottom: 12px;
+        }
+        .info-list {
+          list-style: none;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .info-list li {
+          font-size: 13px;
+          color: var(--text-secondary);
+          padding-left: 16px;
+          position: relative;
+          line-height: 1.5;
+        }
+        .info-list li::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 8px;
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background: var(--accent);
+          opacity: 0.6;
+        }
+
+        /* ── Chat panel ── */
+        .chat-panel {
+          background: var(--bg-card);
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+        }
+        .chat-interface {
+          flex: 1;
+          min-height: 0;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+          .app-grid {
+            grid-template-columns: 1fr;
+            height: auto;
+          }
+          .avatar-card {
+            height: 280px;
+            flex: none;
+          }
+          .chat-panel {
+            height: 60vh;
+          }
         }
       `}</style>
     </ErrorBoundary>

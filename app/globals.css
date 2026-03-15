@@ -2,34 +2,211 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Force light theme */
 :root {
-  color-scheme: light;
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111118;
+  --bg-card: #16161f;
+  --bg-card-hover: #1c1c28;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-accent: rgba(99, 102, 241, 0.4);
+  --text-primary: #f0f0f5;
+  --text-secondary: #8b8b9e;
+  --text-muted: #4a4a5e;
+  --accent: #6366f1;
+  --accent-glow: rgba(99, 102, 241, 0.15);
+  --accent-hover: #818cf8;
+  color-scheme: dark;
 }
 
 * {
-  color-scheme: light;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-body {
-  background-color: #f8f9fa;
-  color: #212529;
+html, body {
+  height: 100%;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-inter, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Remove dark mode */
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #f8f9fa;
-    color: #212529;
-  }
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* Selection */
+::selection { background: var(--accent-glow); color: var(--text-primary); }
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-/* Ensure all dark: classes are ignored */
-.dark\:bg-gray-800,
-.dark\:bg-gray-900,
-.dark\:text-gray-100,
-.dark\:text-gray-200,
-.dark\:border-gray-600,
-.dark\:border-gray-700 {
-  /* Override dark mode styles */
+/* Animations */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--accent-glow); }
+  50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.3); }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Override any light-mode remnants */
+@media (prefers-color-scheme: light) {
+  body { background-color: var(--bg-primary); color: var(--text-primary); }
+}
+
+/* ── ChatInterface dark theme overrides ── */
+
+/* Toolbar (export/import bar) */
+.flex.flex-col.h-full > div.flex.items-center.gap-3.p-4 {
+  background: var(--bg-card) !important;
+  border-bottom: 1px solid var(--border) !important;
+  padding: 10px 16px !important;
+}
+
+/* Export / Import buttons */
+.flex.flex-col.h-full button[aria-label="Export conversation"],
+.flex.flex-col.h-full button[aria-label="Import conversation"] {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-secondary) !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  padding: 6px 12px !important;
+  transition: background 0.15s, border-color 0.15s !important;
+}
+.flex.flex-col.h-full button[aria-label="Export conversation"]:hover,
+.flex.flex-col.h-full button[aria-label="Import conversation"]:hover {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: var(--border-accent) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Message list area */
+.flex.flex-col.h-full .flex-1.overflow-y-auto,
+.flex.flex-col.h-full [class*="overflow-y-auto"] {
+  background: var(--bg-card) !important;
+}
+
+/* Search bar */
+.flex.flex-col.h-full input[placeholder*="Search"],
+.flex.flex-col.h-full input[type="search"] {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px !important;
+}
+.flex.flex-col.h-full input[placeholder*="Search"]::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Input area at bottom */
+.flex.flex-col.h-full > div:last-child,
+.flex.flex-col.h-full [class*="border-t"] {
+  background: var(--bg-card) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+/* Text input */
+.flex.flex-col.h-full textarea,
+.flex.flex-col.h-full input[type="text"] {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-primary) !important;
+  border-radius: 10px !important;
+}
+.flex.flex-col.h-full textarea:focus,
+.flex.flex-col.h-full input[type="text"]:focus {
+  border-color: var(--border-accent) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--accent-glow) !important;
+}
+.flex.flex-col.h-full textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Send button */
+.flex.flex-col.h-full button[aria-label*="Send"],
+.flex.flex-col.h-full button[type="submit"] {
+  background: var(--accent) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  color: white !important;
+  transition: background 0.15s, transform 0.1s !important;
+}
+.flex.flex-col.h-full button[aria-label*="Send"]:hover,
+.flex.flex-col.h-full button[type="submit"]:hover {
+  background: var(--accent-hover) !important;
+}
+
+/* Message bubbles — user */
+[class*="bg-blue-600"],
+[class*="bg-blue-500"] {
+  background: var(--accent) !important;
+  border-radius: 14px 14px 4px 14px !important;
+}
+
+/* Message bubbles — agent */
+[class*="bg-gray-100"],
+[class*="bg-white"] {
+  background: var(--bg-card-hover) !important;
+  color: var(--text-primary) !important;
+  border-radius: 14px 14px 14px 4px !important;
+}
+
+/* Timestamps */
+[class*="text-gray-400"],
+[class*="text-gray-500"] {
+  color: var(--text-muted) !important;
+}
+
+/* Typing indicator */
+[class*="bg-gray-200"] {
+  background: var(--bg-card-hover) !important;
+}
+
+/* Banners */
+[class*="bg-orange-100"],
+[class*="bg-red-100"] {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+}
+[class*="text-orange-800"],
+[class*="text-red-800"] {
+  color: #fca5a5 !important;
+}
+
+/* Filter select */
+.flex.flex-col.h-full select {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-secondary) !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+}
+
+/* Mode toggle */
+[class*="bg-gray-100 dark:bg-gray-800"],
+[class*="bg-gray-50"] {
+  background: var(--bg-secondary) !important;
+}
+
+/* Voice button */
+[class*="bg-red-500"],
+[class*="bg-red-600"] {
+  background: #ef4444 !important;
 }

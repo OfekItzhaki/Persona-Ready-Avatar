@@ -38,108 +38,72 @@ export function PersonaSwitcher() {
   // eslint-disable-next-line no-undef
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Retry logic: retry after 5 seconds on failure (Requirement 4.5)
   useEffect(() => {
     if (error && !retryTimeout) {
       logger.warn('Agent fetch failed, retrying in 5 seconds', {
         component: 'PersonaSwitcher',
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-
       const timeout = setTimeout(() => {
-        logger.info('Retrying agent fetch', {
-          component: 'PersonaSwitcher',
-        });
+        logger.info('Retrying agent fetch', { component: 'PersonaSwitcher' });
         refetch();
-
         setRetryTimeout(null);
       }, 5000);
-
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setRetryTimeout(timeout);
     }
-
     return () => {
-      if (retryTimeout) {
-        clearTimeout(retryTimeout);
-      }
+      if (retryTimeout) clearTimeout(retryTimeout);
     };
   }, [error, refetch, retryTimeout]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    // eslint-disable-next-line no-undef
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        // eslint-disable-next-line no-undef
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setFocusedIndex(-1);
       }
     };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Handle agent selection
   const handleSelectAgent = (agentId: string) => {
-    logger.info('Agent selected', {
-      component: 'PersonaSwitcher',
-      agentId,
-    });
-
+    logger.info('Agent selected', { component: 'PersonaSwitcher', agentId });
     setSelectedAgent(agentId);
     setIsOpen(false);
     setFocusedIndex(-1);
   };
 
-  // Keyboard navigation (Requirement 13.3)
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (!agents || agents.length === 0) return;
-
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
         if (!isOpen) {
           setIsOpen(true);
           setFocusedIndex(0);
-        } else {
-          setFocusedIndex((prev) => (prev < agents.length - 1 ? prev + 1 : prev));
-        }
+        } else setFocusedIndex((prev) => (prev < agents.length - 1 ? prev + 1 : prev));
         break;
-
       case 'ArrowUp':
         event.preventDefault();
-        if (isOpen) {
-          setFocusedIndex((prev) => (prev > 0 ? prev - 1 : prev));
-        }
+        if (isOpen) setFocusedIndex((prev) => (prev > 0 ? prev - 1 : prev));
         break;
-
       case 'Enter':
         event.preventDefault();
-        if (isOpen && focusedIndex >= 0 && agents[focusedIndex]) {
+        if (isOpen && focusedIndex >= 0 && agents[focusedIndex])
           handleSelectAgent(agents[focusedIndex].id);
-        } else if (!isOpen) {
+        else if (!isOpen) {
           setIsOpen(true);
           setFocusedIndex(0);
         }
         break;
-
       case 'Escape':
         event.preventDefault();
         setIsOpen(false);
         setFocusedIndex(-1);
         buttonRef.current?.focus();
         break;
-
       case 'Tab':
         if (isOpen) {
           setIsOpen(false);
@@ -149,12 +113,14 @@ export function PersonaSwitcher() {
     }
   };
 
-  // Get selected agent details
   const selectedAgent = agents?.find((agent) => agent.id === selectedAgentId);
 
   return (
-    <div ref={dropdownRef} className="relative w-full max-w-md" onKeyDown={handleKeyDown}>
-      {/* Dropdown Button */}
+    <div
+      ref={dropdownRef}
+      style={{ position: 'relative', minWidth: '200px' }}
+      onKeyDown={handleKeyDown}
+    >
       <button
         ref={buttonRef}
         type="button"
@@ -164,58 +130,96 @@ export function PersonaSwitcher() {
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls="agent-listbox"
-        className={`
-          w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-lg
-          shadow-sm hover:shadow-md hover:border-blue-400 focus:outline-none focus:ring-2
-          focus:ring-blue-500 focus:border-transparent transition-all duration-200
-          ${isLoading || error ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        `}
+        style={{
+          width: '100%',
+          padding: '8px 12px',
+          background: 'var(--bg-card)',
+          border: `1px solid ${isOpen ? 'var(--border-accent)' : 'var(--border)'}`,
+          borderRadius: '10px',
+          cursor: isLoading || error ? 'not-allowed' : 'pointer',
+          opacity: isLoading || error ? 0.5 : 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px',
+          transition: 'border-color 0.15s, background 0.15s',
+          outline: 'none',
+        }}
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {/* Agent Icon */}
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-              {selectedAgent ? selectedAgent.name.charAt(0).toUpperCase() : '?'}
-            </div>
-
-            {/* Agent Info */}
-            <div className="flex-1 min-w-0">
-              {isLoading ? (
-                <span className="text-gray-500 text-sm">Loading agents...</span>
-              ) : error ? (
-                <span className="text-red-600 text-sm">Error loading agents. Retrying...</span>
-              ) : selectedAgent ? (
-                <div>
-                  <div className="font-medium text-gray-900 text-sm">{selectedAgent.name}</div>
-                </div>
-              ) : (
-                <span className="text-gray-500 text-sm">Select an agent...</span>
-              )}
-            </div>
-          </div>
-
-          {/* Dropdown Arrow */}
-          <svg
-            className={`w-5 h-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
-              isOpen ? 'transform rotate-180' : ''
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '8px',
+              flexShrink: 0,
+              background: 'linear-gradient(135deg, var(--accent) 0%, #818cf8 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+              fontWeight: '700',
+              color: 'white',
+            }}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+            {selectedAgent ? selectedAgent.name.charAt(0).toUpperCase() : '?'}
+          </div>
+          <span
+            style={{
+              fontSize: '13px',
+              fontWeight: '500',
+              color: isLoading || error ? 'var(--text-muted)' : 'var(--text-primary)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {isLoading
+              ? 'Loading...'
+              : error
+                ? 'Error loading agents'
+                : selectedAgent
+                  ? selectedAgent.name
+                  : 'Select an agent'}
+          </span>
         </div>
+        <svg
+          style={{
+            width: '14px',
+            height: '14px',
+            color: 'var(--text-muted)',
+            flexShrink: 0,
+            transition: 'transform 0.2s',
+            transform: isOpen ? 'rotate(180deg)' : 'none',
+          }}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
       </button>
 
-      {/* Dropdown Menu */}
       {isOpen && agents && agents.length > 0 && (
         <ul
           id="agent-listbox"
           role="listbox"
           aria-label="Available AI agents"
-          className="absolute z-20 w-full mt-2 bg-white border-2 border-gray-300 rounded-lg shadow-xl max-h-80 overflow-auto"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            right: 0,
+            minWidth: '100%',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-accent)',
+            borderRadius: '12px',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
+            zIndex: 100,
+            overflow: 'hidden',
+            listStyle: 'none',
+            padding: '4px',
+          }}
         >
           {agents.map((agent, index) => (
             <li
@@ -224,31 +228,84 @@ export function PersonaSwitcher() {
               aria-selected={agent.id === selectedAgentId}
               onClick={() => handleSelectAgent(agent.id)}
               onMouseEnter={() => setFocusedIndex(index)}
-              className={`
-                px-4 py-3 cursor-pointer transition-colors border-b-2 border-gray-200 last:border-b-0
-                ${agent.id === selectedAgentId ? 'bg-blue-100 font-semibold' : 'hover:bg-gray-50'}
-                ${focusedIndex === index ? 'bg-gray-100' : ''}
-              `}
+              style={{
+                padding: '10px 12px',
+                cursor: 'pointer',
+                borderRadius: '8px',
+                background:
+                  agent.id === selectedAgentId
+                    ? 'var(--accent-glow)'
+                    : focusedIndex === index
+                      ? 'rgba(255,255,255,0.04)'
+                      : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                transition: 'background 0.1s',
+              }}
             >
-              <div className="flex items-center gap-3">
-                {/* Agent Avatar */}
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                  {agent.name.charAt(0).toUpperCase()}
-                </div>
-
-                {/* Agent Details */}
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 text-sm flex items-center gap-2">
-                    {agent.name}
-                    {agent.id === selectedAgentId && (
-                      <span className="text-blue-600 font-bold">✓</span>
-                    )}
-                  </div>
-                  {agent.description && (
-                    <div className="text-xs text-gray-600 truncate">{agent.description}</div>
-                  )}
-                </div>
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '8px',
+                  flexShrink: 0,
+                  background:
+                    agent.id === selectedAgentId
+                      ? 'linear-gradient(135deg, var(--accent) 0%, #818cf8 100%)'
+                      : 'rgba(255,255,255,0.06)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  color: agent.id === selectedAgentId ? 'white' : 'var(--text-secondary)',
+                }}
+              >
+                {agent.name.charAt(0).toUpperCase()}
               </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: agent.id === selectedAgentId ? '600' : '400',
+                    color:
+                      agent.id === selectedAgentId
+                        ? 'var(--text-primary)'
+                        : 'var(--text-secondary)',
+                  }}
+                >
+                  {agent.name}
+                </div>
+                {agent.description && (
+                  <div
+                    style={{
+                      fontSize: '11px',
+                      color: 'var(--text-muted)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {agent.description}
+                  </div>
+                )}
+              </div>
+              {agent.id === selectedAgentId && (
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--accent)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
             </li>
           ))}
         </ul>

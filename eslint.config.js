@@ -57,6 +57,11 @@ export default [
         TextEncoder: 'readonly',
         TextDecoder: 'readonly',
         crypto: 'readonly',
+        Node: 'readonly',
+        NodeList: 'readonly',
+        Event: 'readonly',
+        MouseEvent: 'readonly',
+        KeyboardEvent: 'readonly',
       },
     },
     plugins: {

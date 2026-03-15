@@ -244,14 +244,8 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
             announcement =
               'Error: Microphone access denied. Please grant permission in your browser settings to use voice input.';
             NotificationService.getInstance().error(
-              'Microphone access denied. Please grant permission in your browser settings to use voice input.',
-              undefined, // No auto-dismiss
-              {
-                label: 'Switch to Text',
-                onClick: () => {
-                  handleModeChange('text');
-                },
-              }
+              'Microphone access denied. Please grant permission in your browser settings.',
+              5000
             );
             break;
 
@@ -292,23 +286,17 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
             announcement = 'Error: Voice input configuration error. Please contact support.';
             NotificationService.getInstance().error(
               'Voice input configuration error. Please contact support.',
-              undefined,
-              {
-                label: 'Switch to Text',
-                onClick: () => {
-                  handleModeChange('text');
-                },
-              }
+              5000
             );
             break;
 
           case 'SYNTHESIS_FAILED':
-            // Requirement 6.4: Recognition failure with retry and fallback
+            // Requirement 6.4: Recognition failure with retry
             announcement =
               'Error: Speech recognition failed. Please try again or switch to text input.';
             NotificationService.getInstance().error(
-              'Speech recognition failed. Please try again or switch to text input.',
-              undefined,
+              'Speech recognition failed. Please try again.',
+              5000,
               {
                 label: 'Retry',
                 onClick: () => {
@@ -329,17 +317,11 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
             break;
 
           default:
-            // Generic error with fallback option (should never reach here due to exhaustive switch)
+            // Generic error
             announcement = `Error: ${(error as { message?: string }).message || 'An error occurred with voice input'}`;
             NotificationService.getInstance().error(
               (error as { message?: string }).message || 'An error occurred with voice input',
-              undefined,
-              {
-                label: 'Switch to Text',
-                onClick: () => {
-                  handleModeChange('text');
-                },
-              }
+              5000
             );
         }
 
@@ -905,15 +887,13 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       />
 
       {/* Input Mode Toggle (Requirement 7.1) */}
-      <div className="border-t px-3 py-2" style={{background:'var(--bg-secondary)',borderColor:'var(--border)'}}>
-        <div className="flex items-center gap-2">
-          <span className="text-xs" style={{color:'var(--text-muted)'}}>Mode:</span>
-          <InputModeToggle
-            currentMode={inputMode}
-            onModeChange={handleModeChange}
-            disabled={isPending || !isBrowserCompatible}
-          />
-        </div>
+      <div className="border-t px-4 py-2.5 flex items-center gap-3" style={{background:'var(--bg-secondary)',borderColor:'var(--border)'}}>
+        <span className="text-xs font-medium" style={{color:'var(--text-muted)'}}>Input:</span>
+        <InputModeToggle
+          currentMode={inputMode}
+          onModeChange={handleModeChange}
+          disabled={isPending || !isBrowserCompatible}
+        />
       </div>
 
       {/* Browser Compatibility Warning (Requirement 11.2, 11.4) */}
@@ -938,7 +918,7 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
 
       {/* Voice Input Controls - Shown when voice mode is active (Requirement 7.2) */}
       {inputMode === 'voice' && isBrowserCompatible && (
-        <div className="border-t p-6 space-y-4" style={{background:'var(--bg-card)',borderColor:'var(--border)'}}>
+        <div className="border-t p-5 space-y-4" style={{background:'var(--bg-card)',borderColor:'var(--border)'}}>
           {/* Interim Results Display (Requirement 5.1, 15.3) */}
           <InterimResultDisplay
             text={interimText}
@@ -946,9 +926,8 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
             isProcessing={voiceInputState === 'processing'}
           />
 
-          {/* Voice Input Controls Row */}
-          <div className="flex items-center gap-4 flex-wrap">
-            {/* Voice Input Button (Requirement 3.1, 4.1, 15.1, 15.2, 15.3, 15.4) */}
+          {/* Voice Input Button — centered, prominent */}
+          <div className="flex justify-center">
             <VoiceInputButton
               mode={recognitionMode}
               isRecognizing={isRecognizing}
@@ -957,18 +936,20 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
               onRelease={handleVoiceRelease}
               disabled={isPending || !selectedAgent}
             />
+          </div>
 
-            {/* Audio Level Indicator (Requirement 5.5) */}
-            <div className="flex-1 min-w-[200px]">
+          {/* Audio Level + Mode row */}
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
               <AudioLevelIndicator level={audioLevel} isActive={isRecognizing} />
             </div>
 
             {/* Recognition Mode Toggle */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <label
                 htmlFor="recognition-mode"
-                className="text-sm font-medium"
-                style={{color:'var(--text-secondary)'}}
+                className="text-xs font-medium"
+                style={{color:'var(--text-muted)'}}
               >
                 Mode:
               </label>
@@ -977,26 +958,20 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
                 value={recognitionMode}
                 onChange={(e) => setRecognitionMode(e.target.value as RecognitionMode)}
                 disabled={isRecognizing}
-                className="px-3 py-2 text-sm border rounded-lg disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="px-2 py-1.5 text-xs border rounded-lg disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 style={{background:'rgba(255,255,255,0.05)',border:'1px solid var(--border)',color:'var(--text-primary)'}}
               >
-                <option value="push-to-talk">🎤 Push-to-Talk</option>
-                <option value="continuous">🔄 Continuous</option>
+                <option value="push-to-talk">Push-to-Talk</option>
+                <option value="continuous">Continuous</option>
               </select>
             </div>
           </div>
 
           {/* Voice Input Instructions */}
-          <div className="text-sm p-3 rounded-lg" style={{color:'var(--text-muted)',background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.15)'}}>
-            {recognitionMode === 'push-to-talk' ? (
-              <p>
-                💡 <strong>Tip:</strong> Hold the button to speak, release to send your message.
-              </p>
-            ) : (
-              <p>
-                💡 <strong>Tip:</strong> Click to start listening. Click again to stop.
-              </p>
-            )}
+          <div className="text-xs px-3 py-2 rounded-lg" style={{color:'var(--text-muted)',background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.15)'}}>
+            {recognitionMode === 'push-to-talk'
+              ? 'Hold the button while speaking, release to send.'
+              : 'Click to start listening. Click again to stop.'}
           </div>
         </div>
       )}

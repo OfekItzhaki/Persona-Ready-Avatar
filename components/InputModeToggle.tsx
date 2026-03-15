@@ -89,11 +89,12 @@ export function InputModeToggle({ currentMode, onModeChange, disabled }: InputMo
         type="button"
         onClick={() => !disabled && onModeChange('text')}
         disabled={disabled}
-        className="px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         style={{
           background: currentMode === 'text' ? 'var(--accent)' : 'transparent',
           color: currentMode === 'text' ? '#fff' : 'var(--text-muted)',
           cursor: disabled ? 'not-allowed' : 'pointer',
+          whiteSpace: 'nowrap',
         }}
         aria-pressed={currentMode === 'text'}
       >
@@ -103,11 +104,12 @@ export function InputModeToggle({ currentMode, onModeChange, disabled }: InputMo
         type="button"
         onClick={() => !disabled && onModeChange('voice')}
         disabled={disabled}
-        className="px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         style={{
           background: currentMode === 'voice' ? 'var(--accent)' : 'transparent',
           color: currentMode === 'voice' ? '#fff' : 'var(--text-muted)',
           cursor: disabled ? 'not-allowed' : 'pointer',
+          whiteSpace: 'nowrap',
         }}
         aria-pressed={currentMode === 'voice'}
       >

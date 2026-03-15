@@ -221,19 +221,21 @@ export function VoiceInputButton({
       type="button"
       className={`
         relative inline-flex items-center justify-center
-        rounded-xl font-medium
+        rounded-2xl font-semibold
         transition-all duration-200
         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
-        ${getButtonStyles()}
-        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}
       `}
       style={{
         background: getButtonBackground(),
-        padding: '10px 20px',
-        minWidth: '140px',
+        padding: '12px 28px',
+        minWidth: '180px',
+        fontSize: '14px',
+        letterSpacing: '0.01em',
+        color: '#fff',
         boxShadow: isRecognizing
-          ? '0 0 20px rgba(239,68,68,0.4)'
-          : '0 0 16px rgba(99,102,241,0.25)',
+          ? '0 0 24px rgba(239,68,68,0.5), 0 4px 12px rgba(0,0,0,0.3)'
+          : '0 0 20px rgba(99,102,241,0.35), 0 4px 12px rgba(0,0,0,0.3)',
         border: 'none',
       }}
       onMouseDown={handleMouseDown}
@@ -247,16 +249,16 @@ export function VoiceInputButton({
       aria-pressed={isRecognizing}
       role="button"
     >
-      <span className="flex items-center gap-2">
+      <span className="flex items-center gap-2.5" style={{color:'#fff',whiteSpace:'nowrap'}}>
         {getIcon()}
-        <span>
+        <span style={{color:'#fff',fontWeight:600}}>
           {state === 'error'
-            ? 'Error'
+            ? 'Error — Retry'
             : state === 'processing'
               ? 'Processing...'
               : mode === 'push-to-talk'
                 ? isRecognizing ? 'Release to Send' : 'Hold to Speak'
-                : isRecognizing ? 'Stop' : 'Start Listening'}
+                : isRecognizing ? 'Stop Listening' : 'Start Listening'}
         </span>
       </span>
 

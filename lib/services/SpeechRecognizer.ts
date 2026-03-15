@@ -40,40 +40,11 @@ export class SpeechRecognizer implements ISpeechRecognizer {
    */
   configure(config: AzureSpeechConfig): void {
     try {
-      logger.info('Configuring speech recognizer', {
-        component: 'SpeechRecognizer',
-        operation: 'configure',
-        language: config.language,
-        region: config.region,
-      });
-
-      // Create speech configuration
-      this.speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
-        config.subscriptionKey,
-        config.region
-      );
-
-      // Set recognition language
+      this.speechConfig = SpeechSDK.SpeechConfig.fromSubscription(config.subscriptionKey, config.region);
       this.speechConfig.speechRecognitionLanguage = config.language;
-
-      // Set output format to simple (text only)
       this.speechConfig.outputFormat = SpeechSDK.OutputFormat.Simple;
-
-      logger.info('Speech recognizer configured successfully', {
-        component: 'SpeechRecognizer',
-        operation: 'configure',
-        language: config.language,
-      });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-      logger.error('Failed to configure speech recognizer', {
-        component: 'SpeechRecognizer',
-        operation: 'configure',
-        error: errorMessage,
-      });
-
-      throw new Error(`Failed to configure speech recognizer: ${errorMessage}`);
+      throw new Error(`Failed to configure speech recognizer: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -83,63 +54,22 @@ export class SpeechRecognizer implements ISpeechRecognizer {
    * Requirements: 2.4
    */
   async startContinuousRecognition(audioStream: MediaStream): Promise<void> {
-    if (!this.speechConfig) {
-      throw new Error('Speech recognizer not configured. Call configure() first.');
-    }
-
-    if (this.isRecognizingFlag) {
-      logger.warn('Recognition already in progress', {
-        component: 'SpeechRecognizer',
-        operation: 'startContinuousRecognition',
-      });
-      return;
-    }
+    if (!this.speechConfig) throw new Error('Speech recognizer not configured. Call configure() first.');
+    if (this.isRecognizingFlag) return;
 
     try {
-      logger.info('Starting continuous recognition', {
-        component: 'SpeechRecognizer',
-        operation: 'startContinuousRecognition',
-      });
-
-      // Create audio config from MediaStream
       const audioConfig = SpeechSDK.AudioConfig.fromStreamInput(this.createPushStream(audioStream));
-
-      // Create recognizer
       this.recognizer = new SpeechSDK.SpeechRecognizer(this.speechConfig, audioConfig);
-
-      // Set up event handlers
       this.setupEventHandlers();
 
-      // Start continuous recognition
       await new Promise<void>((resolve, reject) => {
         this.recognizer!.startContinuousRecognitionAsync(
-          () => {
-            this.isRecognizingFlag = true;
-            logger.info('Continuous recognition started', {
-              component: 'SpeechRecognizer',
-              operation: 'startContinuousRecognition',
-            });
-            resolve();
-          },
-          (error) => {
-            logger.error('Failed to start continuous recognition', {
-              component: 'SpeechRecognizer',
-              operation: 'startContinuousRecognition',
-              error: error,
-            });
-            reject(new Error(`Failed to start recognition: ${error}`));
-          }
+          () => { this.isRecognizingFlag = true; resolve(); },
+          (error) => reject(new Error(`Failed to start recognition: ${error}`))
         );
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-      logger.error('Error in startContinuousRecognition', {
-        component: 'SpeechRecognizer',
-        operation: 'startContinuousRecognition',
-        error: errorMessage,
-      });
-
+      logger.error('Failed to start continuous recognition', { component: 'SpeechRecognizer', error: error instanceof Error ? error.message : 'Unknown error' });
       throw error;
     }
   }
@@ -150,49 +80,18 @@ export class SpeechRecognizer implements ISpeechRecognizer {
    * Requirements: 2.4, 13.2, 12.2
    */
   async stopContinuousRecognition(): Promise<void> {
-    if (!this.recognizer || !this.isRecognizingFlag) {
-      return;
-    }
+    if (!this.recognizer || !this.isRecognizingFlag) return;
 
     try {
-      logger.info('Stopping continuous recognition', {
-        component: 'SpeechRecognizer',
-        operation: 'stopContinuousRecognition',
-      });
-
       await new Promise<void>((resolve, reject) => {
         this.recognizer!.stopContinuousRecognitionAsync(
-          () => {
-            this.isRecognizingFlag = false;
-            logger.info('Continuous recognition stopped', {
-              component: 'SpeechRecognizer',
-              operation: 'stopContinuousRecognition',
-            });
-            resolve();
-          },
-          (error) => {
-            logger.error('Failed to stop continuous recognition', {
-              component: 'SpeechRecognizer',
-              operation: 'stopContinuousRecognition',
-              error: error,
-            });
-            reject(new Error(`Failed to stop recognition: ${error}`));
-          }
+          () => { this.isRecognizingFlag = false; resolve(); },
+          (error) => reject(new Error(`Failed to stop recognition: ${error}`))
         );
       });
-
-      // Dispose of resources
-      // Requirements: 13.2 - Proper disposal of SpeechRecognizer instances
       this.dispose();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-      logger.error('Error in stopContinuousRecognition', {
-        component: 'SpeechRecognizer',
-        operation: 'stopContinuousRecognition',
-        error: errorMessage,
-      });
-
+      logger.error('Failed to stop continuous recognition', { component: 'SpeechRecognizer', error: error instanceof Error ? error.message : 'Unknown error' });
       throw error;
     }
   }
@@ -204,50 +103,25 @@ export class SpeechRecognizer implements ISpeechRecognizer {
    */
   private dispose(): void {
     try {
-      logger.info('Disposing SpeechRecognizer resources', {
-        component: 'SpeechRecognizer',
-        operation: 'dispose',
-      });
-
-      // Stop MediaRecorder if active
-      // Requirements: 12.2 - Release MediaStream tracks immediately
       if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
         this.mediaRecorder.stop();
         this.mediaRecorder = null;
       }
-
-      // Unsubscribe from all event handlers to prevent memory leaks
-      // Requirements: 13.2
       if (this.recognizer) {
         this.recognizer.recognizing = undefined as any;
         this.recognizer.recognized = undefined as any;
         this.recognizer.canceled = undefined as any;
         this.recognizer.sessionStarted = undefined as any;
         this.recognizer.sessionStopped = undefined as any;
-
-        // Close and dispose recognizer
         this.recognizer.close();
         this.recognizer = null;
       }
-
-      // Clear callback references
       this.recognizingCallback = null;
       this.recognizedCallback = null;
       this.errorCallback = null;
       this.sessionStartedCallback = null;
       this.sessionStoppedCallback = null;
-
-      logger.info('SpeechRecognizer resources disposed', {
-        component: 'SpeechRecognizer',
-        operation: 'dispose',
-      });
-    } catch (error) {
-      logger.error('Error disposing SpeechRecognizer resources', {
-        component: 'SpeechRecognizer',
-        operation: 'dispose',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+    } catch { /* ignore disposal errors */ }
   }
 
   /**
@@ -304,103 +178,35 @@ export class SpeechRecognizer implements ISpeechRecognizer {
    * Requirements: 5.1, 5.3, 6.1, 6.2, 6.3, 6.4
    */
   private setupEventHandlers(): void {
-    if (!this.recognizer) {
-      return;
-    }
+    if (!this.recognizer) return;
 
-    // Recognizing event (interim results)
     this.recognizer.recognizing = (_sender, event) => {
-      if (event.result.reason === SpeechSDK.ResultReason.RecognizingSpeech) {
-        const interimResult: InterimResult = {
-          text: event.result.text,
-          offset: event.result.offset,
-        };
-
-        logger.debug('Interim recognition result', {
-          component: 'SpeechRecognizer',
-          operation: 'recognizing',
-          text: interimResult.text,
-        });
-
-        if (this.recognizingCallback) {
-          this.recognizingCallback(interimResult);
-        }
+      if (event.result.reason === SpeechSDK.ResultReason.RecognizingSpeech && this.recognizingCallback) {
+        this.recognizingCallback({ text: event.result.text, offset: event.result.offset });
       }
     };
 
-    // Recognized event (final results)
     this.recognizer.recognized = (_sender, event) => {
-      if (event.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-        const finalResult: FinalResult = {
-          text: event.result.text,
-          confidence: 0.95, // Azure doesn't provide confidence in simple format
-          offset: event.result.offset,
-          duration: event.result.duration,
-        };
-
-        logger.info('Final recognition result', {
-          component: 'SpeechRecognizer',
-          operation: 'recognized',
-          text: finalResult.text,
-        });
-
-        if (this.recognizedCallback) {
-          this.recognizedCallback(finalResult);
-        }
-      } else if (event.result.reason === SpeechSDK.ResultReason.NoMatch) {
-        logger.warn('No speech recognized', {
-          component: 'SpeechRecognizer',
-          operation: 'recognized',
-        });
+      if (event.result.reason === SpeechSDK.ResultReason.RecognizedSpeech && this.recognizedCallback) {
+        this.recognizedCallback({ text: event.result.text, confidence: 0.95, offset: event.result.offset, duration: event.result.duration });
       }
     };
 
-    // Canceled event (errors)
     this.recognizer.canceled = (_sender, event) => {
-      logger.error('Recognition canceled', {
-        component: 'SpeechRecognizer',
-        operation: 'canceled',
-        reason: event.reason,
-        errorDetails: event.errorDetails,
-      });
-
       if (event.reason === SpeechSDK.CancellationReason.Error) {
-        const error = this.mapCancellationError(event);
-
-        if (this.errorCallback) {
-          this.errorCallback(error);
-        }
+        logger.error('Recognition canceled', { component: 'SpeechRecognizer', errorDetails: event.errorDetails });
+        if (this.errorCallback) this.errorCallback(this.mapCancellationError(event));
       }
-
       this.isRecognizingFlag = false;
     };
 
-    // Session started event
-    this.recognizer.sessionStarted = (_sender, event) => {
-      logger.info('Recognition session started', {
-        component: 'SpeechRecognizer',
-        operation: 'sessionStarted',
-        sessionId: event.sessionId,
-      });
-
-      if (this.sessionStartedCallback) {
-        this.sessionStartedCallback();
-      }
+    this.recognizer.sessionStarted = (_sender, _event) => {
+      if (this.sessionStartedCallback) this.sessionStartedCallback();
     };
 
-    // Session stopped event
-    this.recognizer.sessionStopped = (_sender, event) => {
-      logger.info('Recognition session stopped', {
-        component: 'SpeechRecognizer',
-        operation: 'sessionStopped',
-        sessionId: event.sessionId,
-      });
-
+    this.recognizer.sessionStopped = (_sender, _event) => {
       this.isRecognizingFlag = false;
-
-      if (this.sessionStoppedCallback) {
-        this.sessionStoppedCallback();
-      }
+      if (this.sessionStoppedCallback) this.sessionStoppedCallback();
     };
   }
 

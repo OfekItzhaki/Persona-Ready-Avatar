@@ -76,44 +76,21 @@ export class VoiceInputService implements IVoiceInputService {
    */
   async initialize(config: AzureSpeechConfig): Promise<void> {
     try {
-      logger.info('Initializing voice input service', {
-        component: 'VoiceInputService',
-        operation: 'initialize',
-        language: config.language,
-      });
-
-      // Validate configuration
       if (!config.subscriptionKey || !config.region) {
         throw new Error('Azure Speech Service credentials are required');
       }
-
       this.config = config;
-
-      // Configure speech recognizer
       this.speechRecognizer.configure(config);
-
-      // Set up speech recognizer event handlers
       this.setupRecognizerEventHandlers();
-
-      // Preload SDK resources if not already done
-      // Requirements: 14.1 - Optimize recognition session start latency
       if (!this.sdkPreloaded) {
         await this.preloadSDKResources();
       }
-
-      logger.info('Voice input service initialized successfully', {
-        component: 'VoiceInputService',
-        operation: 'initialize',
-      });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
       logger.error('Failed to initialize voice input service', {
         component: 'VoiceInputService',
         operation: 'initialize',
-        error: errorMessage,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
-
       throw error;
     }
   }
@@ -125,29 +102,10 @@ export class VoiceInputService implements IVoiceInputService {
    */
   private async preloadSDKResources(): Promise<void> {
     try {
-      logger.info('Preloading Azure Speech SDK resources', {
-        component: 'VoiceInputService',
-        operation: 'preloadSDKResources',
-      });
-
-      // Preload microphone by checking availability
-      // This initializes browser audio APIs without requesting permission
       this.microphoneManager.isAvailable();
-
-      // Mark as preloaded
       this.sdkPreloaded = true;
-
-      logger.info('Azure Speech SDK resources preloaded', {
-        component: 'VoiceInputService',
-        operation: 'preloadSDKResources',
-      });
-    } catch (error) {
-      logger.warn('Failed to preload SDK resources', {
-        component: 'VoiceInputService',
-        operation: 'preloadSDKResources',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      // Don't throw - preloading is an optimization, not critical
+    } catch {
+      // preloading is optional
     }
   }
 
@@ -157,108 +115,44 @@ export class VoiceInputService implements IVoiceInputService {
    * Requirements: 3.1, 3.2, 3.3, 4.1, 4.2, 4.4
    */
   async startRecognition(mode: RecognitionMode): Promise<void> {
-    if (this.isRecognizingFlag) {
-      logger.warn('Recognition already in progress', {
-        component: 'VoiceInputService',
-        operation: 'startRecognition',
-      });
-      return;
-    }
+    if (this.isRecognizingFlag) return;
 
     if (!this.config) {
       throw new Error('Voice input service not initialized. Call initialize() first.');
     }
 
     try {
-      logger.info('Starting recognition session', {
-        component: 'VoiceInputService',
-        operation: 'startRecognition',
-        mode: mode,
-      });
-
       this.currentMode = mode;
       this.sessionStartTime = Date.now();
 
-      // Check microphone availability
-      // Requirements: 1.5
       if (!this.microphoneManager.isAvailable()) {
-        const error: RecognitionError = {
-          type: 'MICROPHONE_UNAVAILABLE',
-          message: 'No microphone detected. Please connect a microphone and try again.',
-          recoverable: true,
-        };
-        this.emitError(error);
+        this.emitError({ type: 'MICROPHONE_UNAVAILABLE', message: 'No microphone detected.', recoverable: true });
         return;
       }
 
-      // Request microphone permission if needed
-      // Requirements: 1.1, 1.2
       const permission = await this.microphoneManager.requestPermission();
       if (!permission.granted) {
-        const error: RecognitionError = {
-          type: 'PERMISSION_DENIED',
-          message: permission.error || 'Microphone permission denied',
-          recoverable: true,
-        };
-        this.emitError(error);
+        this.emitError({ type: 'PERMISSION_DENIED', message: permission.error || 'Microphone permission denied', recoverable: true });
         return;
       }
 
-      // Start audio capture
-      // Requirements: 1.3
       const audioStream = await this.microphoneManager.startCapture();
-
-      // Start speech recognition
-      // Requirements: 2.4
       await this.speechRecognizer.startContinuousRecognition(audioStream);
 
       this.isRecognizingFlag = true;
       this.emitRecognitionState(true);
 
-      // Set up session timeout for continuous mode
-      // Requirements: 13.4, 13.5
       if (mode === 'continuous') {
         this.sessionTimeoutId = setTimeout(() => {
-          logger.warn('Recognition session timed out', {
-            component: 'VoiceInputService',
-            operation: 'startRecognition',
-            duration: 60000,
-          });
-
           this.stopRecognition();
-
-          const error: RecognitionError = {
-            type: 'TIMEOUT',
-            duration: 60000,
-            recoverable: true,
-          };
-          this.emitError(error);
-        }, 60000); // 60 second timeout
+          this.emitError({ type: 'TIMEOUT', duration: 60000, recoverable: true });
+        }, 60000);
       }
-
-      logger.info('Recognition session started successfully', {
-        component: 'VoiceInputService',
-        operation: 'startRecognition',
-        mode: mode,
-      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-      logger.error('Failed to start recognition session', {
-        component: 'VoiceInputService',
-        operation: 'startRecognition',
-        error: errorMessage,
-      });
-
-      // Clean up on error
+      logger.error('Failed to start recognition session', { component: 'VoiceInputService', operation: 'startRecognition', error: errorMessage });
       await this.cleanup();
-
-      const recognitionError: RecognitionError = {
-        type: 'SYNTHESIS_FAILED',
-        message: `Failed to start recognition: ${errorMessage}`,
-        recoverable: true,
-      };
-      this.emitError(recognitionError);
+      this.emitError({ type: 'SYNTHESIS_FAILED', message: `Failed to start recognition: ${errorMessage}`, recoverable: true });
     }
   }
 
@@ -268,29 +162,11 @@ export class VoiceInputService implements IVoiceInputService {
    * Requirements: 3.3, 4.4, 13.1, 13.2
    */
   async stopRecognition(): Promise<void> {
-    if (!this.isRecognizingFlag) {
-      return;
-    }
-
+    if (!this.isRecognizingFlag) return;
     try {
-      logger.info('Stopping recognition session', {
-        component: 'VoiceInputService',
-        operation: 'stopRecognition',
-        duration: Date.now() - this.sessionStartTime,
-      });
-
       await this.cleanup();
-
-      logger.info('Recognition session stopped successfully', {
-        component: 'VoiceInputService',
-        operation: 'stopRecognition',
-      });
     } catch (error) {
-      logger.error('Error stopping recognition session', {
-        component: 'VoiceInputService',
-        operation: 'stopRecognition',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      logger.error('Error stopping recognition session', { component: 'VoiceInputService', operation: 'stopRecognition', error: error instanceof Error ? error.message : 'Unknown error' });
     }
   }
 
@@ -300,31 +176,9 @@ export class VoiceInputService implements IVoiceInputService {
    * Requirements: 2.2, 2.3
    */
   updateLanguage(language: string): void {
-    if (!this.config) {
-      logger.warn('Cannot update language: service not initialized', {
-        component: 'VoiceInputService',
-        operation: 'updateLanguage',
-      });
-      return;
-    }
-
-    logger.info('Updating recognition language', {
-      component: 'VoiceInputService',
-      operation: 'updateLanguage',
-      from: this.config.language,
-      to: language,
-    });
-
+    if (!this.config) return;
     this.config.language = language;
-
-    // Reconfigure speech recognizer with new language
     this.speechRecognizer.configure(this.config);
-
-    logger.info('Recognition language updated', {
-      component: 'VoiceInputService',
-      operation: 'updateLanguage',
-      language: language,
-    });
   }
 
   /**
@@ -405,54 +259,20 @@ export class VoiceInputService implements IVoiceInputService {
    * Requirements: 5.1, 5.3, 6.1, 6.2, 6.3, 6.4, 14.2
    */
   private setupRecognizerEventHandlers(): void {
-    // Handle interim results
-    // Requirements: 5.1, 14.2 - Minimize processing overhead for < 200ms latency
     this.speechRecognizer.onRecognizing((result: InterimResult) => {
-      // Create result object inline to minimize allocations
-      const recognitionResult: RecognitionResult = {
-        type: 'interim',
-        text: result.text,
-        timestamp: Date.now(),
-      };
-
-      // Emit immediately without additional processing
-      this.emitResult(recognitionResult);
+      this.emitResult({ type: 'interim', text: result.text, timestamp: Date.now() });
     });
 
-    // Handle final results
-    // Requirements: 5.3, 3.4, 4.3, 8.1, 8.5
     this.speechRecognizer.onRecognized((result: FinalResult) => {
-      // Trim whitespace from recognized text
-      // Requirements: 8.5
-      const trimmedText = result.text.trim();
-
-      const recognitionResult: RecognitionResult = {
-        type: 'final',
-        text: trimmedText,
-        confidence: result.confidence,
-        timestamp: Date.now(),
-      };
-
-      this.emitResult(recognitionResult);
+      this.emitResult({ type: 'final', text: result.text.trim(), confidence: result.confidence, timestamp: Date.now() });
     });
 
-    // Handle errors
-    // Requirements: 6.1, 6.2, 6.3, 6.4
     this.speechRecognizer.onError((error: RecognitionError) => {
-      logger.error('Recognition error', {
-        component: 'VoiceInputService',
-        operation: 'onError',
-        errorType: error.type,
-        message: error.type === 'TIMEOUT' ? `Timeout after ${error.duration}ms` : error.message,
-      });
-
+      logger.error('Recognition error', { component: 'VoiceInputService', operation: 'onError', errorType: error.type });
       this.emitError(error);
-
-      // Stop recognition on error
       this.stopRecognition();
     });
 
-    // Handle session stopped
     this.speechRecognizer.onSessionStopped(() => {
       this.isRecognizingFlag = false;
       this.emitRecognitionState(false);
@@ -466,70 +286,26 @@ export class VoiceInputService implements IVoiceInputService {
    * Requirements: 5.1, 5.3, 14.2
    */
   private emitResult(result: RecognitionResult): void {
-    // Use for-of loop for better performance than forEach
     for (const callback of this.resultCallbacks) {
-      try {
-        callback(result);
-      } catch (error) {
-        logger.error('Error in result callback', {
-          component: 'VoiceInputService',
-          operation: 'emitResult',
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
+      try { callback(result); } catch { /* ignore */ }
     }
   }
 
-  /**
-   * Emit error to all subscribers
-   *
-   * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
-   */
   private emitError(error: RecognitionError): void {
     for (const callback of this.errorCallbacks) {
-      try {
-        callback(error);
-      } catch (err) {
-        logger.error('Error in error callback', {
-          component: 'VoiceInputService',
-          operation: 'emitError',
-          error: err instanceof Error ? err.message : 'Unknown error',
-        });
-      }
+      try { callback(error); } catch { /* ignore */ }
     }
   }
 
-  /**
-   * Emit recognition state change to all subscribers
-   */
   private emitRecognitionState(isRecognizing: boolean): void {
     for (const callback of this.recognitionStateCallbacks) {
-      try {
-        callback(isRecognizing);
-      } catch (error) {
-        logger.error('Error in recognition state callback', {
-          component: 'VoiceInputService',
-          operation: 'emitRecognitionState',
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
+      try { callback(isRecognizing); } catch { /* ignore */ }
     }
   }
 
-  /**
-   * Emit audio level to all subscribers
-   */
   private emitAudioLevel(level: number): void {
     for (const callback of this.audioLevelCallbacks) {
-      try {
-        callback(level);
-      } catch (error) {
-        logger.error('Error in audio level callback', {
-          component: 'VoiceInputService',
-          operation: 'emitAudioLevel',
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
+      try { callback(level); } catch { /* ignore */ }
     }
   }
 
@@ -539,24 +315,16 @@ export class VoiceInputService implements IVoiceInputService {
    * Requirements: 12.2, 13.1, 13.2
    */
   private async cleanup(): Promise<void> {
-    // Clear session timeout
     if (this.sessionTimeoutId) {
       clearTimeout(this.sessionTimeoutId);
       this.sessionTimeoutId = null;
     }
-
-    // Stop speech recognition
-    // Requirements: 13.2
     if (this.speechRecognizer.isRecognizing()) {
       await this.speechRecognizer.stopContinuousRecognition();
     }
-
-    // Stop microphone capture
-    // Requirements: 12.2
     if (this.microphoneManager.isCapturing()) {
       this.microphoneManager.stopCapture();
     }
-
     this.isRecognizingFlag = false;
     this.emitRecognitionState(false);
   }

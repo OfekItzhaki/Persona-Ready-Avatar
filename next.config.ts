@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               "font-src 'self' data:",
-              "connect-src 'self' ws://localhost:* wss://localhost:* https://cognitiveservices.azure.com https://*.cognitiveservices.azure.com",
+              "connect-src 'self' ws://localhost:* wss://localhost:* https://cognitiveservices.azure.com https://*.cognitiveservices.azure.com wss://*.stt.speech.microsoft.com https://*.stt.speech.microsoft.com",
               "media-src 'self' blob:",
               "worker-src 'self' blob:",
             ].join('; '),
@@ -39,7 +39,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
+            value: 'camera=(), microphone=(self), geolocation=()',
           },
         ],
       },

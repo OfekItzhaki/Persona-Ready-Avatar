@@ -87,6 +87,10 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
   const voiceInputServiceRef = useRef<VoiceInputService | null>(null);
   const inputModeControllerRef = useRef<InputModeController | null>(null);
 
+  // Keep a ref to selectedAgent so voice callbacks always see the latest value
+  const selectedAgentRef = useRef(selectedAgent);
+  useEffect(() => { selectedAgentRef.current = selectedAgent; }, [selectedAgent]);
+
   // Screen reader announcement state (Requirement 10.2, 10.3, 10.5)
   const [screenReaderAnnouncement, setScreenReaderAnnouncement] = useState('');
 
@@ -183,18 +187,26 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
         if (result.type === 'interim') {
           setInterimText(result.text);
           setVoiceInputState('recording');
-        } else if (result.type === 'final') {
-          // Set processing state while finalizing (Requirement 15.3)
+        } else if (result.type === 'final' && result.text.trim()) {
           setVoiceInputState('processing');
           setInterimText('');
 
-          // Submit recognized text to chat
-          handleSubmit(result.text);
+          // Use ref so we always have the latest selectedAgent (avoids stale closure)
+          const agent = selectedAgentRef.current;
+          if (!agent) return;
 
-          // Reset to idle after a brief delay
-          setTimeout(() => {
-            setVoiceInputState('idle');
-          }, 500);
+          sendMessage(
+            { agentId: agent.id, message: result.text.trim(), ttsService, selectedAgent: agent },
+            {
+              onError: (error) => {
+                NotificationService.getInstance().error(
+                  error instanceof Error ? error.message : 'Failed to send message'
+                );
+              },
+            }
+          );
+
+          setTimeout(() => setVoiceInputState('idle'), 500);
         }
       });
 

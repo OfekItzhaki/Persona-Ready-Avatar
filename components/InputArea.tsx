@@ -215,7 +215,7 @@ export function InputArea({
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             disabled={disabled}
-            placeholder={!isOnline ? 'You are offline. Messages will be queued.' : placeholder}
+            placeholder={!isOnline ? 'Offline — messages will be queued' : placeholder}
             rows={1}
             className="flex-1 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed resize-none overflow-hidden min-h-[42px] max-h-[200px]"
             style={{background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',color:'var(--text-primary)'}}
@@ -228,8 +228,12 @@ export function InputArea({
           <button
             type="submit"
             disabled={isSubmitDisabled}
-            className="send-button px-6 py-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed transition-colors self-end"
-            style={{background: isSubmitDisabled ? 'var(--text-muted)' : 'var(--accent)'}}
+            className="send-button px-5 py-2 text-sm font-semibold text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed transition-all self-end"
+            style={{
+              background: isSubmitDisabled ? 'rgba(255,255,255,0.08)' : 'var(--accent)',
+              color: isSubmitDisabled ? 'var(--text-muted)' : '#fff',
+              boxShadow: isSubmitDisabled ? 'none' : '0 0 12px rgba(99,102,241,0.3)',
+            }}
             aria-label="Send message"
             title={disabled ? 'Sending...' : 'Send message'}
           >

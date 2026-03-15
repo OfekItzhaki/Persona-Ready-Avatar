@@ -76,3 +76,10 @@ mark {
   border-radius: 2px;
   padding: 0 2px;
 }
+
+/* ── Placeholder color ── */
+textarea::placeholder,
+input::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}

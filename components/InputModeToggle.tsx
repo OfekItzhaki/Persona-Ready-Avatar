@@ -84,39 +84,38 @@ export function InputModeToggle({ currentMode, onModeChange, disabled }: InputMo
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={disabled}
-      className={`
-        relative inline-flex items-center justify-center
-        w-14 h-8 rounded-full
-        transition-all duration-200
-        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        ${currentMode === 'voice' ? 'bg-indigo-500' : 'bg-gray-600'}
-      `}
-      aria-label={getAriaLabel()}
-      aria-pressed={currentMode === 'voice'}
-      role="button"
-    >
-      {/* Toggle slider */}
-      <span
-        className={`
-          absolute inline-flex items-center justify-center
-          w-6 h-6 rounded-full bg-white shadow-md
-          transform transition-transform duration-200
-          ${currentMode === 'voice' ? 'translate-x-3' : '-translate-x-3'}
-        `}
+    <div className="flex items-center gap-1 rounded-lg p-0.5" style={{background:'rgba(255,255,255,0.05)',border:'1px solid var(--border)'}}>
+      <button
+        type="button"
+        onClick={() => !disabled && onModeChange('text')}
+        disabled={disabled}
+        className="px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        style={{
+          background: currentMode === 'text' ? 'var(--accent)' : 'transparent',
+          color: currentMode === 'text' ? '#fff' : 'var(--text-muted)',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+        }}
+        aria-pressed={currentMode === 'text'}
       >
-        {/* Icon inside slider */}
-        <span className="text-gray-700">{getIcon(currentMode)}</span>
-      </span>
-
-      {/* Screen reader only text for current mode */}
+        Text
+      </button>
+      <button
+        type="button"
+        onClick={() => !disabled && onModeChange('voice')}
+        disabled={disabled}
+        className="px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        style={{
+          background: currentMode === 'voice' ? 'var(--accent)' : 'transparent',
+          color: currentMode === 'voice' ? '#fff' : 'var(--text-muted)',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+        }}
+        aria-pressed={currentMode === 'voice'}
+      >
+        Voice
+      </button>
       <span className="sr-only">
         {currentMode === 'voice' ? 'Voice input mode active' : 'Text input mode active'}
       </span>
-    </button>
+    </div>
   );
 }

@@ -103,27 +103,25 @@ export function VoiceInputButton({
     }
   };
 
-  // Get button styling based on state (Requirement 15.1, 15.2, 15.3, 15.4, 15.5, 15.6)
-  // All colors meet WCAG 2.1 Level AA contrast requirements (3:1 for UI components)
+  // Get button styling based on state
   const getButtonStyles = () => {
     if (state === 'error') {
-      // Error state: Red background with error icon (Requirement 15.4)
-      // bg-red-600 (#dc2626) has 5.9:1 contrast on white - exceeds AA requirements
-      return 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500';
+      return 'text-white';
     }
     if (state === 'processing') {
-      // Processing state: Yellow/orange background with loading indicator (Requirement 15.3)
-      // bg-yellow-600 (#ca8a04) has 3.0:1 contrast on white - meets AA requirements for UI components
-      return 'bg-yellow-600 hover:bg-yellow-700 text-white focus:ring-yellow-500';
+      return 'text-white';
     }
     if (isRecognizing) {
-      // Recording state: Red background with pulsing animation (Requirement 15.2)
-      // bg-red-600 (#dc2626) has 5.9:1 contrast on white - exceeds AA requirements
-      return 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 animate-pulse';
+      return 'text-white animate-pulse';
     }
-    // Idle state: Blue background (Requirement 15.1)
-    // bg-blue-600 (#2563eb) has 4.5:1 contrast on white - exceeds AA requirements
-    return 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500';
+    return 'text-white';
+  };
+
+  const getButtonBackground = () => {
+    if (state === 'error') return '#ef4444';
+    if (state === 'processing') return '#d97706';
+    if (isRecognizing) return '#ef4444';
+    return 'var(--accent)';
   };
 
   // Get icon based on state
@@ -223,12 +221,21 @@ export function VoiceInputButton({
       type="button"
       className={`
         relative inline-flex items-center justify-center
-        px-4 py-2 rounded-lg font-medium
+        rounded-xl font-medium
         transition-all duration-200
-        focus:outline-none focus:ring-2 focus:ring-offset-2
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
         ${getButtonStyles()}
-        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
       `}
+      style={{
+        background: getButtonBackground(),
+        padding: '10px 20px',
+        minWidth: '140px',
+        boxShadow: isRecognizing
+          ? '0 0 20px rgba(239,68,68,0.4)'
+          : '0 0 16px rgba(99,102,241,0.25)',
+        border: 'none',
+      }}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
@@ -242,22 +249,22 @@ export function VoiceInputButton({
     >
       <span className="flex items-center gap-2">
         {getIcon()}
-        <span className="hidden sm:inline">
+        <span>
           {state === 'error'
             ? 'Error'
             : state === 'processing'
               ? 'Processing...'
               : mode === 'push-to-talk'
-                ? 'Push to Talk'
-                : 'Continuous'}
+                ? isRecognizing ? 'Release to Send' : 'Hold to Speak'
+                : isRecognizing ? 'Stop' : 'Start Listening'}
         </span>
       </span>
 
-      {/* Pulsing animation indicator when recording (Requirement 15.2) */}
+      {/* Pulsing dot when recording */}
       {isRecognizing && state === 'recording' && (
         <span className="absolute -top-1 -right-1 flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{background:'#f87171'}}></span>
+          <span className="relative inline-flex rounded-full h-3 w-3" style={{background:'#ef4444'}}></span>
         </span>
       )}
     </button>

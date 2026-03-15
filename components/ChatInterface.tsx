@@ -167,6 +167,16 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       const voiceService = VoiceInputService.getInstance();
       voiceInputServiceRef.current = voiceService;
 
+      // Initialize with Azure Speech credentials if available
+      try {
+        const { getAzureSpeechConfig } = await import('@/lib/env');
+        const speechConfig = getAzureSpeechConfig();
+        await voiceService.initialize(speechConfig);
+      } catch {
+        // Azure Speech not configured — voice input will show an error when attempted
+        console.warn('Azure Speech not configured, voice input will be unavailable');
+      }
+
       // Subscribe to recognition results
       const unsubscribeResults = voiceService.subscribeToResults((result) => {
         if (result.type === 'interim') {
@@ -789,8 +799,8 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
           <button
             onClick={() => setShowExportMenu(!showExportMenu)}
             disabled={messages.length === 0}
-            className="px-3 py-1.5 text-xs font-medium rounded-md disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-            style={{background:'rgba(255,255,255,0.06)',border:'1px solid var(--border)',color:'var(--text-primary)'}}
+            className="px-3 py-1.5 text-xs font-semibold rounded-md disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+            style={{background:'rgba(99,102,241,0.12)',border:'1px solid rgba(99,102,241,0.25)',color:'var(--accent-hover)'}}
             aria-label="Export conversation"
             aria-expanded={showExportMenu}
             aria-haspopup="menu"
@@ -828,8 +838,8 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
         {/* Import Button */}
         <button
           onClick={handleImportClick}
-          className="px-3 py-1.5 text-xs font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-          style={{background:'rgba(255,255,255,0.06)',border:'1px solid var(--border)',color:'var(--text-primary)'}}
+          className="px-3 py-1.5 text-xs font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+          style={{background:'rgba(99,102,241,0.12)',border:'1px solid rgba(99,102,241,0.25)',color:'var(--accent-hover)'}}
           aria-label="Import conversation"
         >
           ↑ Import

@@ -144,11 +144,12 @@ export class TTSService implements ITTSService {
       };
 
       // Call Azure Speech Repository to synthesize speech
-      // Pass isValidSSML flag to indicate whether to use SSML or plain text
+      // Pass isValidSSML flag and AudioManager's context to avoid creating a second AudioContext
       const result = await this.azureSpeechRepository.synthesize(
         processedText, 
         config, 
-        isValidSSML
+        isValidSSML,
+        (this.audioManager as any).audioContext ?? undefined
       );
 
       if (!result.success) {

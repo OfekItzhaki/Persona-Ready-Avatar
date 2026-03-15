@@ -231,7 +231,8 @@ export interface IAzureSpeechRepository {
   synthesize(
     text: string,
     config: SpeechConfig,
-    isSSML?: boolean
+    isSSML?: boolean,
+    audioContext?: AudioContext
   ): Promise<Result<SynthesisResult, SpeechError>>;
 }
 

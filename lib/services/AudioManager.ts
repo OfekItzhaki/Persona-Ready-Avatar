@@ -20,7 +20,7 @@ import { logger } from '@/lib/logger';
  * - Real-time audio level analysis
  */
 export class AudioManager implements IAudioManager {
-  private audioContext: AudioContext | null = null;
+  audioContext: AudioContext | null = null;
   private sourceNode: AudioBufferSourceNode | null = null;
   private gainNode: GainNode | null = null;
   private analyserNode: AnalyserNode | null = null;

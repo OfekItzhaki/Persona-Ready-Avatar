@@ -33,6 +33,13 @@ export default function Home() {
   const setPlaybackState = useAppStore((state) => state.setPlaybackState);
   const setSelectedAvatar = useAppStore((state) => state.setSelectedAvatar);
 
+  // Stop TTS immediately when voice is toggled off
+  useEffect(() => {
+    if (!ttsEnabled && ttsService) {
+      ttsService.stop();
+    }
+  }, [ttsEnabled, ttsService]);
+
   useEffect(() => {
     initializeFocusIndicators();
   }, []);

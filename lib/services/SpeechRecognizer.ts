@@ -116,11 +116,10 @@ export class SpeechRecognizer implements ISpeechRecognizer {
         this.recognizer.close();
         this.recognizer = null;
       }
-      this.recognizingCallback = null;
-      this.recognizedCallback = null;
-      this.errorCallback = null;
-      this.sessionStartedCallback = null;
-      this.sessionStoppedCallback = null;
+      // NOTE: do NOT null out callbacks here — the Azure SDK fires the final
+      // `recognized` event asynchronously after stopContinuousRecognitionAsync
+      // resolves. Nulling them here would silently drop the last utterance.
+      // Callbacks are intentionally kept alive until the next configure() call.
     } catch { /* ignore disposal errors */ }
   }
 

@@ -31,12 +31,14 @@ export class AzureSpeechRepository implements IAzureSpeechRepository {
    * @param text - The text to synthesize (can be SSML or plain text)
    * @param config - Speech configuration (voice, language, output format, rate, pitch)
    * @param isSSML - Whether the text is already valid SSML (default: false)
+   * @param audioContext - Optional AudioContext to use for decoding (avoids creating a second context)
    * @returns Result containing SynthesisResult (audio buffer + visemes) or SpeechError
    */
   async synthesize(
     text: string,
     config: SpeechConfig,
-    isSSML: boolean = false
+    isSSML: boolean = false,
+    audioContext?: AudioContext
   ): Promise<Result<SynthesisResult, SpeechError>> {
     logger.info('Starting speech synthesis', {
       component: 'AzureSpeechRepository',
@@ -117,7 +119,7 @@ export class AzureSpeechRepository implements IAzureSpeechRepository {
       this.calculateVisemeDurations(visemes);
 
       // Convert audio data to AudioBuffer
-      const audioBuffer = await this.convertToAudioBuffer(result.data);
+      const audioBuffer = await this.convertToAudioBuffer(result.data, audioContext);
 
       logger.info('Speech synthesis completed successfully', {
         component: 'AzureSpeechRepository',
@@ -366,14 +368,14 @@ export class AzureSpeechRepository implements IAzureSpeechRepository {
    * Convert Azure audio data (ArrayBuffer) to Web Audio API AudioBuffer
    * 
    * @param audioData - Raw audio data from Azure SDK
+   * @param existingContext - Optional existing AudioContext to reuse (avoids double-play)
    * @returns Web Audio API AudioBuffer
    */
-  private async convertToAudioBuffer(audioData: ArrayBuffer): Promise<AudioBuffer> {
-    // Create audio context
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  private async convertToAudioBuffer(audioData: ArrayBuffer, existingContext?: AudioContext): Promise<AudioBuffer> {
+    // Reuse provided context or create a temporary one for decoding only
+    const audioContext = existingContext || new (window.AudioContext || (window as any).webkitAudioContext)();
 
     try {
-      // Decode audio data
       const audioBuffer = await audioContext.decodeAudioData(audioData.slice(0));
 
       logger.debug('Audio data converted to AudioBuffer', {

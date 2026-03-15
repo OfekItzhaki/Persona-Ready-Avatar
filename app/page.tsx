@@ -24,6 +24,7 @@ import type { Agent } from '@/types';
 export default function Home() {
   const [ttsService, setTtsService] = useState<TTSService | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(false);
 
   const selectedAgentId = useAppStore((state) => state.selectedAgentId);
   const { data: agents } = useAgents();
@@ -162,6 +163,41 @@ export default function Home() {
               <PersonaSwitcherErrorBoundary>
                 <PersonaSwitcher />
               </PersonaSwitcherErrorBoundary>
+              {/* Agent voice toggle */}
+              <button
+                onClick={() => setTtsEnabled(v => !v)}
+                title={ttsEnabled ? 'Mute agent voice' : 'Enable agent voice'}
+                aria-label={ttsEnabled ? 'Mute agent voice' : 'Enable agent voice'}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  background: ttsEnabled ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.05)',
+                  border: ttsEnabled ? '1px solid rgba(99,102,241,0.4)' : '1px solid var(--border)',
+                  color: ttsEnabled ? 'var(--accent-hover)' : 'var(--text-muted)',
+                }}
+              >
+                {ttsEnabled ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <line x1="23" y1="9" x2="17" y2="15"/>
+                    <line x1="17" y1="9" x2="23" y2="15"/>
+                  </svg>
+                )}
+                {ttsEnabled ? 'Voice On' : 'Voice Off'}
+              </button>
             </div>
           </div>
         </header>
@@ -190,7 +226,7 @@ export default function Home() {
             <section className="chat-panel">
               <ChatInterfaceErrorBoundary>
                 <ChatInterface
-                  ttsService={ttsService || undefined}
+                  ttsService={ttsEnabled && ttsService ? ttsService : undefined}
                   selectedAgent={selectedAgent}
                   className="chat-interface"
                 />

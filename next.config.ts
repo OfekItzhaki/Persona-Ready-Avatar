@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' data:",
               "connect-src 'self' ws://localhost:* wss://localhost:* https://cognitiveservices.azure.com https://*.cognitiveservices.azure.com wss://*.stt.speech.microsoft.com https://*.stt.speech.microsoft.com",
               "media-src 'self' blob:",
-              "worker-src 'self' blob:",
+              "worker-src 'self' blob: data:",
             ].join('; '),
           },
           {

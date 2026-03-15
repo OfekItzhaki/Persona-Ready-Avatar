@@ -102,8 +102,8 @@ export class AzureSpeechRepository implements IAzureSpeechRepository {
           component: 'AzureSpeechRepository',
         });
       } else {
-        // Build SSML if rate or pitch are specified
-        const needsSSML = !!config.rate || !!config.pitch;
+        // Build SSML only when rate or pitch actually differ from defaults
+        const needsSSML = (!!config.rate && config.rate !== 1.0) || (!!config.pitch && config.pitch !== 0);
         ssmlText = needsSSML ? this.buildSSML(text, config) : text;
         useSSML = needsSSML;
       }

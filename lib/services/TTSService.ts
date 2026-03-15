@@ -40,6 +40,7 @@ export class TTSService implements ITTSService {
   private preferencesService: PreferencesService;
   private visemeSubscribers: Set<(viseme: VisemeEvent) => void> = new Set();
   private isActive: boolean = false;
+  private synthesisInFlight: boolean = false;
 
   constructor(
     azureSpeechRepository: IAzureSpeechRepository,
@@ -80,6 +81,13 @@ export class TTSService implements ITTSService {
     });
 
     try {
+      // Guard against concurrent synthesis calls
+      if (this.synthesisInFlight) {
+        logger.warn('Synthesis already in flight, ignoring duplicate call', { component: 'TTSService' });
+        return { success: false, error: { type: 'SYNTHESIS_FAILED', details: 'Already synthesizing' } };
+      }
+      this.synthesisInFlight = true;
+
       // Stop any existing playback
       this.stop();
 
@@ -155,6 +163,7 @@ export class TTSService implements ITTSService {
       if (!result.success) {
         // Transform SpeechError to TTSError
         const ttsError = this.transformSpeechError(result.error);
+        this.synthesisInFlight = false;
         
         logger.error('Speech synthesis failed', {
           component: 'TTSService',
@@ -177,6 +186,7 @@ export class TTSService implements ITTSService {
 
       // Mark service as active
       this.isActive = true;
+      this.synthesisInFlight = false;
 
       // Forward viseme events to subscribers
       this.emitVisemeEvents(visemes);
@@ -197,6 +207,7 @@ export class TTSService implements ITTSService {
         data: audioBuffer,
       };
     } catch (error) {
+      this.synthesisInFlight = false;
       const ttsError = this.handleError(error);
       
       logger.error('Unexpected error during speech synthesis', {

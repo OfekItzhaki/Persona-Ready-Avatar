@@ -50,7 +50,7 @@ export default function Home() {
     try {
       const azureSpeechRepository = new AzureSpeechRepository();
       const audioManager = new AudioManager();
-      const visemeCoordinator = new VisemeCoordinator();
+      const visemeCoordinator = new VisemeCoordinator(audioManager.audioContext ?? undefined);
       const languageVoiceMapper = new LanguageVoiceMapper();
       const localStorageRepo = new LocalStorageRepository();
       const preferencesService = PreferencesService.initialize(

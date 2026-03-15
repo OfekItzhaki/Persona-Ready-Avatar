@@ -205,7 +205,7 @@ export function InputArea({
   const isSubmitDisabled = disabled || !inputValue.trim() || isOverLimit;
 
   return (
-    <form onSubmit={handleSubmit} className={`input-area border-t border-gray-300 p-4 ${className}`}>
+    <form onSubmit={handleSubmit} className={`input-area border-t p-4 ${className}`} style={{borderColor:'var(--border)',background:'var(--bg-secondary)'}}>
       <div className="flex flex-col gap-2">
         {/* Textarea Input (Requirement 2.1) */}
         <div className="input-container flex gap-2">
@@ -217,7 +217,8 @@ export function InputArea({
             disabled={disabled}
             placeholder={!isOnline ? 'You are offline. Messages will be queued.' : placeholder}
             rows={1}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed resize-none overflow-hidden min-h-[42px] max-h-[200px]"
+            className="flex-1 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed resize-none overflow-hidden min-h-[42px] max-h-[200px]"
+            style={{background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',color:'var(--text-primary)'}}
             aria-label="Message input"
             aria-describedby={`message-input-help${showCharCounter ? ' message-char-count' : ''}`}
             aria-invalid={!!validationError}
@@ -227,7 +228,8 @@ export function InputArea({
           <button
             type="submit"
             disabled={isSubmitDisabled}
-            className="send-button px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors self-end"
+            className="send-button px-6 py-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed transition-colors self-end"
+            style={{background: isSubmitDisabled ? 'var(--text-muted)' : 'var(--accent)'}}
             aria-label="Send message"
             title={disabled ? 'Sending...' : 'Send message'}
           >
@@ -238,7 +240,7 @@ export function InputArea({
         {/* Help Text and Character Counter */}
         <div className="flex justify-between items-center text-xs">
           {/* Help Text (Requirement 2.9, 36.6) */}
-          <p id="message-input-help" className="text-gray-500">
+          <p id="message-input-help" className="text-xs" style={{color:'var(--text-muted)'}}>
             Press Enter to send, Shift+Enter for new line
           </p>
 

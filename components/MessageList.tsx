@@ -489,11 +489,15 @@ export const MessageList = memo(function MessageList({
         onMouseLeave={() => setHoveredMessageId(null)}
       >
         <div
-          className={`max-w-[80%] rounded-lg px-4 py-2 ${
+          className={`max-w-[80%] rounded-2xl px-4 py-2 ${
             isUserMessage
-              ? 'bg-blue-600 text-white' // User message styling (Requirement 1.2)
-              : 'bg-gray-200 text-gray-900' // Agent message styling (Requirement 1.2)
+              ? 'rounded-br-sm'
+              : 'rounded-bl-sm'
           }`}
+          style={{
+            background: isUserMessage ? 'var(--accent)' : 'var(--bg-card-hover)',
+            color: 'var(--text-primary)',
+          }}
           role="article"
           aria-label={`${isUserMessage ? 'Your' : 'Agent'} message`}
         >
@@ -504,13 +508,14 @@ export const MessageList = memo(function MessageList({
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
                 onKeyDown={(e) => handleEditKeyDown(e, message.id)}
-                className="w-full min-h-[60px] px-2 py-1 text-sm text-gray-900 bg-white border border-gray-300 rounded resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full min-h-[60px] px-2 py-1 text-sm rounded resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                style={{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',color:'var(--text-primary)'}}
                 maxLength={MAX_MESSAGE_LENGTH}
                 aria-label="Edit message"
                 autoFocus
               />
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-blue-200">
+                <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>
                   {editContent.length}/{MAX_MESSAGE_LENGTH}
                 </span>
                 <div className="flex gap-2">
@@ -546,7 +551,8 @@ export const MessageList = memo(function MessageList({
                     {canEdit && (
                       <button
                         onClick={() => handleStartEdit(message)}
-                        className="p-1 text-blue-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
+                        className="p-1 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded"
+                        style={{color:'rgba(255,255,255,0.5)'}}
                         aria-label="Edit message"
                       >
                         <svg
@@ -635,11 +641,8 @@ export const MessageList = memo(function MessageList({
                     {/* Delete button for all messages (Requirement 12.1, 12.4) */}
                     <button
                       onClick={() => handleStartDelete(message.id)}
-                      className={`p-1 ${
-                        isUserMessage
-                          ? 'text-blue-200 hover:text-white focus:ring-blue-300'
-                          : 'text-gray-500 hover:text-gray-700 focus:ring-gray-400'
-                      } focus:outline-none focus:ring-2 rounded`}
+                      className={`p-1 focus:outline-none focus:ring-2 rounded`}
+                      style={{color: isUserMessage ? 'rgba(255,255,255,0.5)' : 'var(--text-muted)'}}
                       aria-label="Delete message"
                     >
                       <svg
@@ -662,7 +665,8 @@ export const MessageList = memo(function MessageList({
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <p
-                  className={`text-xs ${isUserMessage ? 'text-blue-200' : 'text-gray-600'}`}
+                  className="text-xs"
+                  style={{color: isUserMessage ? 'rgba(255,255,255,0.5)' : 'var(--text-muted)'}}
                   title={getFullTimestamp(message.timestamp)}
                   aria-label={`Sent ${getFullTimestamp(message.timestamp)}`}
                 >
@@ -671,9 +675,8 @@ export const MessageList = memo(function MessageList({
                 {/* Edited indicator (Requirement 11.4) */}
                 {message.edited && message.editedAt && (
                   <span
-                    className={`text-xs italic ${
-                      isUserMessage ? 'text-blue-200' : 'text-gray-500'
-                    }`}
+                    className="text-xs italic"
+                    style={{color: isUserMessage ? 'rgba(255,255,255,0.4)' : 'var(--text-muted)'}}
                     title={`Edited ${getFullTimestamp(message.editedAt)}`}
                     aria-label={`Edited ${getFullTimestamp(message.editedAt)}`}
                   >
@@ -683,9 +686,8 @@ export const MessageList = memo(function MessageList({
                 {/* Queue status indicator (Requirement 33.2) */}
                 {message.queueStatus && (
                   <span
-                    className={`text-xs italic flex items-center gap-1 ${
-                      isUserMessage ? 'text-blue-200' : 'text-gray-500'
-                    }`}
+                    className="text-xs italic flex items-center gap-1"
+                    style={{color: isUserMessage ? 'rgba(255,255,255,0.4)' : 'var(--text-muted)'}}
                     aria-label={`Message status: ${message.queueStatus}`}
                   >
                     {message.queueStatus === 'pending' && (
@@ -779,7 +781,8 @@ export const MessageList = memo(function MessageList({
     return (
       <div className="flex justify-start">
         <div
-          className="max-w-[80%] rounded-lg px-4 py-2 bg-gray-200 text-gray-900"
+          className="max-w-[80%] rounded-2xl rounded-bl-sm px-4 py-2"
+          style={{background:'var(--bg-card-hover)',color:'var(--text-secondary)'}}
           role="status"
           aria-label="Agent is typing"
           aria-live="polite"
@@ -787,18 +790,9 @@ export const MessageList = memo(function MessageList({
           <div className="flex items-center gap-1">
             <span className="text-sm">Agent is typing</span>
             <div className="flex gap-1 ml-1">
-              <span
-                className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"
-                style={{ animationDelay: '0ms' }}
-              ></span>
-              <span
-                className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"
-                style={{ animationDelay: '150ms' }}
-              ></span>
-              <span
-                className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"
-                style={{ animationDelay: '300ms' }}
-              ></span>
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{background:'var(--text-muted)',animationDelay:'0ms'}}></span>
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{background:'var(--text-muted)',animationDelay:'150ms'}}></span>
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{background:'var(--text-muted)',animationDelay:'300ms'}}></span>
             </div>
           </div>
         </div>
@@ -831,7 +825,7 @@ export const MessageList = memo(function MessageList({
 
       {/* Search and Filter UI - Only show when there are messages */}
       {messages.length > 0 && (
-        <div className="p-4 border-b border-gray-200 space-y-3">
+        <div className="p-4 border-b space-y-3" style={{borderColor:'var(--border)',background:'var(--bg-secondary)'}}>
           {/* Search input (Requirement 15.1) */}
           <div className="relative">
             <input
@@ -840,14 +834,16 @@ export const MessageList = memo(function MessageList({
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Search messages..."
-              className="search-input w-full px-4 py-2 pr-20 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="search-input w-full px-4 py-2 pr-20 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              style={{background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',color:'var(--text-primary)'}}
               aria-label="Search messages"
             />
             {/* Clear button (Requirement 15.8) */}
             {searchQuery && (
               <button
                 onClick={handleClearSearch}
-                className="search-clear-button absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                className="search-clear-button absolute right-2 top-1/2 -translate-y-1/2 p-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+              style={{color:'var(--text-muted)'}}
                 aria-label="Clear search"
               >
                 <svg
@@ -871,14 +867,15 @@ export const MessageList = memo(function MessageList({
           {/* Role filter and message count (Requirement 15.5, 15.6) */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <label htmlFor="role-filter" className="text-sm text-gray-600">
+              <label htmlFor="role-filter" className="text-sm" style={{color:'var(--text-muted)'}}>
                 Filter:
               </label>
               <select
                 id="role-filter"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-                className="filter-select px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="filter-select px-3 py-1 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                style={{background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',color:'var(--text-secondary)'}}
                 aria-label="Filter messages by role"
               >
                 <option value="all">All messages</option>
@@ -889,7 +886,7 @@ export const MessageList = memo(function MessageList({
 
             {/* Message count (Requirement 15.5) */}
             {(debouncedSearchQuery || roleFilter !== 'all') && (
-              <span className="text-sm text-gray-600">
+              <span className="text-sm" style={{color:'var(--text-muted)'}}>
                 {filteredMessages.length} {filteredMessages.length === 1 ? 'message' : 'messages'}
               </span>
             )}
@@ -912,7 +909,8 @@ export const MessageList = memo(function MessageList({
           <div className="flex items-center justify-center h-full text-center px-4">
             <div className="max-w-sm">
               <svg
-                className="w-16 h-16 mx-auto text-gray-400 mb-4"
+                className="w-16 h-16 mx-auto mb-4"
+                style={{color:'var(--text-muted)'}}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -924,14 +922,14 @@ export const MessageList = memo(function MessageList({
                   d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                 />
               </svg>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
+              <p className="text-sm" style={{color:'var(--text-muted)'}}>
                 No messages yet. Start a conversation!
               </p>
             </div>
           </div>
         ) : filteredMessages.length === 0 ? (
           // No results message (Requirement 15.7)
-          <div className="text-center text-gray-500 mt-8">
+          <div className="text-center mt-8" style={{color:'var(--text-muted)'}}>
             <p>No messages match your search.</p>
           </div>
         ) : shouldUseVirtualization ? (
@@ -987,20 +985,22 @@ export const MessageList = memo(function MessageList({
           aria-describedby="delete-dialog-description"
         >
           <div
-            className="delete-dialog bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+            className="delete-dialog rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+            style={{background:'var(--bg-card)',border:'1px solid var(--border)'}}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={handleDeleteDialogKeyDown}
           >
-            <h2 id="delete-dialog-title" className="text-lg font-semibold text-gray-900 mb-2">
+            <h2 id="delete-dialog-title" className="text-lg font-semibold mb-2" style={{color:'var(--text-primary)'}}>
               Delete Message
             </h2>
-            <p id="delete-dialog-description" className="text-sm text-gray-600 mb-6">
+            <p id="delete-dialog-description" className="text-sm mb-6" style={{color:'var(--text-secondary)'}}>
               Are you sure you want to delete this message? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={handleCancelDelete}
-                className="delete-dialog-button px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                className="delete-dialog-button px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                style={{background:'rgba(255,255,255,0.06)',color:'var(--text-secondary)'}}
                 aria-label="Cancel deletion"
               >
                 Cancel

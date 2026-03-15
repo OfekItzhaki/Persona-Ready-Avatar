@@ -780,13 +780,14 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       )}
 
       {/* Export/Import Controls (Requirements 13, 14) */}
-      <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+      <div className="flex items-center gap-3 p-4 border-b" style={{background:'var(--bg-secondary)',borderColor:'var(--border)'}}>
         {/* Export Button with Format Selection */}
         <div className="relative">
           <button
             onClick={() => setShowExportMenu(!showExportMenu)}
             disabled={messages.length === 0}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            className="px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+            style={{background:'rgba(255,255,255,0.05)',border:'1px solid var(--border)',color:'var(--text-secondary)'}}
             aria-label="Export conversation"
             aria-expanded={showExportMenu}
             aria-haspopup="menu"
@@ -796,17 +797,23 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
 
           {/* Export Format Menu */}
           {showExportMenu && (
-            <div className="absolute top-full left-0 mt-2 w-40 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 overflow-hidden">
+            <div className="absolute top-full left-0 mt-2 w-40 rounded-lg shadow-lg z-10 overflow-hidden" style={{background:'var(--bg-card-hover)',border:'1px solid var(--border)'}}>
               <button
                 onClick={() => handleExport('json')}
-                className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-600 transition-colors"
+                className="w-full px-4 py-3 text-left text-sm focus:outline-none transition-colors"
+                style={{color:'var(--text-secondary)'}}
+                onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,0.06)')}
+                onMouseLeave={e=>(e.currentTarget.style.background='')}
                 role="menuitem"
               >
                 📄 JSON
               </button>
               <button
                 onClick={() => handleExport('text')}
-                className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-600 transition-colors"
+                className="w-full px-4 py-3 text-left text-sm focus:outline-none transition-colors"
+                style={{color:'var(--text-secondary)'}}
+                onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,0.06)')}
+                onMouseLeave={e=>(e.currentTarget.style.background='')}
                 role="menuitem"
               >
                 📝 Plain Text
@@ -818,7 +825,8 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
         {/* Import Button */}
         <button
           onClick={handleImportClick}
-          className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+          className="px-4 py-2 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+          style={{background:'rgba(255,255,255,0.05)',border:'1px solid var(--border)',color:'var(--text-secondary)'}}
           aria-label="Import conversation"
         >
           📤 Import
@@ -838,11 +846,11 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       {/* Import Mode Dialog (Requirement 14.7) */}
       {showImportDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <div className="rounded-lg p-6 max-w-md w-full mx-4 shadow-xl" style={{background:'var(--bg-card)',border:'1px solid var(--border)'}}>
+            <h3 className="text-lg font-semibold mb-4" style={{color:'var(--text-primary)'}}>
               Import Conversation
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-sm mb-6" style={{color:'var(--text-secondary)'}}>
               You have an existing conversation. How would you like to import?
             </p>
             <div className="flex flex-col gap-3">
@@ -854,13 +862,15 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
               </button>
               <button
                 onClick={() => handleImportModeSelect('replace')}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                style={{background:'rgba(255,255,255,0.05)',border:'1px solid var(--border)',color:'var(--text-secondary)'}}
               >
                 Replace Current Conversation
               </button>
               <button
                 onClick={() => setShowImportDialog(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 focus:outline-none"
+                className="px-4 py-2 text-sm font-medium focus:outline-none"
+                style={{color:'var(--text-muted)'}}
               >
                 Cancel
               </button>
@@ -880,9 +890,9 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       />
 
       {/* Input Mode Toggle (Requirement 7.1) */}
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800">
+      <div className="border-t p-4" style={{background:'var(--bg-secondary)',borderColor:'var(--border)'}}>
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Input Mode:</span>
+          <span className="text-sm font-medium" style={{color:'var(--text-secondary)'}}>Input Mode:</span>
           <InputModeToggle
             currentMode={inputMode}
             onModeChange={handleModeChange}
@@ -957,7 +967,7 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
 
       {/* Voice Input Controls - Shown when voice mode is active (Requirement 7.2) */}
       {inputMode === 'voice' && isBrowserCompatible && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-6 space-y-4 bg-white dark:bg-gray-900">
+        <div className="border-t p-6 space-y-4" style={{background:'var(--bg-card)',borderColor:'var(--border)'}}>
           {/* Interim Results Display (Requirement 5.1, 15.3) */}
           <InterimResultDisplay
             text={interimText}
@@ -986,7 +996,8 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
             <div className="flex items-center gap-3">
               <label
                 htmlFor="recognition-mode"
-                className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="text-sm font-medium"
+                style={{color:'var(--text-secondary)'}}
               >
                 Mode:
               </label>
@@ -995,7 +1006,8 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
                 value={recognitionMode}
                 onChange={(e) => setRecognitionMode(e.target.value as RecognitionMode)}
                 disabled={isRecognizing}
-                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 text-sm border rounded-lg disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                style={{background:'rgba(255,255,255,0.05)',border:'1px solid var(--border)',color:'var(--text-primary)'}}
               >
                 <option value="push-to-talk">🎤 Push-to-Talk</option>
                 <option value="continuous">🔄 Continuous</option>
@@ -1004,7 +1016,7 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
           </div>
 
           {/* Voice Input Instructions */}
-          <div className="text-sm text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="text-sm p-3 rounded-lg" style={{color:'var(--text-muted)',background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.15)'}}>
             {recognitionMode === 'push-to-talk' ? (
               <p>
                 💡 <strong>Tip:</strong> Hold the button to speak, release to send your message.

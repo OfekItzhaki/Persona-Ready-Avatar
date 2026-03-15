@@ -94,7 +94,7 @@ export function InputModeToggle({ currentMode, onModeChange, disabled }: InputMo
         transition-all duration-200
         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        ${currentMode === 'voice' ? 'bg-blue-600' : 'bg-gray-400 dark:bg-gray-600'}
+        ${currentMode === 'voice' ? 'bg-indigo-500' : 'bg-gray-600'}
       `}
       aria-label={getAriaLabel()}
       aria-pressed={currentMode === 'voice'}

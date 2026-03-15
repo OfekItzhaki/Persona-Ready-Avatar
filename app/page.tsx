@@ -8,8 +8,7 @@ import { useAppStore } from '@/lib/store/useAppStore';
 import { useAgents } from '@/lib/hooks/useReactQuery';
 import { PersonaSwitcher } from '@/components/PersonaSwitcher';
 import { PersonaSwitcherErrorBoundary } from '@/components/ErrorBoundary';
-import { ImageAvatar } from '@/components/ImageAvatar';
-import { getAvatarConfig } from '@/config/avatars';
+import AvatarSystem from '@/components/AvatarSystem';
 import { getAvatarConfig as getEnvAvatarConfig } from '@/lib/env';
 import { TTSService } from '@/lib/services/TTSService';
 import { AzureSpeechRepository } from '@/lib/repositories/AzureSpeechRepository';
@@ -29,16 +28,9 @@ export default function Home() {
   const selectedAgentId = useAppStore((state) => state.selectedAgentId);
   const { data: agents } = useAgents();
   const selectedAgent = agents?.find((agent: Agent) => agent.id === selectedAgentId);
-  const playbackState = useAppStore((state) => state.playbackState);
   const setCurrentViseme = useAppStore((state) => state.setCurrentViseme);
   const setPlaybackState = useAppStore((state) => state.setPlaybackState);
   const setSelectedAvatar = useAppStore((state) => state.setSelectedAvatar);
-
-  // Get avatar config for selected agent
-  const avatarConfig = getAvatarConfig(selectedAgentId || undefined);
-  const isSpeaking = playbackState === 'playing';
-
-  const selectedAvatarId = useAppStore((state) => state.selectedAvatarId);
 
   useEffect(() => {
     initializeFocusIndicators();
@@ -208,11 +200,7 @@ export default function Home() {
                   }}
                 >
                   <div style={{ width: '250px', height: '250px', position: 'relative' }}>
-                    <ImageAvatar
-                      imageUrl={avatarConfig.imageUrl}
-                      agentName={selectedAgent?.name || avatarConfig.name || 'AI Assistant'}
-                      isSpeaking={isSpeaking}
-                    />
+                    <AvatarSystem />
                   </div>
                 </div>
 

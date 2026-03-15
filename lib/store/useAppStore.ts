@@ -88,6 +88,12 @@ interface AppState {
   setAvatarLoadingState: (state: AvatarLoadingState) => void;
   setAvatarError: (error: AvatarLoadError | null) => void;
   retryAvatarLoad: () => void;
+
+  // Photorealistic avatar state (Requirements 17.1–17.6)
+  avatarMode: 'did' | 'glb' | 'none';
+  setAvatarMode: (mode: 'did' | 'glb' | 'none') => void;
+  didVideoUrl: string | null;
+  setDidVideoUrl: (url: string | null) => void;
 }
 
 /**
@@ -170,9 +176,7 @@ export const useAppStore = create<AppState>((set) => ({
     }),
   updateMessage: (messageId: string, updates: Partial<ChatMessage>) =>
     set((state) => ({
-      messages: state.messages.map((msg) =>
-        msg.id === messageId ? { ...msg, ...updates } : msg
-      ),
+      messages: state.messages.map((msg) => (msg.id === messageId ? { ...msg, ...updates } : msg)),
     })),
   deleteMessage: (messageId: string) =>
     set((state) => ({
@@ -294,8 +298,7 @@ export const useAppStore = create<AppState>((set) => ({
       consecutiveTTSFailures: 0,
       ttsTextOnlyMode: false,
     }),
-  setTTSTextOnlyMode: (enabled: boolean) =>
-    set({ ttsTextOnlyMode: enabled }),
+  setTTSTextOnlyMode: (enabled: boolean) => set({ ttsTextOnlyMode: enabled }),
 
   // Avatar system state (Ready Player Me integration)
   selectedAvatarId: 'default-1',
@@ -304,11 +307,11 @@ export const useAppStore = create<AppState>((set) => ({
   availableAvatars: (() => {
     // Initialize available avatars from environment configuration
     const avatars: AvatarOption[] = [];
-    
+
     const avatar1Url = process.env.NEXT_PUBLIC_AVATAR_DEFAULT_1;
     const avatar2Url = process.env.NEXT_PUBLIC_AVATAR_DEFAULT_2;
     const avatar3Url = process.env.NEXT_PUBLIC_AVATAR_DEFAULT_3;
-    
+
     if (avatar1Url) {
       avatars.push({
         id: 'default-1',
@@ -317,7 +320,7 @@ export const useAppStore = create<AppState>((set) => ({
         description: 'Professional avatar option 1',
       });
     }
-    
+
     if (avatar2Url) {
       avatars.push({
         id: 'default-2',
@@ -326,7 +329,7 @@ export const useAppStore = create<AppState>((set) => ({
         description: 'Professional avatar option 2',
       });
     }
-    
+
     if (avatar3Url) {
       avatars.push({
         id: 'default-3',
@@ -335,7 +338,7 @@ export const useAppStore = create<AppState>((set) => ({
         description: 'Professional avatar option 3',
       });
     }
-    
+
     // Fallback to default if no environment variables set
     if (avatars.length === 0) {
       avatars.push({
@@ -345,7 +348,7 @@ export const useAppStore = create<AppState>((set) => ({
         description: 'Default avatar',
       });
     }
-    
+
     return avatars;
   })(),
   setSelectedAvatar: (id: string) => set({ selectedAvatarId: id }),
@@ -356,4 +359,10 @@ export const useAppStore = create<AppState>((set) => ({
       avatarError: null,
       avatarLoadingState: 'idle',
     }),
+
+  // Photorealistic avatar state (Requirements 17.1–17.6)
+  avatarMode: 'none',
+  setAvatarMode: (mode: 'did' | 'glb' | 'none') => set({ avatarMode: mode }),
+  didVideoUrl: null,
+  setDidVideoUrl: (url: string | null) => set({ didVideoUrl: url }),
 }));

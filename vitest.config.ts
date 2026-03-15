@@ -35,6 +35,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './'),
+      // three.js package.json is missing in this environment; point to the build entry
+      three: path.resolve(__dirname, 'node_modules/three/build/three.cjs'),
     },
   },
 });

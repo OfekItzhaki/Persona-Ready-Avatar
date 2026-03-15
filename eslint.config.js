@@ -4,6 +4,7 @@ import typescriptParser from '@typescript-eslint/parser';
 import prettier from 'eslint-config-prettier';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
+import nextPlugin from '@next/eslint-plugin-next';
 
 export default [
   js.configs.recommended,
@@ -31,12 +32,38 @@ export default [
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        Buffer: 'readonly',
+        Response: 'readonly',
+        Request: 'readonly',
+        FormData: 'readonly',
+        Blob: 'readonly',
+        File: 'readonly',
+        HTMLVideoElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLElement: 'readonly',
+        sessionStorage: 'readonly',
+        localStorage: 'readonly',
+        AudioContext: 'readonly',
+        AudioBuffer: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        FrameRequestCallback: 'readonly',
+        global: 'readonly',
+        globalThis: 'readonly',
+        RequestInit: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        AbortController: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        crypto: 'readonly',
       },
     },
     plugins: {
       '@typescript-eslint': typescript,
       react,
       'react-hooks': reactHooks,
+      '@next/next': nextPlugin,
     },
     rules: {
       ...typescript.configs.recommended.rules,
@@ -58,6 +85,8 @@ export default [
       ],
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      '@next/next/no-img-element': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
     },
     settings: {
       react: {

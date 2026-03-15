@@ -1,12 +1,13 @@
-import { IVisemeCoordinator, VisemeData, VisemeEvent } from '@/types';
+import { IVisemeCoordinator, VisemeData, VisemeEvent, VISEME_BLENDSHAPE_MAP } from '@/types';
 import { logger } from '@/lib/logger';
+import * as THREE from 'three';
 
 /**
  * VisemeCoordinator
- * 
+ *
  * Synchronizes viseme animations with audio playback. Schedules viseme changes
  * based on audio timing and provides real-time viseme data for avatar animation.
- * 
+ *
  * Key Features:
  * - Schedules viseme animations based on audio timing
  * - Uses requestAnimationFrame for smooth 60 FPS updates
@@ -23,20 +24,37 @@ export class VisemeCoordinator implements IVisemeCoordinator {
   private currentViseme: VisemeData | null = null;
   private isRunning: boolean = false;
   private visemeSubscribers: Set<(viseme: VisemeData) => void> = new Set();
+  private avatarMesh: THREE.Mesh | null = null;
 
   constructor(audioContext?: AudioContext) {
     // Use provided AudioContext or create a new one
-    this.audioContext = audioContext || new (window.AudioContext || (window as any).webkitAudioContext)();
-    
+    this.audioContext =
+      audioContext ||
+      new (
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      )();
+
     logger.info('VisemeCoordinator initialized', {
       hasAudioContext: !!this.audioContext,
     });
   }
 
   /**
+   * Set the avatar mesh for blendshape morph target application.
+   * Pass null to clear the stored mesh reference.
+   *
+   * @param mesh - THREE.Mesh with morphTargetDictionary/morphTargetInfluences, or null
+   */
+  setModel(mesh: THREE.Mesh | null): void {
+    this.avatarMesh = mesh;
+    logger.info('VisemeCoordinator: avatar mesh updated', { hasMesh: !!mesh });
+  }
+
+  /**
    * Start viseme coordination
    * Schedules viseme animations based on audio timing
-   * 
+   *
    * @param audioBuffer - The audio buffer being played (used for duration reference)
    * @param visemes - Array of viseme events with timing information
    */
@@ -88,6 +106,17 @@ export class VisemeCoordinator implements IVisemeCoordinator {
       duration: 0,
     });
 
+    // Zero out all morph target influences on the stored mesh
+    if (this.avatarMesh?.morphTargetDictionary && this.avatarMesh.morphTargetInfluences) {
+      const dict = this.avatarMesh.morphTargetDictionary;
+      for (const key of Object.keys(dict)) {
+        const index = dict[key];
+        if (index !== undefined) {
+          this.avatarMesh.morphTargetInfluences[index] = 0;
+        }
+      }
+    }
+
     // Clear state
     this.visemes = [];
     this.startTime = 0;
@@ -106,7 +135,7 @@ export class VisemeCoordinator implements IVisemeCoordinator {
   /**
    * Subscribe to viseme change events
    * Returns unsubscribe function
-   * 
+   *
    * @param callback - Function to call when viseme changes
    * @returns Unsubscribe function
    */
@@ -183,7 +212,7 @@ export class VisemeCoordinator implements IVisemeCoordinator {
   /**
    * Find the appropriate viseme for the given playback time
    * Uses binary search for efficient lookup
-   * 
+   *
    * @param timeMs - Current playback time in milliseconds
    * @returns The viseme event at the given time, or null if none found
    */
@@ -203,8 +232,8 @@ export class VisemeCoordinator implements IVisemeCoordinator {
       const nextViseme = i < this.visemes.length - 1 ? this.visemes[i + 1] : null;
 
       // Calculate end time for this viseme
-      const endTime = nextViseme 
-        ? nextViseme.audioOffset 
+      const endTime = nextViseme
+        ? nextViseme.audioOffset
         : viseme.audioOffset + (viseme.duration || 100); // Default 100ms if no next viseme
 
       // Check if current time falls within this viseme's range
@@ -226,12 +255,36 @@ export class VisemeCoordinator implements IVisemeCoordinator {
   }
 
   /**
-   * Update current viseme and notify subscribers
-   * 
+   * Update current viseme and notify subscribers.
+   * Also applies the corresponding blendshape to the stored avatar mesh.
+   *
    * @param viseme - The new viseme data
    */
   private updateCurrentViseme(viseme: VisemeData): void {
     this.currentViseme = viseme;
+
+    // Apply blendshape to the avatar mesh if one is set
+    if (this.avatarMesh?.morphTargetDictionary && this.avatarMesh.morphTargetInfluences) {
+      const dict = this.avatarMesh.morphTargetDictionary;
+      const influences = this.avatarMesh.morphTargetInfluences;
+
+      // Zero out all mouth blendshapes first
+      for (const blendshapeName of Object.values(VISEME_BLENDSHAPE_MAP)) {
+        const index = dict[blendshapeName];
+        if (index !== undefined) {
+          influences[index] = 0;
+        }
+      }
+
+      // Activate the target blendshape (skip silence / viseme 0)
+      const targetBlendshape = VISEME_BLENDSHAPE_MAP[viseme.visemeId];
+      if (targetBlendshape && viseme.visemeId !== 0) {
+        const index = dict[targetBlendshape];
+        if (index !== undefined) {
+          influences[index] = 1;
+        }
+      }
+    }
 
     // Notify all subscribers
     this.visemeSubscribers.forEach((callback) => {

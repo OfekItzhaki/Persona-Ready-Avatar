@@ -124,7 +124,7 @@ export type DomainError = ApiError | TTSError | SpeechError | ValidationError;
 
 // State Types
 
-export type PlaybackState = 'idle' | 'playing' | 'paused' | 'stopped';
+export type PlaybackState = 'idle' | 'loading' | 'playing' | 'paused' | 'stopped';
 
 // Enhanced State Types for Requirements 3-9, 22-23, 32-34
 

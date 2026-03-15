@@ -91,17 +91,17 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
   const selectedAgentRef = useRef(selectedAgent);
   useEffect(() => { selectedAgentRef.current = selectedAgent; }, [selectedAgent]);
 
-  // Keep a ref to ttsService and sendMessage to avoid stale closures in voice callbacks
-  const ttsServiceRef = useRef(ttsService);
-  useEffect(() => { ttsServiceRef.current = ttsService; }, [ttsService]);
-  const sendMessageRef = useRef(sendMessage);
-  useEffect(() => { sendMessageRef.current = sendMessage; }, [sendMessage]);
-
   // Screen reader announcement state (Requirement 10.2, 10.3, 10.5)
   const [screenReaderAnnouncement, setScreenReaderAnnouncement] = useState('');
 
   // Use mutation hook for message submission
   const { mutate: sendMessage, isPending } = useSendMessage();
+
+  // Keep refs to avoid stale closures in voice callbacks
+  const ttsServiceRef = useRef(ttsService);
+  useEffect(() => { ttsServiceRef.current = ttsService; }, [ttsService]);
+  const sendMessageRef = useRef(sendMessage);
+  useEffect(() => { sendMessageRef.current = sendMessage; }, [sendMessage]);
 
   /**
    * Initialize OfflineQueueService and set up message sending callback

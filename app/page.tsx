@@ -33,9 +33,17 @@ export default function Home() {
   const setPlaybackState = useAppStore((state) => state.setPlaybackState);
   const setSelectedAvatar = useAppStore((state) => state.setSelectedAvatar);
 
-  // Stop TTS immediately when voice is toggled off
+  // Mute/unmute AudioManager when the voice toggle changes.
+  // We always pass ttsService to ChatInterface so voice-input mode can trigger
+  // TTS automatically; the toggle just controls whether audio is audible.
   useEffect(() => {
-    if (!ttsEnabled && ttsService) {
+    if (!ttsService) return;
+    const audioManager = (ttsService as any).audioManager;
+    if (!audioManager) return;
+    if (ttsEnabled) {
+      audioManager.unmute();
+    } else {
+      audioManager.mute();
       ttsService.stop();
     }
   }, [ttsEnabled, ttsService]);
@@ -87,6 +95,8 @@ export default function Home() {
 
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTtsService(tts);
+      // Start muted — user must explicitly enable voice
+      tts['audioManager']?.mute?.();
       setIsInitialized(true);
       logger.info('Application services initialized successfully', { component: 'Home' });
 
@@ -233,7 +243,7 @@ export default function Home() {
             <section className="chat-panel">
               <ChatInterfaceErrorBoundary>
                 <ChatInterface
-                  ttsService={ttsEnabled && ttsService ? ttsService : undefined}
+                  ttsService={ttsService ?? undefined}
                   selectedAgent={selectedAgent}
                   className="chat-interface"
                 />

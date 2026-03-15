@@ -89,7 +89,11 @@ export class SpeechRecognizer implements ISpeechRecognizer {
           (error) => reject(new Error(`Failed to stop recognition: ${error}`))
         );
       });
-      this.dispose();
+      // Delay dispose so the Azure SDK has time to fire the final `recognized`
+      // event, which arrives asynchronously after stopContinuousRecognitionAsync
+      // resolves. Without this delay the recognizer is closed before the last
+      // utterance callback fires and the message is silently dropped.
+      setTimeout(() => this.dispose(), 500);
     } catch (error) {
       logger.error('Failed to stop continuous recognition', { component: 'SpeechRecognizer', error: error instanceof Error ? error.message : 'Unknown error' });
       throw error;

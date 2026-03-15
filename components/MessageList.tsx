@@ -825,7 +825,7 @@ export const MessageList = memo(function MessageList({
 
       {/* Search and Filter UI - Only show when there are messages */}
       {messages.length > 0 && (
-        <div className="p-4 border-b space-y-3" style={{borderColor:'var(--border)',background:'var(--bg-secondary)'}}>
+        <div className="px-3 py-2 border-b space-y-2" style={{borderColor:'var(--border)',background:'var(--bg-secondary)'}}>
           {/* Search input (Requirement 15.1) */}
           <div className="relative">
             <input
@@ -834,7 +834,7 @@ export const MessageList = memo(function MessageList({
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Search messages..."
-              className="search-input w-full px-4 py-2 pr-20 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="search-input w-full px-3 py-1.5 pr-16 text-xs rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
               style={{background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',color:'var(--text-primary)'}}
               aria-label="Search messages"
             />
@@ -874,7 +874,7 @@ export const MessageList = memo(function MessageList({
                 id="role-filter"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-                className="filter-select px-3 py-1 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="filter-select px-2 py-1 text-xs rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 style={{background:'rgba(255,255,255,0.04)',border:'1px solid var(--border)',color:'var(--text-secondary)'}}
                 aria-label="Filter messages by role"
               >
@@ -897,7 +897,7 @@ export const MessageList = memo(function MessageList({
       {/* Message display area */}
       <div
         ref={parentRef}
-        className={`message-list-container flex-1 overflow-y-auto p-4 ${className}`}
+        className={`message-list-container flex-1 overflow-y-auto px-4 py-3 ${className}`}
         role="log"
         aria-live="polite"
         aria-relevant="additions text"
@@ -966,7 +966,7 @@ export const MessageList = memo(function MessageList({
           </div>
         ) : (
           // Standard rendering for < 100 messages
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredMessages.map((message) => renderMessage(message))}
             {/* Typing indicator (Requirement 16.1, 16.3, 16.4) */}
             {showTypingIndicator && renderTypingIndicator()}

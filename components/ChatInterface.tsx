@@ -750,9 +750,10 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
         <div
           role="alert"
           aria-live="polite"
-          className="bg-orange-100 dark:bg-orange-900 border-b border-orange-300 dark:border-orange-700 px-4 py-2"
+          className="border-b px-4 py-2"
+          style={{background:'rgba(251,146,60,0.1)',borderColor:'rgba(251,146,60,0.2)'}}
         >
-          <p className="text-sm text-orange-800 dark:text-orange-200">
+          <p className="text-xs" style={{color:'#fdba74'}}>
             <span className="font-semibold">Warning:</span> Message queue is nearly full (
             {offlineQueue.length}/50). Messages will be sent when connection is restored.
           </p>
@@ -764,14 +765,16 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
         <div
           role="alert"
           aria-live="polite"
-          className="bg-red-100 dark:bg-red-900 border-b border-red-300 dark:border-red-700 px-4 py-2 flex items-center justify-between"
+          className="border-b px-4 py-2 flex items-center justify-between"
+          style={{background:'rgba(239,68,68,0.1)',borderColor:'rgba(239,68,68,0.2)'}}
         >
-          <p className="text-sm text-red-800 dark:text-red-200">
+          <p className="text-xs" style={{color:'#fca5a5'}}>
             <span className="font-semibold">Error:</span> Some messages failed to send.
           </p>
           <button
             onClick={handleRetryFailedMessages}
-            className="px-3 py-1 text-xs font-medium text-white bg-red-600 dark:bg-red-700 rounded hover:bg-red-700 dark:hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="px-2 py-1 text-xs font-medium text-white rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+            style={{background:'rgba(239,68,68,0.6)'}}
             aria-label="Retry failed messages"
           >
             Retry
@@ -780,43 +783,43 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       )}
 
       {/* Export/Import Controls (Requirements 13, 14) */}
-      <div className="flex items-center gap-3 p-4 border-b" style={{background:'var(--bg-secondary)',borderColor:'var(--border)'}}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b" style={{background:'var(--bg-secondary)',borderColor:'var(--border)'}}>
         {/* Export Button with Format Selection */}
         <div className="relative">
           <button
             onClick={() => setShowExportMenu(!showExportMenu)}
             disabled={messages.length === 0}
-            className="px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-            style={{background:'rgba(255,255,255,0.05)',border:'1px solid var(--border)',color:'var(--text-secondary)'}}
+            className="px-3 py-1.5 text-xs font-medium rounded-md disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+            style={{background:'rgba(255,255,255,0.06)',border:'1px solid var(--border)',color:'var(--text-primary)'}}
             aria-label="Export conversation"
             aria-expanded={showExportMenu}
             aria-haspopup="menu"
           >
-            📥 Export
+            ↓ Export
           </button>
 
           {/* Export Format Menu */}
           {showExportMenu && (
-            <div className="absolute top-full left-0 mt-2 w-40 rounded-lg shadow-lg z-10 overflow-hidden" style={{background:'var(--bg-card-hover)',border:'1px solid var(--border)'}}>
+            <div className="absolute top-full left-0 mt-1 w-36 rounded-lg shadow-xl z-10 overflow-hidden" style={{background:'var(--bg-card-hover)',border:'1px solid var(--border)'}}>
               <button
                 onClick={() => handleExport('json')}
-                className="w-full px-4 py-3 text-left text-sm focus:outline-none transition-colors"
-                style={{color:'var(--text-secondary)'}}
+                className="w-full px-3 py-2 text-left text-xs focus:outline-none transition-colors"
+                style={{color:'var(--text-primary)'}}
                 onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,0.06)')}
                 onMouseLeave={e=>(e.currentTarget.style.background='')}
                 role="menuitem"
               >
-                📄 JSON
+                JSON
               </button>
               <button
                 onClick={() => handleExport('text')}
-                className="w-full px-4 py-3 text-left text-sm focus:outline-none transition-colors"
-                style={{color:'var(--text-secondary)'}}
+                className="w-full px-3 py-2 text-left text-xs focus:outline-none transition-colors"
+                style={{color:'var(--text-primary)'}}
                 onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,0.06)')}
                 onMouseLeave={e=>(e.currentTarget.style.background='')}
                 role="menuitem"
               >
-                📝 Plain Text
+                Plain Text
               </button>
             </div>
           )}
@@ -825,11 +828,11 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
         {/* Import Button */}
         <button
           onClick={handleImportClick}
-          className="px-4 py-2 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-          style={{background:'rgba(255,255,255,0.05)',border:'1px solid var(--border)',color:'var(--text-secondary)'}}
+          className="px-3 py-1.5 text-xs font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+          style={{background:'rgba(255,255,255,0.06)',border:'1px solid var(--border)',color:'var(--text-primary)'}}
           aria-label="Import conversation"
         >
-          📤 Import
+          ↑ Import
         </button>
 
         {/* Hidden File Input */}
@@ -856,7 +859,8 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => handleImportModeSelect('append')}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                style={{background:'var(--accent)'}}
               >
                 Append to Current Conversation
               </button>
@@ -890,9 +894,9 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       />
 
       {/* Input Mode Toggle (Requirement 7.1) */}
-      <div className="border-t p-4" style={{background:'var(--bg-secondary)',borderColor:'var(--border)'}}>
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium" style={{color:'var(--text-secondary)'}}>Input Mode:</span>
+      <div className="border-t px-3 py-2" style={{background:'var(--bg-secondary)',borderColor:'var(--border)'}}>
+        <div className="flex items-center gap-2">
+          <span className="text-xs" style={{color:'var(--text-muted)'}}>Mode:</span>
           <InputModeToggle
             currentMode={inputMode}
             onModeChange={handleModeChange}
@@ -906,60 +910,16 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
         <div
           role="alert"
           aria-live="polite"
-          className="border-t border-gray-200 dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/20 p-4"
+          className="border-t p-4"
+          style={{background:'rgba(234,179,8,0.08)',borderColor:'rgba(234,179,8,0.2)'}}
         >
           <div className="flex items-start gap-3">
-            <svg
-              className="w-5 h-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                clipRule="evenodd"
-              />
+            <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true" style={{color:'#fbbf24'}}>
+              <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
             </svg>
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
-                Voice Input Not Available
-              </h3>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
-                {compatibilityMessage}
-              </p>
-              <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                Supported browsers:{' '}
-                <a
-                  href="https://www.google.com/chrome/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-yellow-800 dark:hover:text-yellow-200"
-                >
-                  Chrome 90+
-                </a>
-                ,{' '}
-                <a
-                  href="https://www.microsoft.com/edge"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-yellow-800 dark:hover:text-yellow-200"
-                >
-                  Edge 90+
-                </a>
-                ,{' '}
-                <a
-                  href="https://www.apple.com/safari/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-yellow-800 dark:hover:text-yellow-200"
-                >
-                  Safari 14+
-                </a>
-              </p>
-              <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
-                Text input is still available as a fallback.
-              </p>
+            <div>
+              <p className="text-xs font-semibold mb-1" style={{color:'#fde68a'}}>Voice Input Not Available</p>
+              <p className="text-xs" style={{color:'#fcd34d'}}>{compatibilityMessage}</p>
             </div>
           </div>
         </div>

@@ -205,7 +205,7 @@ export function InputArea({
   const isSubmitDisabled = disabled || !inputValue.trim() || isOverLimit;
 
   return (
-    <form onSubmit={handleSubmit} className={`input-area border-t p-4 ${className}`} style={{borderColor:'var(--border)',background:'var(--bg-secondary)'}}>
+    <form onSubmit={handleSubmit} className={`input-area border-t px-3 py-2 ${className}`} style={{borderColor:'var(--border)',background:'var(--bg-secondary)'}}>
       <div className="flex flex-col gap-2">
         {/* Textarea Input (Requirement 2.1) */}
         <div className="input-container flex gap-2">

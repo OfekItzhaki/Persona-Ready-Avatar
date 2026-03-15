@@ -108,18 +108,12 @@ export class SpeechRecognizer implements ISpeechRecognizer {
         this.mediaRecorder = null;
       }
       if (this.recognizer) {
-        this.recognizer.recognizing = undefined as any;
-        this.recognizer.recognized = undefined as any;
-        this.recognizer.canceled = undefined as any;
-        this.recognizer.sessionStarted = undefined as any;
-        this.recognizer.sessionStopped = undefined as any;
+        // Do NOT clear event handlers before close — the Azure SDK fires the
+        // final `recognized` event asynchronously after stopContinuousRecognitionAsync
+        // resolves. Clearing them here would drop the last utterance.
         this.recognizer.close();
         this.recognizer = null;
       }
-      // NOTE: do NOT null out callbacks here — the Azure SDK fires the final
-      // `recognized` event asynchronously after stopContinuousRecognitionAsync
-      // resolves. Nulling them here would silently drop the last utterance.
-      // Callbacks are intentionally kept alive until the next configure() call.
     } catch { /* ignore disposal errors */ }
   }
 

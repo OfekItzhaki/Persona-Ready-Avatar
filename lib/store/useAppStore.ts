@@ -207,7 +207,7 @@ export const useAppStore = create<AppState>((set) => ({
     volume: 100,
     isMuted: false,
     playbackSpeed: 1.0,
-    speechRate: 1.0,
+    speechRate: 1.15,
     speechPitch: 0,
     audioQuality: 'high',
     voiceInputMode: 'text',

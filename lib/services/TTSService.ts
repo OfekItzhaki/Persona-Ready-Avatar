@@ -186,7 +186,6 @@ export class TTSService implements ITTSService {
 
       // Mark service as active
       this.isActive = true;
-      this.synthesisInFlight = false;
 
       // Forward viseme events to subscribers
       this.emitVisemeEvents(visemes);
@@ -196,6 +195,9 @@ export class TTSService implements ITTSService {
 
       // Start audio playback
       await this.audioManager.play(audioBuffer);
+
+      // Clear in-flight flag only after playback starts
+      this.synthesisInFlight = false;
 
       logger.info('Audio playback started', {
         component: 'TTSService',

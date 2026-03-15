@@ -67,8 +67,11 @@ export class AzureSpeechRepository implements IAzureSpeechRepository {
       speechConfig.speechSynthesisVoiceName = config.voice;
       speechConfig.speechSynthesisOutputFormat = this.mapOutputFormat(config.outputFormat);
 
-      // Create synthesizer with null audio config (we'll handle audio ourselves)
-      synthesizer = new sdk.SpeechSynthesizer(speechConfig, undefined);
+      // Create synthesizer with a pull stream output so the SDK does NOT
+      // play audio through the default speakers — we handle playback ourselves.
+      const pushStream = sdk.AudioOutputStream.createPullStream();
+      const audioConfig = sdk.AudioConfig.fromStreamOutput(pushStream);
+      synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
 
       // Collect viseme events
       const visemes: VisemeEvent[] = [];

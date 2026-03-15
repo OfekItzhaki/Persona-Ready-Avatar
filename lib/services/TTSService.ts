@@ -258,6 +258,9 @@ export class TTSService implements ITTSService {
    * Halts audio playback and viseme coordination
    */
   stop(): void {
+    // Always reset synthesisInFlight so future calls aren't blocked
+    this.synthesisInFlight = false;
+
     if (!this.isActive) {
       return;
     }

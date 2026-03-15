@@ -73,62 +73,29 @@ export class InputModeController implements IInputModeController {
 
   /**
    * Save input mode preference to localStorage
+   * Only persists 'text' — voice mode is never saved as a default.
    *
    * Requirements: 7.4
    */
   savePreference(): void {
     try {
-      localStorage.setItem(this.STORAGE_KEY, this.currentMode);
-
-      logger.debug('Input mode preference saved', {
-        component: 'InputModeController',
-        operation: 'savePreference',
-        mode: this.currentMode,
-      });
-    } catch (error) {
-      logger.error('Failed to save input mode preference', {
-        component: 'InputModeController',
-        operation: 'savePreference',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      // Only persist text mode; voice mode must be re-selected each session
+      localStorage.setItem(this.STORAGE_KEY, 'text');
+    } catch {
+      // ignore storage errors
     }
   }
 
   /**
    * Load input mode preference from localStorage
+   * Always defaults to 'text' — voice mode must be explicitly chosen each session.
    *
    * Requirements: 7.5
    */
   loadPreference(): InputMode {
-    try {
-      const saved = localStorage.getItem(this.STORAGE_KEY);
-
-      if (saved === 'voice' || saved === 'text') {
-        logger.info('Input mode preference loaded', {
-          component: 'InputModeController',
-          operation: 'loadPreference',
-          mode: saved,
-        });
-        return saved;
-      }
-
-      // Default to text mode
-      logger.info('No saved input mode preference, using default', {
-        component: 'InputModeController',
-        operation: 'loadPreference',
-        defaultMode: 'text',
-      });
-      return 'text';
-    } catch (error) {
-      logger.error('Failed to load input mode preference', {
-        component: 'InputModeController',
-        operation: 'loadPreference',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-
-      // Return default on error
-      return 'text';
-    }
+    // Always start in text mode regardless of any saved preference.
+    // Voice mode requires explicit user opt-in each session.
+    return 'text';
   }
 
   /**

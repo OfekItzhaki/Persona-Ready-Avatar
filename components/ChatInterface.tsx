@@ -103,6 +103,9 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
   const sendMessageRef = useRef(sendMessage);
   useEffect(() => { sendMessageRef.current = sendMessage; }, [sendMessage]);
 
+  // Dedup guard: prevent double-send from React StrictMode or duplicate subscriptions
+  const lastVoiceSendRef = useRef<{ text: string; time: number } | null>(null);
+
   /**
    * Initialize OfflineQueueService and set up message sending callback
    */
@@ -133,7 +136,6 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       });
     } catch {
       // OfflineQueueService not initialized yet - will be initialized in app setup
-      console.warn('OfflineQueueService not initialized yet');
     }
   }, [sendMessage, ttsService, selectedAgent]);
 
@@ -152,7 +154,6 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
 
       if (!compatibilityResult.isCompatible) {
         // Browser not compatible - disable voice input (Requirement 11.2)
-        console.warn('Browser compatibility check failed:', compatibilityResult.checks);
         NotificationService.getInstance().warning(
           'Voice input is not available in this browser. Please use Chrome 90+, Edge 90+, or Safari 14+.'
         );
@@ -184,7 +185,7 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
           const speechConfig = getAzureSpeechConfig();
           await voiceService.initialize(speechConfig);
         } catch {
-          console.warn('Azure Speech not configured, voice input will be unavailable');
+          // Azure Speech not configured, voice input will be unavailable
         }
       })();
 
@@ -196,6 +197,19 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
         } else if (result.type === 'final' && result.text.trim()) {
           setVoiceInputState('processing');
           setInterimText('');
+
+          // Dedup: ignore if same text was sent within the last 2 seconds
+          const now = Date.now();
+          const trimmed = result.text.trim();
+          if (
+            lastVoiceSendRef.current &&
+            lastVoiceSendRef.current.text === trimmed &&
+            now - lastVoiceSendRef.current.time < 2000
+          ) {
+            setTimeout(() => setVoiceInputState('idle'), 500);
+            return;
+          }
+          lastVoiceSendRef.current = { text: trimmed, time: now };
 
           // Use ref so we always have the latest selectedAgent (avoids stale closure)
           const agent = selectedAgentRef.current;

@@ -18,6 +18,7 @@ import { InputModeToggle } from './InputModeToggle';
 import { VoiceInputService } from '@/lib/services/VoiceInputService';
 import { InputModeController } from '@/lib/services/InputModeController';
 import { checkBrowserCompatibility } from '@/lib/utils/browserCompatibility';
+import { getAzureSpeechConfig } from '@/lib/env';
 import type { Agent } from '@/types';
 import type { InputMode, RecognitionMode } from '@/types';
 
@@ -167,15 +168,15 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
       const voiceService = VoiceInputService.getInstance();
       voiceInputServiceRef.current = voiceService;
 
-      // Initialize with Azure Speech credentials if available
-      try {
-        const { getAzureSpeechConfig } = await import('@/lib/env');
-        const speechConfig = getAzureSpeechConfig();
-        await voiceService.initialize(speechConfig);
-      } catch {
-        // Azure Speech not configured — voice input will show an error when attempted
-        console.warn('Azure Speech not configured, voice input will be unavailable');
-      }
+      // Initialize with Azure Speech credentials if available (fire-and-forget)
+      void (async () => {
+        try {
+          const speechConfig = getAzureSpeechConfig();
+          await voiceService.initialize(speechConfig);
+        } catch {
+          console.warn('Azure Speech not configured, voice input will be unavailable');
+        }
+      })();
 
       // Subscribe to recognition results
       const unsubscribeResults = voiceService.subscribeToResults((result) => {

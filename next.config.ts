@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               "font-src 'self' data:",
-              "connect-src 'self' ws://localhost:* wss://localhost:* https://cognitiveservices.azure.com https://*.cognitiveservices.azure.com wss://*.stt.speech.microsoft.com https://*.stt.speech.microsoft.com",
+              "connect-src 'self' ws://localhost:* wss://localhost:* https://cognitiveservices.azure.com https://*.cognitiveservices.azure.com wss://*.stt.speech.microsoft.com https://*.stt.speech.microsoft.com wss://*.tts.speech.microsoft.com https://*.tts.speech.microsoft.com wss://*.speech.microsoft.com https://*.speech.microsoft.com",
               "media-src 'self' blob:",
               "worker-src 'self' blob: data:",
             ].join('; '),

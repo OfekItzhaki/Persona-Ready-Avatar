@@ -91,6 +91,12 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
   const selectedAgentRef = useRef(selectedAgent);
   useEffect(() => { selectedAgentRef.current = selectedAgent; }, [selectedAgent]);
 
+  // Keep a ref to ttsService and sendMessage to avoid stale closures in voice callbacks
+  const ttsServiceRef = useRef(ttsService);
+  useEffect(() => { ttsServiceRef.current = ttsService; }, [ttsService]);
+  const sendMessageRef = useRef(sendMessage);
+  useEffect(() => { sendMessageRef.current = sendMessage; }, [sendMessage]);
+
   // Screen reader announcement state (Requirement 10.2, 10.3, 10.5)
   const [screenReaderAnnouncement, setScreenReaderAnnouncement] = useState('');
 
@@ -195,8 +201,8 @@ export function ChatInterface({ ttsService, selectedAgent, className = '' }: Cha
           const agent = selectedAgentRef.current;
           if (!agent) return;
 
-          sendMessage(
-            { agentId: agent.id, message: result.text.trim(), ttsService, selectedAgent: agent },
+          sendMessageRef.current(
+            { agentId: agent.id, message: result.text.trim(), ttsService: ttsServiceRef.current ?? undefined, selectedAgent: agent },
             {
               onError: (error) => {
                 NotificationService.getInstance().error(
